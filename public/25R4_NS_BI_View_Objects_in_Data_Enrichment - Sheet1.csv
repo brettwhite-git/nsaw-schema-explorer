@@ -1,0 +1,379 @@
+Entity Name
+Account
+Account Type
+Accounting Book
+Accounting Period
+Action Type
+Amortization Type
+Approval Status
+Assembly Item Bom
+Bill Variance Status
+Bill of Materials
+Bill of Materials Revision
+Bill of Materials Revision Component
+Billing Account
+Billing Class
+Billing Rate Card
+Billing Schedule
+Billing Schedule Recurrence Pattern
+Billing Schedule Type
+Bin
+Bin Putaway Worksheet Transaction Line
+Bin Transfer Transaction Line
+Bin Transfer Transactions
+BinPutaway Worksheet Transactions
+Budget Category
+Budgets
+Budgets Machine
+Build Transaction Accounting Line
+Build Transaction Line
+Build Transactions
+Cash Refund Transaction Accounting Line
+Cash Refund Transaction Line
+Cash Refund Transactions
+Cash Sale Transaction Accounting Line
+Cash Sale Transaction Line
+Cash Sale Transactions
+Charge
+Charge Billing Mode Type
+Charge Rule
+Charge Stage Type
+Charge Type
+Charge Use
+Check Transaction Accounting Line
+Check Transaction Line
+Check Transactions
+Classification
+Commission Payment Type
+Commission Transaction Accounting Line
+Commission Transaction Line
+Commission Transactions
+Consolidated Rate Type
+Contact
+Cost Category
+Cost Estimate Type
+Costing Method Type
+Country
+Credit Card Charge Transaction Accounting Line
+Credit Card Charge Transaction Line
+Credit Card Charge Transactions
+Credit Card Refund Transaction Accounting Line
+Credit Card Refund Transaction Line
+Credit Card Refund Transactions
+Cross Charge Journal Transaction Accounting Line
+Cross Charge Journal Transaction Line
+Cross Charge Journal Transactions
+Currency
+Currency Revaluation Transaction Accounting Line
+Currency Revaluation Transaction Line
+Currency Revaluation Transactions
+Customer
+Customer Category
+Customer Credit Transaction Accounting Line
+Customer Credit Transaction Line
+Customer Credit Transactions
+Customer Deposit Transaction Accounting Line
+Customer Deposit Transaction Line
+Customer Deposit Transactions
+Customer Invoice Transaction Accounting Line
+Customer Invoice Transaction Line
+Customer Invoice Transactions
+Customer Payment Authorization Transaction Accounting Line
+Customer Payment Authorization Transaction Line
+Customer Payment Authorization Transactions
+Customer Payment Transaction Accounting Line
+Customer Payment Transaction Line
+Customer Payment Transactions
+Customer Refund Transaction Accounting Line
+Customer Refund Transaction Line
+Customer Refund Transactions
+Department
+Deposit Application Transaction Accounting Line
+Deposit Application Transaction Line
+Deposit Application Transactions
+Deposit Transaction Accounting Line
+Deposit Transaction Line
+Deposit Transactions
+Effectivity Based On Type
+Email Preference Type
+Employee
+Employee Expense Report Transaction Accounting Line
+Employee Expense Report Transaction Line
+Employee Expense Report Transactions
+Employee Status
+Employee Type
+Entity
+Entity Address
+Entity Address Book
+Entity Group
+Entity Group Type
+Entity Status
+Estimate Transaction Accounting Line
+Estimate Transaction Line
+Estimate Transactions
+Event Frequency
+Event Priority
+Expense Category
+File
+Fiscal Calendar
+Forecast Type
+Frequency Type
+Fulfillment Choice
+Fulfillment Exception Reason
+Fulfillment Exception Type
+Fulfillment Request Transaction Accounting Line
+Fulfillment Request Transaction Line
+Fulfillment Request Transactions
+Fulfillment Request Type
+GL Impact Adjustment Transaction Accounting Line
+GL Impact Adjustment Transaction Line
+GL Impact Adjustment Transactions
+Generalized Item
+Generic Resource
+Inbound Shipment
+Inbound Shipment Item
+International Commercial Term
+International Commercial Term Type
+Inventory Adjustment Transaction Accounting Line
+Inventory Adjustment Transaction Line
+Inventory Adjustment Transactions
+Inventory Balance
+Inventory Commit
+Inventory Cost Revaluation Transaction Accounting Line
+Inventory Cost Revaluation Transaction Line
+Inventory Cost Revaluation Transactions
+Inventory Count Transaction Accounting Line
+Inventory Count Transaction Line
+Inventory Count Transactions
+Inventory Item Price
+Inventory Number
+Inventory Number Location
+Inventory Status
+Inventory Status Change Transaction Line
+Inventory Status Change Transactions
+Inventory Transfer Transaction Accounting Line
+Inventory Transfer Transaction Line
+Inventory Transfer Transactions
+Inventory Worksheet Transaction Accounting Line
+Inventory Worksheet Transaction Line
+Inventory Worksheet Transactions
+Invoice Billing Address
+Invoice Group
+Invoice Group Status
+Invoice Shipping Address
+Issue
+Issue Case Map
+Issue Priority
+Issue Severity
+Issue Status
+Item
+Item Receipt Transaction Accounting Line
+Item Receipt Transaction Line
+Item Receipt Transactions
+Item Revenue Category
+Item Shipment Transaction Accounting Line
+Item Shipment Transaction Line
+Item Shipment Transactions
+Item Source
+Item Subtype
+Item Type
+Item Unit
+Job
+Job Resource Role
+Journal Transaction Accounting Line
+Journal Transaction Line
+Journal Transactions
+Lag Type
+Language
+Limit Type
+Location
+Location Type
+Manufacturing Cost Template
+Manufacturing Routing
+Manufacturing Routing Routing Step
+Media Type
+Merchandise Hierarchy Level
+Merchandise Hierarchy Node
+Merchandise Hierarchy Version
+Netting Settlement Transaction Accounting Line
+Netting Settlement Transaction Line
+Netting Settlement Transactions
+Nexus
+Opportunity Transaction Accounting Line
+Opportunity Transaction Line
+Opportunity Transactions
+Ownership Transfer Transaction Accounting Line
+Ownership Transfer Transaction Line
+Ownership Transfer Transactions
+Partner
+Paycheck Journal Transaction Accounting Line
+Paycheck Journal Transaction Line
+Paycheck Journal Transactions
+Paycheck Transaction Accounting Line
+Paycheck Transaction Line
+Paycheck Transactions
+Payment Instrument
+Payment Instrument Type
+Payment Method
+Payroll Batch
+Payroll Item
+Payroll Item Group
+Payroll Item Type
+Pick Action
+Pick Task
+Planned Revenue Type
+Price Book
+Price Book Line Interval
+Price Level
+Project Expense Type
+Project Task
+Project Task Constraint Type
+Project Time Approval Type
+Prorated By
+Purchase Contract Transaction Accounting Line
+Purchase Contract Transaction Line
+Purchase Contract Transactions
+Purchase Order Billing Address
+Purchase Order Shipping Address
+Purchase Order Transaction Accounting Line
+Purchase Order Transaction Line
+Purchase Order Transactions
+Purchase Requisition Transaction Accounting Line
+Purchase Requisition Transaction Line
+Purchase Requisition Transactions
+Ratable Event Type
+Reforecast Method
+Reporting Section
+Return Authorization Transaction Accounting Line
+Return Authorization Transaction Line
+Return Authorization Transactions
+Revenue Allocation Group
+Revenue Arrangement Transaction Accounting Line
+Revenue Arrangement Transaction Line
+Revenue Arrangement Transactions
+Revenue Commitment Reversal Transaction Accounting Line
+Revenue Commitment Reversal Transaction Line
+Revenue Commitment Reversal Transactions
+Revenue Commitment Transaction Accounting Line
+Revenue Commitment Transaction Line
+Revenue Commitment Transactions
+Revenue Element
+Revenue Plan
+Revenue Plan Planned Revenue
+Revenue Plan Status
+Revenue Plan Type
+Revenue Recognition Amount Source Type
+Revenue Recognition Change Impact Type
+Revenue Recognition Date Source Type
+Revenue Recognition Recurrence Type
+Revenue Recognition Rule
+Revenue Recognition Schedule
+Sales Order Transaction Accounting Line
+Sales Order Transaction Line
+Sales Order Transactions
+Sales Tax Item
+Scheduling Method
+Shipping Item
+Special Account Type
+State
+Statement Charge Accounting Line
+Statement Charge Transaction Line
+Statement Charge Transactions
+Statistical Journal Entry
+Statistical Journal Entry Line
+Status Type
+Store Pickup Fulfillment Accounting Line
+Store Pickup Fulfillment Transaction Line
+Store Pickup Fulfillment Transactions
+Subscription
+Subscription Change Order
+Subscription Change Order Status
+Subscription Line
+Subscription Line Status
+Subscription Line Type
+Subscription Plan
+Subscription Plan Member
+Subscription Plan Subsidiary Map
+Subscription Revenue Recognition Option
+Subscription Term
+Subscription Term Type
+Subscription Term Unit
+Subsidiary
+Support Case
+Support Case Issue
+Support Case Origin
+Support Case Priority
+Support Case Status
+Support Case Type
+System Journal Transaction Accounting Line
+System Journal Transaction Line
+System Journal Transactions
+Tax Liability Cheque Transaction Accounting Line
+Tax Liability Cheque Transaction Line
+Tax Liability Cheque Transactions
+Tax Payment Transaction Accounting Line
+Tax Payment Transaction Line
+Tax Payment Transactions
+Tax Type
+Term
+Time Bill
+Timeline Approval Status
+Timeline Type
+Timesheet
+Transaction Billing Address
+Transaction Shipping Address
+Transfer Order Transaction Accounting Line
+Transfer Order Transaction Line
+Transfer Order Transactions
+Transfer Transaction Accounting Line
+Transfer Transaction Line
+Transfer Transactions
+Unbuild Transaction Accounting Line
+Unbuild Transaction Line
+Unbuild Transactions
+Units Type
+Units Type Unit Of Measurement
+Usage
+Usage Status
+Vendor
+Vendor Bill Credit Transaction Accounting Line
+Vendor Bill Credit Transaction Line
+Vendor Bill Credit Transactions
+Vendor Bill Payment Transaction Accounting Line
+Vendor Bill Payment Transaction Line
+Vendor Bill Payment Transactions
+Vendor Bill Transaction Accounting Line
+Vendor Bill Transaction Line
+Vendor Bill Transactions
+Vendor Category
+Vendor Prepayment Application Accounting Line
+Vendor Prepayment Application Transaction Line
+Vendor Prepayment Application Transactions
+Vendor Prepayment Transaction Accounting Line
+Vendor Prepayment Transaction Line
+Vendor Prepayment Transactions
+Vendor Return Authorization Transaction Accounting Line
+Vendor Return Authorization Transaction Line
+Vendor Return Authorization Transactions
+Vsoe Sop Group Type
+Wave Order Line
+Wave Transactions
+Work Breakdown Structure
+Work Breakdown Structure Line
+Work Calendar
+Work Calendar Holiday
+Work Order Close Transaction Accounting Line
+Work Order Close Transaction Line
+Work Order Close Transactions
+Work Order Completion Transaction Accounting Line
+Work Order Completion Transaction Line
+Work Order Completion Transactions
+Work Order Issue Transaction Accounting Line
+Work Order Issue Transaction Line
+Work Order Issue Transactions
+Work Order Transaction Accounting Line
+Work Order Transaction Line
+Work Order Transactions
+Workplace
+Workplace Main Address
+Zone
