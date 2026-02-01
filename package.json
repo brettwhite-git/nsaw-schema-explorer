@@ -1,5 +1,5 @@
 {
-  "name": "nexus-ontology-explorer",
+  "name": "nsaw-schema-explorer",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,12 +9,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "dagre": "^0.8.5",
+    "flexsearch": "^0.8.212",
+    "lucide-react": "^0.563.0",
+    "papaparse": "^5.5.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "lucide-react": "^0.563.0"
+    "reactflow": "^11.11.4"
   },
   "devDependencies": {
+    "@types/dagre": "^0.7.53",
     "@types/node": "^22.14.0",
+    "@types/papaparse": "^5.5.2",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0"

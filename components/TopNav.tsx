@@ -9,7 +9,7 @@ export const TopNav: React.FC = () => {
         <div className="p-1.5 bg-blue-600/20 rounded-lg border border-blue-500/30">
           <Hexagon className="w-6 h-6 text-blue-400" />
         </div>
-        <span className="text-xl font-bold tracking-tight text-white uppercase italic">Nexus</span>
+        <span className="text-xl font-bold tracking-tight text-white uppercase italic">NSAW</span>
       </div>
 
       <div className="flex-1 max-w-2xl px-8">
