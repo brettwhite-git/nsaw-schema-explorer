@@ -1,13 +1,54 @@
-import React from 'react';
+import React, { useMemo, useEffect, useCallback } from 'react';
+import ReactFlow, {
+  Background,
+  Controls,
+  MiniMap,
+  useNodesState,
+  useEdgesState,
+  Node,
+} from 'reactflow';
+import 'reactflow/dist/style.css';
+
 import { useData } from '../data/DataContext';
-import { Database, ArrowRight, Table2 } from 'lucide-react';
+import { Database } from 'lucide-react';
+import { transformRecordsToGraph } from '../utils/graphLayout';
+import { lineageNodeTypes } from './nodes/LineageNode';
 
 /**
- * GraphViewer - Placeholder for Phase 4 React Flow implementation
- * Currently shows a simple list view of lineage records
+ * GraphViewer - React Flow visualization of data lineage
+ * Shows presentation columns -> physical tables mapping
  */
 export const GraphViewer: React.FC = () => {
   const { selection, selectedRecords, dataIndex } = useData();
+
+  // Transform records to React Flow graph when selectedRecords changes
+  const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
+    if (selectedRecords.length === 0) {
+      return { nodes: [], edges: [] };
+    }
+    const graph = transformRecordsToGraph(selectedRecords);
+    // Update node types to use our custom lineageNode component
+    const nodesWithType = graph.nodes.map(node => ({
+      ...node,
+      type: 'lineageNode',
+    }));
+    return { nodes: nodesWithType, edges: graph.edges };
+  }, [selectedRecords]);
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  // Update nodes/edges when initialNodes/initialEdges change
+  useEffect(() => {
+    setNodes(initialNodes);
+    setEdges(initialEdges);
+  }, [initialNodes, initialEdges, setNodes, setEdges]);
+
+  // Optional: Handle node clicks
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    console.log('Node clicked:', node.data);
+    // Future: Could update selection in DataContext
+  }, []);
 
   // Show welcome state when nothing selected
   if (!selection.presentationTable) {
@@ -56,72 +97,53 @@ export const GraphViewer: React.FC = () => {
     );
   }
 
-  // Show lineage records for selected table
+  // Show React Flow graph for selected table
   return (
-    <div className="flex-1 w-full h-full relative blueprint-grid overflow-auto bg-slate-900/20">
-      {/* Column Headers */}
-      <div className="sticky top-0 z-10 bg-slate-900/95 backdrop-blur border-b border-slate-800 px-6 py-3">
-        <div className="grid grid-cols-3 gap-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-          <div className="flex items-center gap-2">
-            <Table2 className="w-3.5 h-3.5" />
-            Presentation Column
-          </div>
-          <div className="flex items-center gap-2 justify-center">
-            <ArrowRight className="w-3.5 h-3.5" />
-            Maps To
-          </div>
-          <div className="flex items-center gap-2">
-            <Database className="w-3.5 h-3.5" />
-            Physical (DW)
-          </div>
-        </div>
-      </div>
+    <div className="flex-1 w-full h-full relative">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onNodeClick={onNodeClick}
+        nodeTypes={lineageNodeTypes}
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
+        minZoom={0.1}
+        maxZoom={2}
+        defaultEdgeOptions={{
+          type: 'smoothstep',
+          style: { stroke: '#475569', strokeWidth: 2 },
+        }}
+        className="bg-slate-900/20"
+      >
+        <Background color="#334155" gap={20} size={1} />
+        <Controls className="!bg-slate-800 !border-slate-700 [&>button]:!bg-slate-800 [&>button]:!border-slate-700 [&>button]:!text-slate-300 [&>button:hover]:!bg-slate-700" />
+        <MiniMap
+          nodeColor={(node) => {
+            switch (node.data?.nodeType) {
+              case 'presentationColumn':
+                return '#3b82f6'; // Blue
+              case 'physicalTable':
+                return '#a855f7'; // Purple
+              case 'physicalColumn':
+                return '#f97316'; // Orange
+              default:
+                return '#64748b'; // Slate
+            }
+          }}
+          className="!bg-slate-900 !border-slate-700"
+          maskColor="rgba(15, 23, 42, 0.8)"
+        />
+      </ReactFlow>
 
-      {/* Lineage Records */}
-      <div className="p-4 space-y-2">
-        {selectedRecords.map((record, idx) => (
-          <div
-            key={idx}
-            className="grid grid-cols-3 gap-4 p-3 bg-slate-800/30 hover:bg-slate-800/50 rounded-lg border border-slate-700/50 hover:border-slate-600 transition-all cursor-pointer group"
-          >
-            {/* Presentation Column */}
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-blue-500 rounded-full" />
-              <div>
-                <div className="text-sm font-medium text-white group-hover:text-blue-300 transition-colors">
-                  {record.presentationColumn}
-                </div>
-                <div className="text-xs text-slate-500">
-                  {record.presentationTable}
-                </div>
-              </div>
-            </div>
-
-            {/* Arrow */}
-            <div className="flex items-center justify-center">
-              <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-blue-400 transition-colors" />
-            </div>
-
-            {/* Physical Column */}
-            <div className="flex items-center gap-3">
-              <div className="w-1.5 h-8 bg-purple-500 rounded-full" />
-              <div>
-                <div className="text-sm font-medium text-white group-hover:text-purple-300 transition-colors font-mono">
-                  {record.physicalColumn}
-                </div>
-                <div className="text-xs text-slate-500 font-mono">
-                  {record.physicalTable}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Empty state */}
+      {/* Empty state overlay */}
       {selectedRecords.length === 0 && (
-        <div className="flex items-center justify-center h-64 text-slate-500">
-          No field mappings found for this table.
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50">
+          <div className="text-slate-500 text-center">
+            <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            No field mappings found for this table.
+          </div>
         </div>
       )}
     </div>
