@@ -24,6 +24,7 @@ export interface LineageNodeData {
   isNsawGenerated?: boolean;
   inferredSource?: InferredSource;
   columnCount?: number;  // Number of columns for physical tables
+  isSelected?: boolean;  // Whether this node is currently selected
 }
 
 export type LineageNode = Node<LineageNodeData>;

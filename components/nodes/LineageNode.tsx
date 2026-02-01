@@ -45,8 +45,11 @@ const NODE_STYLES = {
 // ======================
 
 const LineageNode: React.FC<NodeProps<LineageNodeData>> = ({ data, selected }) => {
-  const { label, sublabel, nodeType, isNsawGenerated, inferredSource, columnCount } = data;
+  const { label, sublabel, nodeType, isNsawGenerated, inferredSource, columnCount, isSelected } = data;
   const styles = NODE_STYLES[nodeType];
+
+  // Use either React Flow's selected state or our custom isSelected from data
+  const isHighlighted = selected || isSelected;
 
   // Determine icon based on node type
   const NodeIcon = nodeType === 'presentationColumn'
@@ -60,8 +63,8 @@ const LineageNode: React.FC<NodeProps<LineageNodeData>> = ({ data, selected }) =
       className={`
         relative w-[280px] min-h-[80px]
         bg-slate-800/80 backdrop-blur-sm
-        rounded-lg border-2 transition-all duration-150
-        ${selected
+        rounded-lg border-2 transition-all duration-150 cursor-pointer
+        ${isHighlighted
           ? `${styles.borderColorSelected} ring-2 ${styles.ringColor}`
           : `${styles.borderColor} hover:border-opacity-100`
         }

@@ -11,7 +11,7 @@ import 'reactflow/dist/style.css';
 
 import { useData } from '../data/DataContext';
 import { Database } from 'lucide-react';
-import { transformRecordsToGraph } from '../utils/graphLayout';
+import { transformRecordsToGraph, LineageNodeData } from '../utils/graphLayout';
 import { lineageNodeTypes } from './nodes/LineageNode';
 
 /**
@@ -19,7 +19,7 @@ import { lineageNodeTypes } from './nodes/LineageNode';
  * Shows presentation columns -> physical tables mapping
  */
 export const GraphViewer: React.FC = () => {
-  const { selection, selectedRecords, dataIndex } = useData();
+  const { selection, selectedRecords, dataIndex, setSelection } = useData();
 
   // Transform records to React Flow graph when selectedRecords changes
   const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
@@ -28,12 +28,21 @@ export const GraphViewer: React.FC = () => {
     }
     const graph = transformRecordsToGraph(selectedRecords);
     // Update node types to use our custom lineageNode component
+    // Add isSelected flag based on current selection
     const nodesWithType = graph.nodes.map(node => ({
       ...node,
       type: 'lineageNode',
+      data: {
+        ...node.data,
+        isSelected: node.data.nodeType === 'presentationColumn'
+          ? node.data.record?.presentationColumn === selection.presentationColumn
+          : node.data.nodeType === 'physicalTable'
+            ? node.data.label === selection.physicalTable
+            : false,
+      },
     }));
     return { nodes: nodesWithType, edges: graph.edges };
-  }, [selectedRecords]);
+  }, [selectedRecords, selection.presentationColumn, selection.physicalTable]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -44,11 +53,33 @@ export const GraphViewer: React.FC = () => {
     setEdges(initialEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
 
-  // Optional: Handle node clicks
+  // Handle node clicks - update selection based on node type
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
-    console.log('Node clicked:', node.data);
-    // Future: Could update selection in DataContext
-  }, []);
+    const data = node.data as LineageNodeData;
+
+    if (data.nodeType === 'presentationColumn' && data.record) {
+      // Clicking a presentation column selects it and shows its lineage
+      setSelection({
+        presentationColumn: data.record.presentationColumn,
+        physicalTable: data.record.physicalTable,
+        physicalColumn: data.record.physicalColumn,
+      });
+    } else if (data.nodeType === 'physicalTable') {
+      // Clicking a physical table clears column selection, shows table info
+      setSelection({
+        physicalTable: data.label,
+        presentationColumn: null,
+        physicalColumn: null,
+      });
+    } else if (data.nodeType === 'physicalColumn' && data.record) {
+      // Clicking a physical column selects the related presentation column
+      setSelection({
+        presentationColumn: data.record.presentationColumn,
+        physicalTable: data.record.physicalTable,
+        physicalColumn: data.record.physicalColumn,
+      });
+    }
+  }, [setSelection]);
 
   // Show welcome state when nothing selected
   if (!selection.presentationTable) {
