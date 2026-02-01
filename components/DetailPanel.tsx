@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useData } from '../data/DataContext';
 import { FileText, Database, Info, Code, ArrowUpRight, Layers, ChevronRight, PanelRightClose, PanelRightOpen } from 'lucide-react';
 
 export const DetailPanel: React.FC = () => {
   const { selection, selectedRecords, dataIndex } = useData();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Auto-expand when selection changes (user selects something)
   useEffect(() => {
@@ -13,10 +14,27 @@ export const DetailPanel: React.FC = () => {
     }
   }, [selection.subjectArea, selection.presentationTable]);
 
+  // Click-outside detection to collapse panel
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
+        setIsCollapsed(true);
+      }
+    };
+
+    if (!isCollapsed) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isCollapsed]);
+
   // Collapsed state
   if (isCollapsed) {
     return (
-      <div className="w-12 border-l border-slate-800 flex flex-col items-center bg-slate-950 transition-all duration-300">
+      <div ref={panelRef} className="w-12 border-l border-slate-800 flex flex-col items-center bg-slate-950 transition-all duration-300">
         <button
           onClick={() => setIsCollapsed(false)}
           className="p-3 hover:bg-slate-900 transition-colors w-full flex justify-center"
@@ -39,7 +57,7 @@ export const DetailPanel: React.FC = () => {
   // Empty state - nothing selected
   if (!selection.subjectArea) {
     return (
-      <div className="w-80 border-l border-slate-800 flex flex-col bg-slate-950 transition-all duration-300">
+      <div ref={panelRef} className="w-80 border-l border-slate-800 flex flex-col bg-slate-950 transition-all duration-300">
         <div className="p-2 border-b border-slate-900 flex justify-start">
           <button
             onClick={() => setIsCollapsed(true)}
@@ -62,7 +80,7 @@ export const DetailPanel: React.FC = () => {
   );
 
   return (
-    <div className="w-80 border-l border-slate-800 flex flex-col h-full bg-slate-950 overflow-y-auto custom-scrollbar transition-all duration-300">
+    <div ref={panelRef} className="w-80 border-l border-slate-800 flex flex-col h-full bg-slate-950 overflow-y-auto custom-scrollbar transition-all duration-300">
       {/* Header */}
       <div className="p-4 border-b border-slate-900">
         <div className="flex items-center justify-between mb-3">

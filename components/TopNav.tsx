@@ -1,6 +1,6 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { Search, Layers, Database, Share2, Hexagon, Table2, FileText, Code, Home } from 'lucide-react';
+import { Search, Layers, Database, Share2, Table2, FileText, Code, Home } from 'lucide-react';
 import { useData } from '../data/DataContext';
 import { groupSearchResults, getResultTypeLabel } from '../data/searchIndex';
 import { SearchResultType } from '../types';
@@ -49,7 +49,7 @@ export const TopNav: React.FC = () => {
   };
 
   return (
-    <div className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50 backdrop-blur-md z-10">
+    <div className="h-16 border-b border-slate-800 flex items-center justify-between px-6 bg-slate-900/50 backdrop-blur-md z-20">
       <div className="flex items-center gap-3">
         <button
           onClick={clearSelection}
@@ -58,9 +58,6 @@ export const TopNav: React.FC = () => {
         >
           <Home className="w-5 h-5 text-slate-400 hover:text-white" />
         </button>
-        <div className="p-1.5 bg-blue-600/20 rounded-lg border border-blue-500/30">
-          <Hexagon className="w-6 h-6 text-blue-400" />
-        </div>
         <span className="text-xl font-bold tracking-tight text-white uppercase italic">NSAW</span>
       </div>
 
