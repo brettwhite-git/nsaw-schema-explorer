@@ -1,20 +1,17 @@
 
 import React from 'react';
-import { Network, Microscope, Compass, Activity, Database, Settings } from 'lucide-react';
+import { Activity, Database, Settings } from 'lucide-react';
+import { SubjectAreaBrowser } from './SubjectAreaBrowser';
 
 export const Sidebar: React.FC = () => {
   return (
-    <div className="w-64 border-r border-slate-800 flex flex-col h-full bg-slate-950">
-      <div className="p-6">
-        <h1 className="text-xs font-semibold text-slate-500 uppercase tracking-[0.2em] mb-4">Ontology System</h1>
-        <div className="space-y-1">
-          <NavItem icon={<Network className="w-4 h-4" />} label="Traceability" active />
-          <NavItem icon={<Microscope className="w-4 h-4" />} label="Schema Explorer" />
-          <NavItem icon={<Compass className="w-4 h-4" />} label="Map View" />
-        </div>
+    <div className="w-80 border-r border-slate-800 flex flex-col h-full bg-slate-950">
+      <div className="p-6 pb-3">
+        <h1 className="text-xs font-semibold text-slate-500 uppercase tracking-[0.2em] mb-4">Subject Areas</h1>
+        <SubjectAreaBrowser />
       </div>
 
-      <div className="p-6 pt-0">
+      <div className="p-6 pt-3">
         <h1 className="text-xs font-semibold text-slate-500 uppercase tracking-[0.2em] mb-4">Data Views</h1>
         <div className="space-y-1">
           <NavItem icon={<Activity className="w-4 h-4" />} label="Flow Health" />
@@ -31,8 +28,8 @@ export const Sidebar: React.FC = () => {
 
 const NavItem: React.FC<{ icon: React.ReactNode, label: string, active?: boolean }> = ({ icon, label, active }) => (
   <button className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-all ${
-    active 
-      ? 'bg-blue-600/10 text-blue-400 border border-blue-500/20' 
+    active
+      ? 'bg-blue-600/10 text-blue-400 border border-blue-500/20'
       : 'text-slate-400 hover:text-white hover:bg-slate-900'
   }`}>
     {icon}

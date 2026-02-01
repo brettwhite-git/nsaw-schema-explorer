@@ -1,15 +1,57 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../data/DataContext';
-import { FileText, Database, Info, Code, ArrowUpRight, Layers, ChevronRight } from 'lucide-react';
+import { FileText, Database, Info, Code, ArrowUpRight, Layers, ChevronRight, PanelRightClose, PanelRightOpen } from 'lucide-react';
 
 export const DetailPanel: React.FC = () => {
   const { selection, selectedRecords, dataIndex } = useData();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Auto-expand when selection changes (user selects something)
+  useEffect(() => {
+    if (selection.subjectArea && isCollapsed) {
+      setIsCollapsed(false);
+    }
+  }, [selection.subjectArea, selection.presentationTable]);
+
+  // Collapsed state
+  if (isCollapsed) {
+    return (
+      <div className="w-12 border-l border-slate-800 flex flex-col items-center bg-slate-950 transition-all duration-300">
+        <button
+          onClick={() => setIsCollapsed(false)}
+          className="p-3 hover:bg-slate-900 transition-colors w-full flex justify-center"
+          title="Expand panel"
+        >
+          <PanelRightOpen className="w-5 h-5 text-slate-400 hover:text-blue-400" />
+        </button>
+        <div className="flex-1 flex items-center justify-center">
+          <span
+            className="text-[10px] text-slate-600 uppercase tracking-widest font-medium"
+            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
+          >
+            Details
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   // Empty state - nothing selected
   if (!selection.subjectArea) {
     return (
-      <div className="w-80 border-l border-slate-800 flex items-center justify-center p-8 bg-slate-950 text-slate-600 text-center italic">
-        Select a subject area or search for a field to view its lineage details.
+      <div className="w-80 border-l border-slate-800 flex flex-col bg-slate-950 transition-all duration-300">
+        <div className="p-2 border-b border-slate-900 flex justify-start">
+          <button
+            onClick={() => setIsCollapsed(true)}
+            className="p-2 hover:bg-slate-900 rounded transition-colors"
+            title="Collapse panel"
+          >
+            <PanelRightClose className="w-5 h-5 text-slate-400 hover:text-blue-400" />
+          </button>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-8 text-slate-600 text-center italic">
+          Select a subject area or search for a field to view its lineage details.
+        </div>
       </div>
     );
   }
@@ -20,17 +62,24 @@ export const DetailPanel: React.FC = () => {
   );
 
   return (
-    <div className="w-80 border-l border-slate-800 flex flex-col h-full bg-slate-950 overflow-y-auto custom-scrollbar">
+    <div className="w-80 border-l border-slate-800 flex flex-col h-full bg-slate-950 overflow-y-auto custom-scrollbar transition-all duration-300">
       {/* Header */}
-      <div className="p-6 border-b border-slate-900">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
-            Lineage Details
-          </h2>
+      <div className="p-4 border-b border-slate-900">
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={() => setIsCollapsed(true)}
+            className="p-2 -ml-2 hover:bg-slate-900 rounded transition-colors"
+            title="Collapse panel"
+          >
+            <PanelRightClose className="w-5 h-5 text-slate-400 hover:text-blue-400" />
+          </button>
           <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] rounded border border-blue-500/20 font-bold uppercase">
             {selection.presentationTable ? 'Table' : 'Subject Area'}
           </span>
         </div>
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">
+          Lineage Details
+        </h2>
 
         {/* Breadcrumb */}
         <div className="flex items-center gap-1 text-xs text-slate-500 mb-3 flex-wrap">
