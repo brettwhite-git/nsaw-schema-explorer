@@ -26,11 +26,24 @@ npm run preview  # Preview production build
 App.tsx (wraps with DataProvider)
 ├── LoadingScreen.tsx   # Shown during CSV load
 ├── TopNav.tsx          # Search bar with grouped results dropdown
+├── ViewModeSelector.tsx # View mode buttons (Flow, Detailed, Star, Table)
+├── GraphLegend.tsx     # Color legend for graph
 ├── Sidebar.tsx         # Contains SubjectAreaBrowser
-│   └── SubjectAreaBrowser.tsx  # Accordion of 110+ subject areas
+│   └── SubjectAreaBrowser.tsx  # 3-level hierarchy: Functional Area → Subject Area → Table
 ├── GraphViewer.tsx     # React Flow visualization
-│   └── nodes/LineageNode.tsx   # Custom styled node component
+│   ├── nodes/LineageNode.tsx   # Custom styled node component
+│   └── views/
+│       ├── TableView.tsx              # Sortable spreadsheet view
+│       ├── StarSchemaView.tsx         # Fact/dimension radial layout
+│       └── SubjectAreaNetworkView.tsx # Table connection network
 └── DetailPanel.tsx     # Collapsible right panel, shows lineage path
+```
+
+### Configuration (`config/`)
+```
+config/
+└── functionalAreas.ts  # Maps 110 subject areas → 10 functional area groups
+                        # Pattern-based matching (Order to Cash, Procure to Pay, etc.)
 ```
 
 ### Data Layer (`data/`)
@@ -47,6 +60,8 @@ data/
 - `selectedRecords` - Records for currently selected presentation table
 - `search()` / `searchResults` - FlexSearch-powered search
 - Navigation helpers: `selectSubjectArea()`, `selectPresentationTable()`, `selectFromSearchResult()`
+- `viewMode` / `setViewMode` - Current view mode (flow, detailedFlow, starSchema, table)
+- `functionalAreaGroups` - Subject areas grouped by business domain
 
 ### Utilities (`utils/`)
 ```
@@ -99,6 +114,22 @@ Creates a left-to-right (LR) layout using dagre:
 - `isNsawGeneratedTable()` - Detects NSAW-only tables (DAY_D, FISCALCALPERIOD, etc.)
 - `inferRecordType()` - Extracts NetSuite record from DW table name (DW_NS_CUSTOMER_D -> customer)
 - `inferFieldName()` - Converts DW column to camelCase field name
+- `parsePhysicalTableType()` - Classifies DW tables by suffix (_F=fact, _D=dimension, _DH=hierarchy, etc.)
+
+## Physical Table Naming Convention
+DW tables follow suffix patterns that indicate their role:
+- `_F` - Fact tables (transactional data, e.g., DW_NS_WORK_ORDER_F)
+- `_D` - Dimension tables (reference data, e.g., DW_NS_CUSTOMER_D)
+- `_DH` - Hierarchy tables (drill-down support)
+- `_G` - Global/reference tables
+- `_EF` - Enhanced/flattened fact tables
+- `_CF` - Calculated fields
+- `_SEC` - Security tables
+
+## Color System
+**Graph nodes:** Blue (presentation) → Purple (DW tables) → Orange (DW columns)
+**Detail panel:** Blue (presentation) → Purple (DW) → Green (inferred NetSuite source)
+**Amber:** NSAW-generated tables (not from NetSuite)
 
 ## Dependencies
 
@@ -134,3 +165,4 @@ CSV file in `/public/` (loaded at runtime):
 Supporting files (not currently used in app):
 - `25R4_NS_BI_View_Objects_in_Data_Enrichment - Sheet1.csv`
 - `25R4_NS_Data_Augmentation_Entity_Key_List - Sheet1.csv`
+- `25R4_Fusion_NS_Analytics_Tables.html` - Reference doc showing physical table organization by functional area

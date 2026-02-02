@@ -1,12 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import {
   DataIndex,
   SelectionState,
   SearchResult,
   EnrichedLineageRecord,
+  ViewMode,
+  FunctionalAreaGroup,
 } from '../types';
 import { loadLineageData, getRecordsForPresentationTable } from './dataLoader';
 import { initializeSearchIndex, searchLineage, groupSearchResults } from './searchIndex';
+import { groupByFunctionalArea } from '../config/functionalAreas';
 
 interface DataContextValue {
   // Data state
@@ -32,6 +35,13 @@ interface DataContextValue {
   selectSubjectArea: (subjectArea: string) => void;
   selectPresentationTable: (subjectArea: string, table: string) => void;
   selectFromSearchResult: (result: SearchResult) => void;
+
+  // View mode
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
+
+  // Grouped subject areas by functional area
+  functionalAreaGroups: FunctionalAreaGroup[];
 }
 
 const DataContext = createContext<DataContextValue | null>(null);
@@ -66,6 +76,15 @@ export function DataProvider({ children }: DataProviderProps): React.ReactElemen
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+
+  // View mode state
+  const [viewMode, setViewMode] = useState<ViewMode>('detailedFlow');
+
+  // Compute functional area groups when dataIndex changes
+  const functionalAreaGroups = useMemo(() => {
+    if (!dataIndex) return [];
+    return groupByFunctionalArea(dataIndex.subjectAreas);
+  }, [dataIndex]);
 
   // Load data on mount
   useEffect(() => {
@@ -226,6 +245,9 @@ export function DataProvider({ children }: DataProviderProps): React.ReactElemen
     selectSubjectArea,
     selectPresentationTable,
     selectFromSearchResult,
+    viewMode,
+    setViewMode,
+    functionalAreaGroups,
   };
 
   return (

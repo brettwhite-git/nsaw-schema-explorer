@@ -4,6 +4,8 @@ import { TopNav } from './components/TopNav';
 import { GraphViewer } from './components/GraphViewer';
 import { DetailPanel } from './components/DetailPanel';
 import { LoadingScreen } from './components/LoadingScreen';
+import { ViewModeSelector } from './components/ViewModeSelector';
+import { GraphLegend } from './components/GraphLegend';
 import { DataProvider, useData } from './data/DataContext';
 
 const AppContent: React.FC = () => {
@@ -28,16 +30,28 @@ const AppContent: React.FC = () => {
 
         <main className="flex-1 flex flex-col min-w-0 bg-slate-950">
           <div className="p-4 px-6 border-b border-slate-900 bg-slate-900/20">
-            <h1 className="text-lg font-light text-white tracking-tight mb-1">
-              {selection.presentationTable
-                ? `${selection.presentationTable}`
-                : 'NSAW Schema Explorer'}
-            </h1>
-            <p className="text-xs text-slate-500 max-w-2xl">
-              {selection.presentationTable
-                ? `${selectedRecords.length} field mappings in ${selection.subjectArea}`
-                : `Explore ${dataIndex?.totalRecords.toLocaleString() || '56,000+'} field mappings across ${dataIndex?.subjectAreas.length || 110} subject areas.`}
-            </p>
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-lg font-light text-white tracking-tight mb-1">
+                  {selection.presentationTable
+                    ? `${selection.presentationTable}`
+                    : selection.subjectArea
+                      ? selection.subjectArea
+                      : ''}
+                </h1>
+                <p className="text-xs text-slate-500 max-w-2xl">
+                  {selection.presentationTable
+                    ? `${selectedRecords.length} field mappings in ${selection.subjectArea}`
+                    : selection.subjectArea
+                      ? `Select a table to explore field mappings`
+                      : `Explore ${dataIndex?.totalRecords.toLocaleString() || '56,000+'} field mappings across ${dataIndex?.subjectAreas.length || 110} subject areas.`}
+                </p>
+              </div>
+              <div className="flex flex-col items-end gap-2">
+                <ViewModeSelector />
+                <GraphLegend />
+              </div>
+            </div>
           </div>
 
           <div className="flex-1 flex overflow-hidden">

@@ -1,5 +1,58 @@
 // NSAW Schema Explorer - Type Definitions
 
+// ======================
+// View & Navigation Types
+// ======================
+
+/**
+ * View mode for the main content area
+ */
+export type ViewMode = 'table' | 'detailedFlow';
+
+/**
+ * Physical table type classification based on suffix
+ * Derived from DW table naming conventions
+ */
+export type PhysicalTableType =
+  | 'dimension'    // _D - Dimension tables (lookup/reference data)
+  | 'fact'         // _F - Fact tables (transactional data)
+  | 'hierarchy'    // _DH - Hierarchy tables (drill-down support)
+  | 'global'       // _G - Global/reference tables
+  | 'calculated'   // _CF - Calculated/derived fields
+  | 'enhanced'     // _EF - Enhanced/flattened fact tables
+  | 'prediction'   // _P - Prediction tables (ML-generated)
+  | 'security'     // _SEC - Security tables
+  | 'unknown';
+
+/**
+ * Functional area groupings for subject areas
+ * Business domain categories for navigation hierarchy
+ */
+export type FunctionalArea =
+  | 'Order to Cash'
+  | 'Procure to Pay'
+  | 'Financial Management'
+  | 'Inventory & Warehouse'
+  | 'Manufacturing'
+  | 'Banking'
+  | 'HR & Payroll'
+  | 'Customer Management'
+  | 'Analytics & Predictions';
+
+/**
+ * Functional area with its subject areas
+ */
+export interface FunctionalAreaGroup {
+  name: FunctionalArea;
+  subjectAreas: SubjectAreaInfo[];
+  totalRecords: number;
+  totalTables: number;
+}
+
+// ======================
+// Core Data Types
+// ======================
+
 /**
  * Core lineage record - maps 1:1 to a CSV row
  * Represents a single field mapping from presentation layer to physical warehouse
@@ -194,4 +247,21 @@ export function createInferredSource(physicalTable: string, physicalColumn: stri
     fieldName: isGenerated ? null : inferFieldName(physicalColumn),
     isNsawGenerated: isGenerated,
   };
+}
+
+/**
+ * Parse physical table suffix to determine table type
+ * Uses DW naming convention: DW_NS_[NAME]_[SUFFIX]
+ */
+export function parsePhysicalTableType(tableName: string): PhysicalTableType {
+  // Check suffixes in order of specificity
+  if (tableName.endsWith('_EF')) return 'enhanced';
+  if (tableName.endsWith('_CF') || tableName.includes('_CF_')) return 'calculated';
+  if (tableName.endsWith('_DH')) return 'hierarchy';
+  if (tableName.endsWith('_SEC')) return 'security';
+  if (tableName.endsWith('_G')) return 'global';
+  if (tableName.endsWith('_P')) return 'prediction';
+  if (tableName.endsWith('_F')) return 'fact';
+  if (tableName.endsWith('_D')) return 'dimension';
+  return 'unknown';
 }

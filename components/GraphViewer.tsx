@@ -11,38 +11,47 @@ import 'reactflow/dist/style.css';
 
 import { useData } from '../data/DataContext';
 import { Database } from 'lucide-react';
-import { transformRecordsToGraph, LineageNodeData } from '../utils/graphLayout';
+import { transformRecordsToDetailedGraph, LineageNodeData } from '../utils/graphLayout';
 import { lineageNodeTypes } from './nodes/LineageNode';
+import { TableView } from './views/TableView';
+import { SubjectAreaNetworkView } from './views/SubjectAreaNetworkView';
 
 /**
- * GraphViewer - React Flow visualization of data lineage
- * Shows presentation columns -> physical tables mapping
+ * GraphViewer - Main content area with multiple view modes
+ * Supports: flow, detailedFlow, table, starSchema views
  */
 export const GraphViewer: React.FC = () => {
-  const { selection, selectedRecords, dataIndex, setSelection } = useData();
+  const { selection, selectedRecords, dataIndex, setSelection, viewMode } = useData();
 
   // Transform records to React Flow graph when selectedRecords changes
+  // Always use detailed 3-column graph
   const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
     if (selectedRecords.length === 0) {
       return { nodes: [], edges: [] };
     }
-    const graph = transformRecordsToGraph(selectedRecords);
+
+    // Always use detailed transformation (3-column layout)
+    const graph = transformRecordsToDetailedGraph(selectedRecords);
+
     // Update node types to use our custom lineageNode component
     // Add isSelected flag based on current selection
-    const nodesWithType = graph.nodes.map(node => ({
+    const nodesWithType = graph.nodes.map((node) => ({
       ...node,
       type: 'lineageNode',
       data: {
         ...node.data,
-        isSelected: node.data.nodeType === 'presentationColumn'
-          ? node.data.record?.presentationColumn === selection.presentationColumn
-          : node.data.nodeType === 'physicalTable'
-            ? node.data.label === selection.physicalTable
-            : false,
+        isSelected:
+          node.data.nodeType === 'presentationColumn'
+            ? node.data.record?.presentationColumn === selection.presentationColumn
+            : node.data.nodeType === 'physicalTable'
+              ? node.data.label === selection.physicalTable
+              : node.data.nodeType === 'physicalColumn'
+                ? node.data.record?.physicalColumn === selection.physicalColumn
+                : false,
       },
     }));
     return { nodes: nodesWithType, edges: graph.edges };
-  }, [selectedRecords, selection.presentationColumn, selection.physicalTable]);
+  }, [selectedRecords, selection.presentationColumn, selection.physicalTable, selection.physicalColumn, viewMode]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -80,6 +89,11 @@ export const GraphViewer: React.FC = () => {
       });
     }
   }, [setSelection]);
+
+  // Show Subject Area Network when subject area selected but no table
+  if (selection.subjectArea && !selection.presentationTable) {
+    return <SubjectAreaNetworkView />;
+  }
 
   // Show welcome state when nothing selected
   if (!selection.presentationTable) {
@@ -128,7 +142,12 @@ export const GraphViewer: React.FC = () => {
     );
   }
 
-  // Show React Flow graph for selected table
+  // Route to correct view based on viewMode
+  if (viewMode === 'table') {
+    return <TableView records={selectedRecords} />;
+  }
+
+  // Show React Flow graph for detailedFlow mode
   return (
     <div className="flex-1 w-full h-full relative">
       <ReactFlow

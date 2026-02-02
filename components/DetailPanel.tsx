@@ -1,82 +1,29 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useData } from '../data/DataContext';
-import { FileText, Database, Info, Code, ArrowUpRight, Layers, ChevronRight, PanelRightClose, PanelRightOpen, Columns, ArrowDown, Table2 } from 'lucide-react';
+import { FileText, Database, Info, Code, Layers, ChevronRight, Columns, ArrowDown, Table2 } from 'lucide-react';
 
 export const DetailPanel: React.FC = () => {
   const { selection, selectedRecords, dataIndex } = useData();
-  const [isCollapsed, setIsCollapsed] = useState(true);
-  const panelRef = useRef<HTMLDivElement>(null);
 
-  // Get current selection info - MUST be before any returns (hooks rule)
+  // Get current selection info
   const subjectAreaInfo = useMemo(() => {
     return dataIndex?.subjectAreas.find(sa => sa.name === selection.subjectArea);
   }, [dataIndex, selection.subjectArea]);
 
-  // Find the selected column's full record - MUST be before any returns (hooks rule)
+  // Find the selected column's full record
   const selectedColumnRecord = useMemo(() => {
     if (!selection.presentationColumn) return null;
     return selectedRecords.find(r => r.presentationColumn === selection.presentationColumn);
   }, [selection.presentationColumn, selectedRecords]);
 
-  // Auto-expand when selection changes (user selects something)
-  useEffect(() => {
-    if (selection.subjectArea && isCollapsed) {
-      setIsCollapsed(false);
-    }
-  }, [selection.subjectArea, selection.presentationTable]);
-
-  // Click-outside detection to collapse panel
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
-        setIsCollapsed(true);
-      }
-    };
-
-    if (!isCollapsed) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isCollapsed]);
-
-  // Collapsed state
-  if (isCollapsed) {
-    return (
-      <div ref={panelRef} className="w-12 border-l border-slate-800 flex flex-col items-center bg-slate-950 transition-all duration-300">
-        <button
-          onClick={() => setIsCollapsed(false)}
-          className="p-3 hover:bg-slate-900 transition-colors w-full flex justify-center"
-          title="Expand panel"
-        >
-          <PanelRightOpen className="w-5 h-5 text-slate-400 hover:text-blue-400" />
-        </button>
-        <div className="flex-1 flex items-center justify-center">
-          <span
-            className="text-[10px] text-slate-600 uppercase tracking-widest font-medium"
-            style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }}
-          >
-            Details
-          </span>
-        </div>
-      </div>
-    );
-  }
-
   // Empty state - nothing selected
   if (!selection.subjectArea) {
     return (
-      <div ref={panelRef} className="w-80 border-l border-slate-800 flex flex-col bg-slate-950 transition-all duration-300">
-        <div className="p-2 border-b border-slate-900 flex justify-start">
-          <button
-            onClick={() => setIsCollapsed(true)}
-            className="p-2 hover:bg-slate-900 rounded transition-colors"
-            title="Collapse panel"
-          >
-            <PanelRightClose className="w-5 h-5 text-slate-400 hover:text-blue-400" />
-          </button>
+      <div className="w-80 border-l border-slate-800 flex flex-col bg-slate-950">
+        <div className="p-4 border-b border-slate-900">
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
+            Lineage Details
+          </h2>
         </div>
         <div className="flex-1 flex items-center justify-center p-8 text-slate-600 text-center italic">
           Select a subject area or search for a field to view its lineage details.
@@ -93,17 +40,13 @@ export const DetailPanel: React.FC = () => {
       : 'subjectArea';
 
   return (
-    <div ref={panelRef} className="w-80 border-l border-slate-800 flex flex-col h-full bg-slate-950 overflow-y-auto custom-scrollbar transition-all duration-300">
+    <div className="w-80 border-l border-slate-800 flex flex-col h-full bg-slate-950 overflow-y-auto custom-scrollbar">
       {/* Header */}
       <div className="p-4 border-b border-slate-900">
         <div className="flex items-center justify-between mb-3">
-          <button
-            onClick={() => setIsCollapsed(true)}
-            className="p-2 -ml-2 hover:bg-slate-900 rounded transition-colors"
-            title="Collapse panel"
-          >
-            <PanelRightClose className="w-5 h-5 text-slate-400 hover:text-blue-400" />
-          </button>
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest">
+            Lineage Details
+          </h2>
           <span className={`px-2 py-0.5 text-[10px] rounded border font-bold uppercase ${
             detailType === 'column'
               ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
@@ -114,9 +57,6 @@ export const DetailPanel: React.FC = () => {
             {detailType === 'column' ? 'Column' : detailType === 'table' ? 'Table' : 'Subject Area'}
           </span>
         </div>
-        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">
-          Lineage Details
-        </h2>
 
         {/* Breadcrumb */}
         <div className="flex items-center gap-1 text-xs text-slate-500 mb-3 flex-wrap">
