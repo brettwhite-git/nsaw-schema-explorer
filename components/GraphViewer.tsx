@@ -6,6 +6,11 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   Node,
+  Edge,
+  OnNodesChange,
+  OnEdgesChange,
+  ReactFlowProvider,
+  useReactFlow,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 
@@ -15,6 +20,93 @@ import { transformRecordsToDetailedGraph, LineageNodeData } from '../utils/graph
 import { lineageNodeTypes } from './nodes/LineageNode';
 import { TableView } from './views/TableView';
 import { SubjectAreaNetworkView } from './views/SubjectAreaNetworkView';
+
+/**
+ * Returns appropriate fitView options based on graph size.
+ * Smaller graphs get tighter padding and higher min zoom.
+ * Larger graphs prevent extreme zoom-out.
+ */
+function getFitViewOptions(nodeCount: number) {
+  if (nodeCount < 20) {
+    return { padding: 0.3, minZoom: 0.5, maxZoom: 1.5, duration: 200 };
+  }
+  if (nodeCount < 100) {
+    return { padding: 0.2, minZoom: 0.3, maxZoom: 1.2, duration: 200 };
+  }
+  // Large graphs - prevent extreme zoom-out
+  return { padding: 0.15, minZoom: 0.2, maxZoom: 1.0, duration: 200 };
+}
+
+/**
+ * Inner component for React Flow that has access to useReactFlow hook.
+ * This must be wrapped by ReactFlowProvider to work.
+ */
+interface DetailedFlowContentProps {
+  nodes: Node[];
+  edges: Edge[];
+  onNodesChange: OnNodesChange;
+  onEdgesChange: OnEdgesChange;
+  onNodeClick: (event: React.MouseEvent, node: Node) => void;
+  presentationTable: string | null;
+}
+
+const DetailedFlowContent: React.FC<DetailedFlowContentProps> = ({
+  nodes,
+  edges,
+  onNodesChange,
+  onEdgesChange,
+  onNodeClick,
+  presentationTable,
+}) => {
+  const { fitView } = useReactFlow();
+
+  // Fit view on initial render and when nodes change significantly
+  // Using onInit ensures React Flow is ready before fitting
+  const handleInit = useCallback(() => {
+    // Delay slightly to ensure dagre positions are applied
+    setTimeout(() => {
+      fitView(getFitViewOptions(nodes.length));
+    }, 50);
+  }, [fitView, nodes.length]);
+
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onNodeClick={onNodeClick}
+      onInit={handleInit}
+      nodeTypes={lineageNodeTypes}
+      minZoom={0.1}
+      maxZoom={2}
+      defaultEdgeOptions={{
+        type: 'smoothstep',
+        style: { stroke: '#475569', strokeWidth: 2 },
+      }}
+      className="bg-slate-900/20"
+    >
+      <Background color="#334155" gap={20} size={1} />
+      <Controls className="!bg-slate-800 !border-slate-700 [&>button]:!bg-slate-800 [&>button]:!border-slate-700 [&>button]:!text-slate-300 [&>button:hover]:!bg-slate-700" />
+      <MiniMap
+        nodeColor={(node) => {
+          switch (node.data?.nodeType) {
+            case 'presentationColumn':
+              return '#3b82f6'; // Blue
+            case 'physicalTable':
+              return '#a855f7'; // Purple
+            case 'physicalColumn':
+              return '#f97316'; // Orange
+            default:
+              return '#64748b'; // Slate
+          }
+        }}
+        className="!bg-slate-900 !border-slate-700"
+        maskColor="rgba(15, 23, 42, 0.8)"
+      />
+    </ReactFlow>
+  );
+};
 
 /**
  * GraphViewer - Main content area with multiple view modes
@@ -147,44 +239,20 @@ export const GraphViewer: React.FC = () => {
   }
 
   // Show React Flow graph for detailedFlow mode
+  // Wrapped in ReactFlowProvider with key to force remount on table change
+  // This ensures onInit fires and fitView is called with correct bounds
   return (
     <div className="flex-1 w-full h-full relative">
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onNodeClick={onNodeClick}
-        nodeTypes={lineageNodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.1}
-        maxZoom={2}
-        defaultEdgeOptions={{
-          type: 'smoothstep',
-          style: { stroke: '#475569', strokeWidth: 2 },
-        }}
-        className="bg-slate-900/20"
-      >
-        <Background color="#334155" gap={20} size={1} />
-        <Controls className="!bg-slate-800 !border-slate-700 [&>button]:!bg-slate-800 [&>button]:!border-slate-700 [&>button]:!text-slate-300 [&>button:hover]:!bg-slate-700" />
-        <MiniMap
-          nodeColor={(node) => {
-            switch (node.data?.nodeType) {
-              case 'presentationColumn':
-                return '#3b82f6'; // Blue
-              case 'physicalTable':
-                return '#a855f7'; // Purple
-              case 'physicalColumn':
-                return '#f97316'; // Orange
-              default:
-                return '#64748b'; // Slate
-            }
-          }}
-          className="!bg-slate-900 !border-slate-700"
-          maskColor="rgba(15, 23, 42, 0.8)"
+      <ReactFlowProvider key={selection.presentationTable}>
+        <DetailedFlowContent
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onNodeClick={onNodeClick}
+          presentationTable={selection.presentationTable}
         />
-      </ReactFlow>
+      </ReactFlowProvider>
 
       {/* Detailed Flow Legend */}
       <div className="absolute top-4 right-4 z-10 bg-slate-900/90 backdrop-blur-sm rounded-lg border border-slate-700 p-3">

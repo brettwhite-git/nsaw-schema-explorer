@@ -2,6 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow Instructions
+
+**Always use Plan Mode and Subagents for non-trivial tasks:**
+
+1. **Enter Plan Mode** - Use plan mode to research and design before implementing
+2. **Use Explore subagents** - Launch parallel Explore agents to investigate the codebase (up to 3)
+3. **Use Plan subagents** - Launch Plan agents to design implementation approaches
+4. **Execute with subagents** - After plan approval, use general-purpose subagents to implement changes
+5. **Main chat stays lean** - Main conversation coordinates and reviews; subagents do the heavy lifting
+
+**Why this workflow:**
+- Subagents have fresh context windows for deep exploration and implementation
+- Main chat maintains high-level awareness without context bloat
+- Parallel subagents can investigate/implement multiple areas simultaneously
+- Errors in subagents don't pollute main conversation history
+
 ## Project Overview
 
 NSAW Schema Explorer is a React + TypeScript web application for visualizing data lineage from NetSuite Analytics Warehouse (NSAW). It displays an interactive graph showing how data flows from presentation layer (semantic model) through the physical data warehouse to inferred NetSuite source records.
@@ -120,6 +136,43 @@ Creates a left-to-right (LR) layout using dagre:
 - **Column 1 (Left)**: Presentation columns (blue)
 - **Column 2 (Right)**: Physical tables (purple)
 - Optional Column 3: Physical columns (orange) - for detailed view
+
+### React Flow Patterns
+
+**Dynamic fitView (viewport auto-fit when data changes):**
+
+The `fitView` prop on `<ReactFlow>` only fires on initial mount, NOT when nodes change. For dynamic data:
+
+```typescript
+// Pattern: key + onInit for auto-fit on data changes
+<ReactFlowProvider key={uniqueDataKey}>  // Forces remount when key changes
+  <InnerComponent />
+</ReactFlowProvider>
+
+// Inside InnerComponent:
+const { fitView } = useReactFlow();
+
+const handleInit = useCallback(() => {
+  setTimeout(() => fitView(options), 50);  // Small delay for dagre positions
+}, [fitView, nodeCount]);
+
+<ReactFlow onInit={handleInit} ... />
+```
+
+**Why this pattern:**
+- `useReactFlow()` requires `ReactFlowProvider` wrapper
+- `fitView` function is unstable (changes every render) - don't use in useEffect dependencies
+- `key` prop forces complete remount, ensuring `onInit` fires with fresh viewport
+- 50ms delay allows dagre layout positions to be applied before fitView calculates bounds
+
+**Intelligent zoom bounds based on node count:**
+```typescript
+function getFitViewOptions(nodeCount: number) {
+  if (nodeCount < 20)  return { padding: 0.3, minZoom: 0.5, maxZoom: 1.5, duration: 200 };
+  if (nodeCount < 100) return { padding: 0.2, minZoom: 0.3, maxZoom: 1.2, duration: 200 };
+  return { padding: 0.15, minZoom: 0.2, maxZoom: 1.0, duration: 200 };  // Large graphs
+}
+```
 
 ## Type System (types.ts)
 
