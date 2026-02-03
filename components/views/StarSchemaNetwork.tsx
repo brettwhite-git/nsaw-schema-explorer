@@ -14,7 +14,6 @@ import {
   forceLink,
   forceCollide,
   forceManyBody,
-  forceCenter,
   forceRadial,
   SimulationNodeDatum,
   SimulationLinkDatum,
@@ -62,17 +61,12 @@ const CONFIG = {
   // Force parameters - pushed out for better text visibility
   LINK_DISTANCE: 180,
   CHARGE_STRENGTH: -120,
-  COLLISION_PADDING: 20,  // Increased for better label spacing
-  RADIAL_STRENGTH: 0.05,
-  CENTER_STRENGTH: 0.015,
-
-  // Radial distances - pushed out more
-  SECONDARY_RING: 180,
-  DIMENSION_RING: 420,
+  COLLISION_PADDING: 20,
+  RADIAL_STRENGTH: 0.3,      // Increased from 0.15 for better ring cohesion
 
   // Animation - smooth and gentle
   ALPHA_START: 0.4,
-  ALPHA_DECAY: 0.008,
+  ALPHA_DECAY: 0.02,  // Faster decay for quicker settling
   VELOCITY_DECAY: 0.4,
 };
 
@@ -97,7 +91,18 @@ function extractSubjectAreaKey(subjectArea: string): string {
 
 function isPrimaryFact(tableName: string, subjectAreaKey: string): boolean {
   const tableCore = tableName.replace(/^DW_NS_/, '').replace(/_F$|_EF$|_LINES_F$|_LINES_EF$/, '');
-  return tableCore.includes(subjectAreaKey) || subjectAreaKey.includes(tableCore);
+
+  // Direct substring match (existing logic)
+  if (tableCore.includes(subjectAreaKey) || subjectAreaKey.includes(tableCore)) return true;
+
+  // Token overlap: split both into words by underscore, check if >=50% of
+  // subject area tokens appear in the table core
+  const tableTokens = new Set(tableCore.split('_').filter(t => t.length > 1));
+  const saTokens = subjectAreaKey.split('_').filter(t => t.length > 1);
+  if (saTokens.length === 0) return false;
+
+  const matchCount = saTokens.filter(t => tableTokens.has(t)).length;
+  return matchCount / saTokens.length >= 0.5;
 }
 
 function cleanLabel(tableName: string): string {
@@ -112,72 +117,78 @@ function truncateLabel(label: string, maxLen: number): string {
   return label.substring(0, maxLen - 1) + '…';
 }
 
-// Calculate bounding box of all nodes (accounting for node radius AND text labels)
-function calculateBounds(nodes: NetworkNode[]) {
-  if (nodes.length === 0) return null;
-
-  let minX = Infinity, maxX = -Infinity;
-  let minY = Infinity, maxY = -Infinity;
-
-  for (const node of nodes) {
-    if (node.x === undefined || node.y === undefined) continue;
-
-    // Estimate text label width based on label length (roughly 6px per character)
-    const labelWidth = (node.label?.length || 0) * 6;
-    const halfLabelWidth = labelWidth / 2;
-
-    // Text labels are positioned above dimension nodes (small nodes)
-    // Add extra space above for labels: radius + gap(4px) + fontSize(~12px)
-    const labelHeightAbove = node.role === 'dimension' ? 20 : 0;
-
-    // Account for node radius + label extension
-    minX = Math.min(minX, node.x - Math.max(node.radius, halfLabelWidth));
-    maxX = Math.max(maxX, node.x + Math.max(node.radius, halfLabelWidth));
-    minY = Math.min(minY, node.y - node.radius - labelHeightAbove);
-    maxY = Math.max(maxY, node.y + node.radius);
-  }
-
-  if (minX === Infinity) return null;
-
+// Viewport-responsive radial distances
+function computeRadii(width: number, height: number, nodeCount: number) {
+  const maxRadius = Math.min(width, height) / 2 - 80;
+  const scaleFactor = Math.min(1, Math.max(0.5, nodeCount / 30));
+  const dimensionRing = maxRadius * scaleFactor;
+  const secondaryRing = dimensionRing * 0.43;
   return {
-    minX, maxX, minY, maxY,
-    width: maxX - minX,
-    height: maxY - minY,
-    centerX: (minX + maxX) / 2,
-    centerY: (minY + maxY) / 2,
+    secondaryRing: Math.max(secondaryRing, 80),
+    dimensionRing: Math.max(dimensionRing, 150),
   };
 }
 
-// Calculate transform to fit content within viewport with asymmetric padding
-function calculateFitTransform(
-  bounds: NonNullable<ReturnType<typeof calculateBounds>>,
+// Auto-fit transform after settling
+function computeFitTransform(
+  nodes: NetworkNode[],
   viewportWidth: number,
-  viewportHeight: number
-) {
-  // Asymmetric padding: more on right (legend ~180px), less on left (controls ~50px)
-  // More at top (header area ~20px), less at bottom
-  const paddingLeft = 50;
-  const paddingRight = 60;  // Legend is positioned inside viewport, so less padding needed
-  const paddingTop = 30;
-  const paddingBottom = 50;
+  viewportHeight: number,
+  padding: number = 60
+): { x: number; y: number; scale: number } {
+  if (nodes.length === 0) return { x: 0, y: 0, scale: 1 };
 
-  const availableWidth = viewportWidth - paddingLeft - paddingRight;
-  const availableHeight = viewportHeight - paddingTop - paddingBottom;
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const node of nodes) {
+    const x = node.x ?? 0;
+    const y = node.y ?? 0;
+    const r = node.radius + 20;
+    minX = Math.min(minX, x - r);
+    maxX = Math.max(maxX, x + r);
+    minY = Math.min(minY, y - r);
+    maxY = Math.max(maxY, y + r);
+  }
 
-  // Calculate scale to fit content (cap at 1.2 for reasonable zoom)
-  const scaleX = availableWidth / bounds.width;
-  const scaleY = availableHeight / bounds.height;
-  const scale = Math.min(scaleX, scaleY, 1.2);
+  const graphWidth = maxX - minX;
+  const graphHeight = maxY - minY;
+  const graphCenterX = (minX + maxX) / 2;
+  const graphCenterY = (minY + maxY) / 2;
 
-  // Calculate center of available area (shifted slightly left and down due to asymmetric padding)
-  const availableCenterX = paddingLeft + availableWidth / 2;
-  const availableCenterY = paddingTop + availableHeight / 2;
+  const availWidth = viewportWidth - padding * 2;
+  const availHeight = viewportHeight - padding * 2;
 
-  // Calculate translation to center content in available area
-  const tx = availableCenterX - (bounds.centerX * scale);
-  const ty = availableCenterY - (bounds.centerY * scale);
+  const scale = Math.min(1.0, availWidth / graphWidth, availHeight / graphHeight);
 
-  return { x: tx, y: ty, scale };
+  const tx = viewportWidth / 2 - graphCenterX * scale;
+  const ty = viewportHeight / 2 - graphCenterY * scale;
+
+  return { x: tx, y: ty, scale: Math.max(0.3, scale) };
+}
+
+// Orbital animation force for dimension nodes
+function forceOrbital(centerX: number, centerY: number, speed: number = 0.002) {
+  let nodes: NetworkNode[] = [];
+
+  const force: any = (alpha: number) => {
+    for (const node of nodes) {
+      if (node.role !== 'dimension') continue;
+      if (node.fx != null) continue;
+
+      const x = (node.x ?? 0) - centerX;
+      const y = (node.y ?? 0) - centerY;
+      const dist = Math.sqrt(x * x + y * y);
+      if (dist < 1) continue;
+
+      const tx = -y / dist;
+      const ty = x / dist;
+
+      node.vx = (node.vx ?? 0) + tx * speed * dist * 0.01;
+      node.vy = (node.vy ?? 0) + ty * speed * dist * 0.01;
+    }
+  };
+
+  force.initialize = (n: NetworkNode[]) => { nodes = n; };
+  return force;
 }
 
 // ======================
@@ -190,7 +201,9 @@ export const StarSchemaNetwork: React.FC = () => {
   const simulationRef = useRef<ReturnType<typeof forceSimulation<NetworkNode>> | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  const [dimensions, setDimensions] = useState({ width: 1000, height: 700 });
+  // Start with 0x0 - ResizeObserver will provide real dimensions once the
+  // container div mounts. This prevents building a simulation with wrong coordinates.
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const [nodes, setNodes] = useState<NetworkNode[]>([]);
   const [links, setLinks] = useState<NetworkLink[]>([]);
   const [hoveredNode, setHoveredNode] = useState<NetworkNode | null>(null);
@@ -198,6 +211,8 @@ export const StarSchemaNetwork: React.FC = () => {
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [draggingNode, setDraggingNode] = useState<string | null>(null);
+  const [isSettling, setIsSettling] = useState(true);
+  const [isReady, setIsReady] = useState(false);
 
   // Resize observer
   useEffect(() => {
@@ -219,28 +234,24 @@ export const StarSchemaNetwork: React.FC = () => {
   useEffect(() => {
     // Only apply when we're actually showing star schema (no table selected)
     if (!selection.presentationTable && nodes.length > 0) {
-      // Fit to bounds when returning to star schema
-      const bounds = calculateBounds(nodes);
-      if (bounds) {
-        const fitTransform = calculateFitTransform(bounds, dimensions.width, dimensions.height);
-        setTransform(fitTransform);
-      }
+      setTransform(computeFitTransform(nodes, dimensions.width, dimensions.height));
     }
-  }, [selection.presentationTable, dimensions.width, dimensions.height]);
+  }, [selection.presentationTable]);
   // Note: Don't include nodes in deps to avoid re-triggering on every simulation tick
 
   // Build network data
-  const { initialNodes, initialLinks, stats } = useMemo(() => {
-    if (!dataIndex || !selection.subjectArea) {
-      return { initialNodes: [], initialLinks: [], stats: { primary: '', secondaryCount: 0, dimCount: 0 } };
+  const { initialNodes, initialLinks, stats, radii } = useMemo(() => {
+    if (!dataIndex || !selection.subjectArea || dimensions.width === 0 || dimensions.height === 0) {
+      return { initialNodes: [], initialLinks: [], stats: { primary: '', secondaryCount: 0, dimCount: 0 }, radii: { secondaryRing: 80, dimensionRing: 150 } };
     }
 
     const records = dataIndex.bySubjectArea.get(selection.subjectArea) || [];
     if (records.length === 0) {
-      return { initialNodes: [], initialLinks: [], stats: { primary: '', secondaryCount: 0, dimCount: 0 } };
+      return { initialNodes: [], initialLinks: [], stats: { primary: '', secondaryCount: 0, dimCount: 0 }, radii: { secondaryRing: 80, dimensionRing: 150 } };
     }
 
     const subjectAreaKey = extractSubjectAreaKey(selection.subjectArea);
+    // Position at viewport center (D3 will center primary fact here)
     const centerX = dimensions.width / 2;
     const centerY = dimensions.height / 2;
 
@@ -289,6 +300,28 @@ export const StarSchemaNetwork: React.FC = () => {
       primaryFact = secondaryFacts.shift()!;
     }
 
+    // If still no primary fact, promote the most-connected dimension to hub
+    let useVirtualHub = false;
+    if (!primaryFact && dimensionTables.length > 0) {
+      useVirtualHub = true;
+      let bestDim = dimensionTables[0];
+      let bestCount = 0;
+      for (const table of dimensionTables) {
+        const count = tableInfo.get(table)!.columns.size;
+        if (count > bestCount) {
+          bestCount = count;
+          bestDim = table;
+        }
+      }
+      primaryFact = bestDim;
+      const idx = dimensionTables.indexOf(bestDim);
+      if (idx >= 0) dimensionTables.splice(idx, 1);
+    }
+
+    // Compute viewport-responsive radii
+    const totalNodeCount = (primaryFact ? 1 : 0) + secondaryFacts.length + dimensionTables.length;
+    const { secondaryRing, dimensionRing } = computeRadii(dimensions.width, dimensions.height, totalNodeCount);
+
     // Build nodes
     const networkNodes: NetworkNode[] = [];
     const networkLinks: NetworkLink[] = [];
@@ -299,9 +332,9 @@ export const StarSchemaNetwork: React.FC = () => {
       networkNodes.push({
         id: primaryFact,
         label: cleanLabel(primaryFact),
-        role: 'primaryFact',
+        role: useVirtualHub ? 'secondaryFact' : 'primaryFact',
         columnCount: info.columns.size,
-        radius: CONFIG.PRIMARY_FACT_RADIUS,
+        radius: useVirtualHub ? CONFIG.SECONDARY_FACT_RADIUS : CONFIG.PRIMARY_FACT_RADIUS,
         x: centerX,
         y: centerY,
         fx: centerX,
@@ -313,7 +346,7 @@ export const StarSchemaNetwork: React.FC = () => {
     secondaryFacts.forEach((table, i) => {
       const info = tableInfo.get(table)!;
       const angle = (2 * Math.PI * i) / Math.max(secondaryFacts.length, 1) - Math.PI / 2;
-      const radius = CONFIG.SECONDARY_RING + (Math.random() - 0.5) * 30;
+      const radius = secondaryRing + (Math.random() - 0.5) * 30;
       networkNodes.push({
         id: table,
         label: cleanLabel(table),
@@ -334,7 +367,7 @@ export const StarSchemaNetwork: React.FC = () => {
       const baseAngle = (2 * Math.PI * index) / dimensionTables.length;
       const jitter = (Math.random() - 0.5) * 0.1;
       const angle = baseAngle + jitter;
-      const radius = CONFIG.DIMENSION_RING + (Math.random() - 0.5) * 40;
+      const radius = dimensionRing + (Math.random() - 0.5) * 40;
       networkNodes.push({
         id: table,
         label: cleanLabel(table),
@@ -357,10 +390,11 @@ export const StarSchemaNetwork: React.FC = () => {
         secondaryCount: secondaryFacts.length,
         dimCount: dimensionTables.length,
       },
+      radii: { secondaryRing, dimensionRing },
     };
   }, [dataIndex, selection.subjectArea, dimensions]);
 
-  // Run force simulation - compute layout synchronously to avoid visual glitch
+  // Run force simulation with animated settling
   useEffect(() => {
     if (initialNodes.length === 0) {
       setNodes([]);
@@ -368,6 +402,10 @@ export const StarSchemaNetwork: React.FC = () => {
       return;
     }
 
+    // Reset ready state at start
+    setIsReady(false);
+
+    // Position at viewport center (D3 will center primary fact here)
     const centerX = dimensions.width / 2;
     const centerY = dimensions.height / 2;
 
@@ -386,64 +424,90 @@ export const StarSchemaNetwork: React.FC = () => {
       )
       .force('charge', forceManyBody<NetworkNode>()
         .strength(CONFIG.CHARGE_STRENGTH)
-        .distanceMax(500)
       )
       .force('collide', forceCollide<NetworkNode>()
         .radius(d => d.radius + CONFIG.COLLISION_PADDING)
         .strength(0.8)
       )
-      .force('center', forceCenter<NetworkNode>(centerX, centerY)
-        .strength(CONFIG.CENTER_STRENGTH)
-      )
       .force('radial', forceRadial<NetworkNode>(
-        d => d.role === 'dimension' ? CONFIG.DIMENSION_RING : d.role === 'secondaryFact' ? CONFIG.SECONDARY_RING : 0,
+        d => d.role === 'dimension' ? radii.dimensionRing : d.role === 'secondaryFact' ? radii.secondaryRing : 0,
         centerX,
         centerY
       ).strength(CONFIG.RADIAL_STRENGTH))
+      .force('orbital', forceOrbital(centerX, centerY, 0.003))
       .alpha(CONFIG.ALPHA_START)
       .alphaDecay(CONFIG.ALPHA_DECAY)
       .velocityDecay(CONFIG.VELOCITY_DECAY)
-      .stop();  // Don't auto-start - we'll run it manually
+      .stop();  // Don't auto-start - we'll set up tick handler first
 
-    // Run simulation synchronously to compute final positions (no animation)
-    // This prevents the visual glitch where diagram zooms in after rendering
-    const iterations = 300;  // Enough iterations for simulation to converge
-    for (let i = 0; i < iterations; i++) {
+    // Run a few synchronous iterations for warm start (nodes near final positions)
+    const warmupIterations = 30;
+    for (let i = 0; i < warmupIterations; i++) {
       simulation.tick();
     }
 
-    // Now nodes have their final positions - set state and transform once
+    // Store simulation reference for cleanup
+    simulationRef.current = simulation;
+
+    // Set initial state
     setNodes([...simNodes]);
     setLinks([...simLinks]);
 
-    // Calculate fit-to-bounds based on FINAL converged positions
-    const bounds = calculateBounds(simNodes);
-    if (bounds) {
-      const fitTransform = calculateFitTransform(bounds, dimensions.width, dimensions.height);
-      setTransform(fitTransform);
-    }
+    // Mark as ready - transform and nodes are set
+    setIsReady(true);
 
-    // Keep simulation reference for drag interactions
-    simulationRef.current = simulation;
+    // Set settling state
+    setIsSettling(true);
+    let hasSettled = false;
 
-    // Re-enable simulation for interactive dragging (but alpha is already 0)
+    // Let simulation continue animating
     simulation.on('tick', () => {
       setNodes([...simNodes]);
       setLinks([...simLinks]);
+
+      // When simulation nearly stopped, finalize (only once)
+      if (simulation.alpha() < 0.05 && !hasSettled) {
+        hasSettled = true;
+        setIsSettling(false);
+
+        // Auto-fit to viewport
+        const fitTransform = computeFitTransform(simNodes, dimensions.width, dimensions.height);
+        setTransform(fitTransform);
+
+        // Keep simulation alive for orbital animation
+        simulation.alphaDecay(0);
+        simulation.alphaTarget(0.01);
+
+        // Reduce forces during floating to prevent jitter
+        simulation.force('charge', forceManyBody<NetworkNode>()
+          .strength(-20)
+        );
+        simulation.force('link', forceLink<NetworkNode, NetworkLink>(simLinks)
+          .id(d => d.id)
+          .distance(CONFIG.LINK_DISTANCE)
+          .strength(0.1)
+        );
+      }
     });
 
+    // Restart simulation from current alpha (after warmup, alpha is reduced)
+    simulation.alpha(0.3).restart();
+
     return () => {
-      simulation.stop();
+      if (simulationRef.current) {
+        simulationRef.current.stop();
+      }
     };
   }, [initialNodes, initialLinks, dimensions]);
 
   // Pan handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isSettling) return;
     if (e.button === 0 && !hoveredNode) {
       setIsPanning(true);
       setPanStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
     }
-  }, [transform, hoveredNode]);
+  }, [transform, hoveredNode, isSettling]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (isPanning) {
@@ -460,6 +524,7 @@ export const StarSchemaNetwork: React.FC = () => {
   }, []);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (isSettling) return;
     e.preventDefault();
     const rect = e.currentTarget.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
@@ -477,16 +542,20 @@ export const StarSchemaNetwork: React.FC = () => {
 
       return { x: newX, y: newY, scale: newScale };
     });
-  }, []);
+  }, [isSettling]);
+
+  const prevSubjectAreaRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (selection.subjectArea !== prevSubjectAreaRef.current && nodes.length > 0) {
+      prevSubjectAreaRef.current = selection.subjectArea;
+      setTransform(computeFitTransform(nodes, dimensions.width, dimensions.height));
+    }
+  }, [selection.subjectArea, nodes.length]);
 
   const resetView = useCallback(() => {
-    // Calculate fit-to-bounds transform based on current node positions
-    const bounds = calculateBounds(nodes);
-    if (bounds) {
-      const fitTransform = calculateFitTransform(bounds, dimensions.width, dimensions.height);
-      setTransform(fitTransform);
-    }
-  }, [nodes, dimensions.width, dimensions.height]);
+    setTransform(computeFitTransform(nodes, dimensions.width, dimensions.height));
+  }, [nodes, dimensions]);
 
   // Handle node click - navigate to presentation table
   const handleNodeClick = useCallback((node: NetworkNode) => {
@@ -536,27 +605,35 @@ export const StarSchemaNetwork: React.FC = () => {
   const handleDragEnd = useCallback((node: NetworkNode) => {
     setDraggingNode(null);
     if (simulationRef.current) {
-      simulationRef.current.alphaTarget(0);
+      simulationRef.current.alphaTarget(0.01);
     }
     // Release fixed position (node will drift back with physics)
-    // To keep it pinned, remove these two lines:
     node.fx = null;
     node.fy = null;
   }, []);
 
-  if (nodes.length === 0 && initialNodes.length === 0) {
-    return (
-      <div className="flex-1 flex items-center justify-center text-slate-500">
-        <p className="text-lg">No physical tables found</p>
-      </div>
-    );
-  }
+  // Always render the container div with ref so ResizeObserver can measure
+  // real dimensions before the first simulation runs. Previously, the loading
+  // and empty states returned different divs WITHOUT containerRef, causing
+  // the graph to be built with stale hardcoded dimensions (1000x700).
+  const showEmpty = nodes.length === 0 && initialNodes.length === 0;
 
   return (
-    <div ref={containerRef} className="flex-1 w-full h-full relative overflow-hidden bg-slate-950" style={{ backgroundImage: 'radial-gradient(circle, #334155 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+    <div ref={containerRef} className="flex-1 w-full h-full relative overflow-visible bg-slate-950" style={{ backgroundImage: 'radial-gradient(circle, #334155 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+      {showEmpty ? (
+        <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+          <p className="text-lg">No physical tables found</p>
+        </div>
+      ) : !isReady ? (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-slate-500 text-sm">Loading graph...</div>
+        </div>
+      ) : (
+      <>
       <svg
         width={dimensions.width}
         height={dimensions.height}
+        viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
         className={isPanning ? 'cursor-grabbing' : 'cursor-grab'}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
@@ -565,7 +642,9 @@ export const StarSchemaNetwork: React.FC = () => {
         onWheel={handleWheel}
         style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
       >
-        <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.scale})`}>
+        <g
+          transform={`translate(${transform.x}, ${transform.y}) scale(${transform.scale})`}
+        >
           {/* Edges - always visible, subtle gray */}
           <g className="edges">
             {links.map((link, i) => {
@@ -781,6 +860,8 @@ export const StarSchemaNetwork: React.FC = () => {
             }
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

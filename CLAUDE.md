@@ -18,6 +18,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Parallel subagents can investigate/implement multiple areas simultaneously
 - Errors in subagents don't pollute main conversation history
 
+**Reference:** See `CHANGELOG.md` for a log of what was tried, what worked, and key lessons learned.
+
 ## Project Overview
 
 NSAW Schema Explorer is a React + TypeScript web application for visualizing data lineage from NetSuite Analytics Warehouse (NSAW). It displays an interactive graph showing how data flows from presentation layer (semantic model) through the physical data warehouse to inferred NetSuite source records.
@@ -53,7 +55,7 @@ App.tsx (wraps with DataProvider)
 │   └── views/
 │       ├── OverviewFlowView.tsx       # 3-tier data lineage overview map (NEW)
 │       ├── TableView.tsx              # Sortable spreadsheet view
-│       ├── StarSchemaNetwork.tsx      # D3 force radial layout for subject areas
+│       ├── StarSchemaNetwork.tsx      # D3 force radial layout for subject areas (see D3 patterns below)
 │       └── SubjectAreaNetworkView.tsx # Re-export of StarSchemaNetwork
 └── DetailPanel.tsx     # Collapsible right panel, shows lineage path
 ```
@@ -174,6 +176,34 @@ function getFitViewOptions(nodeCount: number) {
 }
 ```
 
+### D3 Force Graph Patterns (StarSchemaNetwork.tsx)
+
+**Container ref must always mount:** The component uses a ResizeObserver to measure its container. The container div with `ref={containerRef}` must ALWAYS render (even during loading/empty states). Loading and empty content goes INSIDE the container as children via ternary. Never use separate `return` statements with different root divs — the ref won't be attached during mount-time effects.
+
+```typescript
+// CORRECT: Single container always renders with ref
+return (
+  <div ref={containerRef} className="flex-1 w-full h-full ...">
+    {showEmpty ? (<EmptyState />) : !isReady ? (<Loading />) : (<Graph />)}
+  </div>
+);
+
+// WRONG: Separate returns — ref only attaches after isReady
+if (!isReady) return <div>Loading...</div>;  // No ref!
+return <div ref={containerRef}>...</div>;
+```
+
+**Initial dimensions must be `{0, 0}`:** Start with zero dimensions and guard the `useMemo` to skip graph building until ResizeObserver provides real measurements. Never hardcode initial dimensions (e.g., 1000x700) — they'll be wrong for the actual container size.
+
+**Force simulation architecture:**
+- Primary fact node pinned at center with `fx`/`fy` (immovable hub)
+- No `forceCenter` — it fights `forceRadial`. The pinned hub + radial force handles centering.
+- `forceRadial` with viewport-responsive ring distances (computed from container dimensions)
+- Custom `forceOrbital` force for smooth infinite animation of dimension nodes
+- Auto-fit via `computeFitTransform()` after settling — computes bounding box and scales/translates to center
+
+**Primary fact detection:** Uses token-overlap matching (≥50% of subject area name tokens must appear in table name). Falls back to promoting the most-connected dimension as a virtual hub when no fact tables exist.
+
 ## Type System (types.ts)
 
 ### Core Types
@@ -236,8 +266,9 @@ DW tables follow suffix patterns that indicate their role:
 
 ### Runtime
 - `react` / `react-dom` - React 19
-- `reactflow` - Graph visualization library
+- `reactflow` - Graph visualization library (detailed flow view)
 - `dagre` - Automatic graph layout algorithm
+- `d3-force` / `d3-drag` / `d3-selection` - D3 force simulation (star schema network)
 - `flexsearch` - Fast full-text search
 - `papaparse` - CSV parsing
 - `lucide-react` - Icons
