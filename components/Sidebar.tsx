@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Settings } from 'lucide-react';
 import { SubjectAreaBrowser } from './SubjectAreaBrowser';
 
 export const Sidebar: React.FC = () => {
@@ -11,20 +10,6 @@ export const Sidebar: React.FC = () => {
         <SubjectAreaBrowser />
       </div>
 
-      <div className="mt-auto p-6 border-t border-slate-900">
-        <NavItem icon={<Settings className="w-4 h-4" />} label="Settings" />
-      </div>
     </div>
   );
 };
-
-const NavItem: React.FC<{ icon: React.ReactNode, label: string, active?: boolean }> = ({ icon, label, active }) => (
-  <button className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-all ${
-    active
-      ? 'bg-blue-600/10 text-blue-400 border border-blue-500/20'
-      : 'text-slate-400 hover:text-white hover:bg-slate-900'
-  }`}>
-    {icon}
-    {label}
-  </button>
-);

@@ -341,16 +341,6 @@ export function getNodeBorderColor(nodeType: LineageNodeType, isNsawGenerated?: 
 }
 
 /**
- * Transform records for a simplified 2-column view
- * Shows only presentation columns -> physical tables
- */
-export function transformRecordsToSimpleGraph(
-  records: EnrichedLineageRecord[]
-): GraphLayout {
-  return transformRecordsToGraph(records, false);
-}
-
-/**
  * Transform records for a detailed 3-column view
  * Shows presentation columns -> physical tables -> physical columns
  */

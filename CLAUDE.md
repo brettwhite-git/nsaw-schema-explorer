@@ -26,18 +26,40 @@ npm run preview  # Preview production build
 App.tsx (wraps with DataProvider)
 ├── LoadingScreen.tsx   # Shown during CSV load
 ├── TopNav.tsx          # Search bar with grouped results dropdown
-├── ViewModeSelector.tsx # View mode buttons (Flow, Detailed, Star, Table)
+├── ViewModeSelector.tsx # View mode buttons (Overview, Detailed, Table)
 ├── GraphLegend.tsx     # Color legend for graph
 ├── Sidebar.tsx         # Contains SubjectAreaBrowser
 │   └── SubjectAreaBrowser.tsx  # 3-level hierarchy: Functional Area → Subject Area → Table
-├── GraphViewer.tsx     # React Flow visualization
-│   ├── nodes/LineageNode.tsx   # Custom styled node component
+├── GraphViewer.tsx     # Main view router
+│   ├── nodes/
+│   │   ├── LineageNode.tsx     # Custom node for detailed flow view
+│   │   └── OverviewNodes.tsx   # Custom nodes for overview map
 │   └── views/
+│       ├── OverviewFlowView.tsx       # 3-tier data lineage overview map (NEW)
 │       ├── TableView.tsx              # Sortable spreadsheet view
-│       ├── StarSchemaView.tsx         # Fact/dimension radial layout
-│       └── SubjectAreaNetworkView.tsx # Table connection network
+│       ├── StarSchemaNetwork.tsx      # D3 force radial layout for subject areas
+│       └── SubjectAreaNetworkView.tsx # Re-export of StarSchemaNetwork
 └── DetailPanel.tsx     # Collapsible right panel, shows lineage path
 ```
+
+### Navigation Flow
+```
+Overview (3-tier map) ─────────────────────────────────────────────────────┐
+  │                                                                         │
+  ├─ Click Functional Area ──► Star Schema Network (D3 radial graph)       │
+  │     │                                                                   │
+  │     └─ Click Table Node ──► Detailed Flow View (field-level lineage)   │
+  │           │                                                             │
+  │           └─ Click Column ──► Detail Panel (NS source info)            │
+  │                                                                         │
+  └─ Always accessible via "Overview" button (never disabled) ◄────────────┘
+```
+
+### View Modes
+- `overview` - High-level 3-tier data architecture map (NS Source → DW → Semantic)
+- `detailedFlow` - Field-level lineage graph (dagre layout, 3 columns)
+- `table` - Sortable spreadsheet view
+- Star Schema Network - Auto-renders when subject area selected (D3 force layout)
 
 ### Configuration (`config/`)
 ```
@@ -60,22 +82,29 @@ data/
 - `selectedRecords` - Records for currently selected presentation table
 - `search()` / `searchResults` - FlexSearch-powered search
 - Navigation helpers: `selectSubjectArea()`, `selectPresentationTable()`, `selectFromSearchResult()`
-- `viewMode` / `setViewMode` - Current view mode (flow, detailedFlow, starSchema, table)
+- `viewMode` / `setViewMode` - Current view mode (overview, detailedFlow, table)
 - `functionalAreaGroups` - Subject areas grouped by business domain
+- `overviewData` - Pre-computed aggregations for Overview map (56k → ~130 nodes)
 
 ### Utilities (`utils/`)
 ```
 utils/
-└── graphLayout.ts     # Transforms records to React Flow nodes/edges using dagre
+├── graphLayout.ts     # Transforms records to React Flow nodes/edges using dagre
+└── overviewLayout.ts  # Aggregates records for Overview map (computeOverviewData, transformOverviewToGraph)
 ```
 
 ### Custom Nodes (`components/nodes/`)
 ```
 components/nodes/
-└── LineageNode.tsx    # Unified node component for all node types
-                       # - presentationColumn (blue)
-                       # - physicalTable (purple)
-                       # - physicalColumn (orange)
+├── LineageNode.tsx    # Node component for detailed flow view
+│                      # - presentationColumn (blue)
+│                      # - physicalTable (purple)
+│                      # - physicalColumn (orange)
+└── OverviewNodes.tsx  # Node component for Overview map
+                       # - sourceRecord (emerald) - NetSuite record types
+                       # - dwGroup (purple/blue) - DW table groupings
+                       # - functionalArea (amber) - Business domains
+                       # - subjectArea (blue) - Expanded drill-down
 ```
 
 ### Data Flow
@@ -110,6 +139,12 @@ Creates a left-to-right (LR) layout using dagre:
 - `GraphNodeData` - Data attached to React Flow nodes
 - `LineageNodeData` - Extended data for LineageNode component
 
+### Overview Types
+- `OverviewNodeType` - 'sourceRecord' | 'dwGroup' | 'functionalArea' | 'subjectArea'
+- `SourceRecordAggregation` - Aggregated NetSuite source data
+- `DWGroupAggregation` - Aggregated DW table group data
+- `OverviewData` - Complete pre-computed overview (sourceRecords, dwGroups, functionalAreas, edges, stats)
+
 ### Utility Functions
 - `isNsawGeneratedTable()` - Detects NSAW-only tables (DAY_D, FISCALCALPERIOD, etc.)
 - `inferRecordType()` - Extracts NetSuite record from DW table name (DW_NS_CUSTOMER_D -> customer)
@@ -127,9 +162,22 @@ DW tables follow suffix patterns that indicate their role:
 - `_SEC` - Security tables
 
 ## Color System
-**Graph nodes:** Blue (presentation) → Purple (DW tables) → Orange (DW columns)
-**Detail panel:** Blue (presentation) → Purple (DW) → Green (inferred NetSuite source)
-**Amber:** NSAW-generated tables (not from NetSuite)
+
+### Overview Map (3-tier)
+- **Emerald** - NetSuite source records (inferred)
+- **Purple** - DW Fact table groups
+- **Blue** - DW Dimension table groups
+- **Amber** - Functional Areas / NSAW-generated
+
+### Detailed Flow View
+- **Blue** - Presentation columns (semantic layer)
+- **Purple** - Physical DW tables
+- **Orange** - Physical DW columns
+
+### Detail Panel
+- **Blue** - Presentation layer
+- **Purple** - DW layer
+- **Green** - Inferred NetSuite source
 
 ## Dependencies
 

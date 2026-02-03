@@ -90,13 +90,12 @@ export const GraphViewer: React.FC = () => {
     }
   }, [setSelection]);
 
-  // Show Subject Area Network when subject area selected but no table
-  if (selection.subjectArea && !selection.presentationTable) {
-    return <SubjectAreaNetworkView />;
-  }
-
-  // Show welcome state when nothing selected
+  // No table selected = show Star Schema (if subject area selected) or Welcome
   if (!selection.presentationTable) {
+    if (selection.subjectArea) {
+      return <SubjectAreaNetworkView />;
+    }
+    // Welcome state
     return (
       <div className="flex-1 w-full h-full relative blueprint-grid overflow-auto bg-slate-900/20 flex items-center justify-center">
         <div className="text-center max-w-md p-8 mx-auto">
@@ -186,6 +185,25 @@ export const GraphViewer: React.FC = () => {
           maskColor="rgba(15, 23, 42, 0.8)"
         />
       </ReactFlow>
+
+      {/* Detailed Flow Legend */}
+      <div className="absolute top-4 right-4 z-10 bg-slate-900/90 backdrop-blur-sm rounded-lg border border-slate-700 p-3">
+        <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-2 font-medium">Legend</div>
+        <div className="flex flex-col gap-2 text-xs text-slate-300">
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-blue-500" />
+            <span>Presentation Fields</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-purple-500" />
+            <span>DW Tables</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full bg-orange-500" />
+            <span>DW Columns</span>
+          </div>
+        </div>
+      </div>
 
       {/* Empty state overlay */}
       {selectedRecords.length === 0 && (

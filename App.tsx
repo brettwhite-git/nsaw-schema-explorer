@@ -5,7 +5,7 @@ import { GraphViewer } from './components/GraphViewer';
 import { DetailPanel } from './components/DetailPanel';
 import { LoadingScreen } from './components/LoadingScreen';
 import { ViewModeSelector } from './components/ViewModeSelector';
-import { GraphLegend } from './components/GraphLegend';
+import { Breadcrumbs } from './components/Breadcrumbs';
 import { DataProvider, useData } from './data/DataContext';
 
 const AppContent: React.FC = () => {
@@ -32,24 +32,10 @@ const AppContent: React.FC = () => {
           <div className="p-4 px-6 border-b border-slate-900 bg-slate-900/20">
             <div className="flex items-start justify-between">
               <div>
-                <h1 className="text-lg font-light text-white tracking-tight mb-1">
-                  {selection.presentationTable
-                    ? `${selection.presentationTable}`
-                    : selection.subjectArea
-                      ? selection.subjectArea
-                      : ''}
-                </h1>
-                <p className="text-xs text-slate-500 max-w-2xl">
-                  {selection.presentationTable
-                    ? `${selectedRecords.length} field mappings in ${selection.subjectArea}`
-                    : selection.subjectArea
-                      ? `Select a table to explore field mappings`
-                      : `Explore ${dataIndex?.totalRecords.toLocaleString() || '56,000+'} field mappings across ${dataIndex?.subjectAreas.length || 110} subject areas.`}
-                </p>
+                <Breadcrumbs />
               </div>
               <div className="flex flex-col items-end gap-2">
                 <ViewModeSelector />
-                <GraphLegend />
               </div>
             </div>
           </div>

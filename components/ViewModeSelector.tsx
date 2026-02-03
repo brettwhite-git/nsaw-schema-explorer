@@ -5,12 +5,12 @@ import { ViewMode } from '../types';
 
 /**
  * ViewModeSelector - Buttons for switching between visualization modes
- * Always visible, disabled when no table is selected
+ * Both Detailed and Table modes require a table selection
  */
 export const ViewModeSelector: React.FC = () => {
   const { viewMode, setViewMode, selection } = useData();
 
-  const isDisabled = !selection.presentationTable;
+  const isTableModeDisabled = !selection.presentationTable;
 
   return (
     <div className="flex items-center gap-1 bg-slate-900/80 rounded-lg p-1 border border-slate-800">
@@ -21,7 +21,7 @@ export const ViewModeSelector: React.FC = () => {
         icon={<Workflow className="w-3.5 h-3.5" />}
         label="Detailed"
         tooltip="3-column view with physical columns"
-        disabled={isDisabled}
+        disabled={isTableModeDisabled}
       />
       <ViewModeButton
         mode="table"
@@ -30,7 +30,7 @@ export const ViewModeSelector: React.FC = () => {
         icon={<LayoutGrid className="w-3.5 h-3.5" />}
         label="Table"
         tooltip="Sortable spreadsheet view"
-        disabled={isDisabled}
+        disabled={isTableModeDisabled}
       />
     </div>
   );

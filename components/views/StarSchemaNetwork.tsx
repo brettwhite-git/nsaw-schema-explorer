@@ -19,6 +19,8 @@ import {
   SimulationNodeDatum,
   SimulationLinkDatum,
 } from 'd3-force';
+import { drag } from 'd3-drag';
+import { select } from 'd3-selection';
 import { useData } from '../../data/DataContext';
 import { parsePhysicalTableType, PhysicalTableType } from '../../types';
 
@@ -58,9 +60,9 @@ const CONFIG = {
   TEXT_COLOR_LIGHT: '#f8fafc',      // Slate-50
 
   // Force parameters - pushed out for better text visibility
-  LINK_DISTANCE: 160,
-  CHARGE_STRENGTH: -100,
-  COLLISION_PADDING: 12,
+  LINK_DISTANCE: 180,
+  CHARGE_STRENGTH: -120,
+  COLLISION_PADDING: 20,  // Increased for better label spacing
   RADIAL_STRENGTH: 0.05,
   CENTER_STRENGTH: 0.015,
 
@@ -110,14 +112,83 @@ function truncateLabel(label: string, maxLen: number): string {
   return label.substring(0, maxLen - 1) + '…';
 }
 
+// Calculate bounding box of all nodes (accounting for node radius AND text labels)
+function calculateBounds(nodes: NetworkNode[]) {
+  if (nodes.length === 0) return null;
+
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+
+  for (const node of nodes) {
+    if (node.x === undefined || node.y === undefined) continue;
+
+    // Estimate text label width based on label length (roughly 6px per character)
+    const labelWidth = (node.label?.length || 0) * 6;
+    const halfLabelWidth = labelWidth / 2;
+
+    // Text labels are positioned above dimension nodes (small nodes)
+    // Add extra space above for labels: radius + gap(4px) + fontSize(~12px)
+    const labelHeightAbove = node.role === 'dimension' ? 20 : 0;
+
+    // Account for node radius + label extension
+    minX = Math.min(minX, node.x - Math.max(node.radius, halfLabelWidth));
+    maxX = Math.max(maxX, node.x + Math.max(node.radius, halfLabelWidth));
+    minY = Math.min(minY, node.y - node.radius - labelHeightAbove);
+    maxY = Math.max(maxY, node.y + node.radius);
+  }
+
+  if (minX === Infinity) return null;
+
+  return {
+    minX, maxX, minY, maxY,
+    width: maxX - minX,
+    height: maxY - minY,
+    centerX: (minX + maxX) / 2,
+    centerY: (minY + maxY) / 2,
+  };
+}
+
+// Calculate transform to fit content within viewport with asymmetric padding
+function calculateFitTransform(
+  bounds: NonNullable<ReturnType<typeof calculateBounds>>,
+  viewportWidth: number,
+  viewportHeight: number
+) {
+  // Asymmetric padding: more on right (legend ~180px), less on left (controls ~50px)
+  // More at top (header area ~20px), less at bottom
+  const paddingLeft = 50;
+  const paddingRight = 60;  // Legend is positioned inside viewport, so less padding needed
+  const paddingTop = 30;
+  const paddingBottom = 50;
+
+  const availableWidth = viewportWidth - paddingLeft - paddingRight;
+  const availableHeight = viewportHeight - paddingTop - paddingBottom;
+
+  // Calculate scale to fit content (cap at 1.2 for reasonable zoom)
+  const scaleX = availableWidth / bounds.width;
+  const scaleY = availableHeight / bounds.height;
+  const scale = Math.min(scaleX, scaleY, 1.2);
+
+  // Calculate center of available area (shifted slightly left and down due to asymmetric padding)
+  const availableCenterX = paddingLeft + availableWidth / 2;
+  const availableCenterY = paddingTop + availableHeight / 2;
+
+  // Calculate translation to center content in available area
+  const tx = availableCenterX - (bounds.centerX * scale);
+  const ty = availableCenterY - (bounds.centerY * scale);
+
+  return { x: tx, y: ty, scale };
+}
+
 // ======================
 // Main Component
 // ======================
 
 export const StarSchemaNetwork: React.FC = () => {
-  const { dataIndex, selection } = useData();
+  const { dataIndex, selection, selectPresentationTable, setViewMode } = useData();
   const containerRef = useRef<HTMLDivElement>(null);
   const simulationRef = useRef<ReturnType<typeof forceSimulation<NetworkNode>> | null>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
 
   const [dimensions, setDimensions] = useState({ width: 1000, height: 700 });
   const [nodes, setNodes] = useState<NetworkNode[]>([]);
@@ -126,6 +197,7 @@ export const StarSchemaNetwork: React.FC = () => {
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [draggingNode, setDraggingNode] = useState<string | null>(null);
 
   // Resize observer
   useEffect(() => {
@@ -142,6 +214,20 @@ export const StarSchemaNetwork: React.FC = () => {
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
+
+  // Reset view when entering star schema view (e.g., navigating back from detailed flow)
+  useEffect(() => {
+    // Only apply when we're actually showing star schema (no table selected)
+    if (!selection.presentationTable && nodes.length > 0) {
+      // Fit to bounds when returning to star schema
+      const bounds = calculateBounds(nodes);
+      if (bounds) {
+        const fitTransform = calculateFitTransform(bounds, dimensions.width, dimensions.height);
+        setTransform(fitTransform);
+      }
+    }
+  }, [selection.presentationTable, dimensions.width, dimensions.height]);
+  // Note: Don't include nodes in deps to avoid re-triggering on every simulation tick
 
   // Build network data
   const { initialNodes, initialLinks, stats } = useMemo(() => {
@@ -274,7 +360,7 @@ export const StarSchemaNetwork: React.FC = () => {
     };
   }, [dataIndex, selection.subjectArea, dimensions]);
 
-  // Run force simulation with gentle animation
+  // Run force simulation - compute layout synchronously to avoid visual glitch
   useEffect(() => {
     if (initialNodes.length === 0) {
       setNodes([]);
@@ -287,10 +373,6 @@ export const StarSchemaNetwork: React.FC = () => {
 
     const simNodes = initialNodes.map(n => ({ ...n }));
     const simLinks = initialLinks.map(l => ({ ...l }));
-
-    // Set initial state immediately so edges are visible
-    setNodes([...simNodes]);
-    setLinks([...simLinks]);
 
     if (simulationRef.current) {
       simulationRef.current.stop();
@@ -320,10 +402,31 @@ export const StarSchemaNetwork: React.FC = () => {
       ).strength(CONFIG.RADIAL_STRENGTH))
       .alpha(CONFIG.ALPHA_START)
       .alphaDecay(CONFIG.ALPHA_DECAY)
-      .velocityDecay(CONFIG.VELOCITY_DECAY);
+      .velocityDecay(CONFIG.VELOCITY_DECAY)
+      .stop();  // Don't auto-start - we'll run it manually
 
+    // Run simulation synchronously to compute final positions (no animation)
+    // This prevents the visual glitch where diagram zooms in after rendering
+    const iterations = 300;  // Enough iterations for simulation to converge
+    for (let i = 0; i < iterations; i++) {
+      simulation.tick();
+    }
+
+    // Now nodes have their final positions - set state and transform once
+    setNodes([...simNodes]);
+    setLinks([...simLinks]);
+
+    // Calculate fit-to-bounds based on FINAL converged positions
+    const bounds = calculateBounds(simNodes);
+    if (bounds) {
+      const fitTransform = calculateFitTransform(bounds, dimensions.width, dimensions.height);
+      setTransform(fitTransform);
+    }
+
+    // Keep simulation reference for drag interactions
     simulationRef.current = simulation;
 
+    // Re-enable simulation for interactive dragging (but alpha is already 0)
     simulation.on('tick', () => {
       setNodes([...simNodes]);
       setLinks([...simLinks]);
@@ -358,15 +461,87 @@ export const StarSchemaNetwork: React.FC = () => {
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
     const delta = e.deltaY > 0 ? 0.92 : 1.08;
-    setTransform(t => ({
-      ...t,
-      scale: Math.min(Math.max(t.scale * delta, 0.3), 5),
-    }));
+
+    setTransform(t => {
+      const newScale = Math.min(Math.max(t.scale * delta, 0.3), 5);
+      const scaleChange = newScale / t.scale;
+
+      // Adjust translation to zoom toward mouse position
+      const newX = mouseX - (mouseX - t.x) * scaleChange;
+      const newY = mouseY - (mouseY - t.y) * scaleChange;
+
+      return { x: newX, y: newY, scale: newScale };
+    });
   }, []);
 
   const resetView = useCallback(() => {
-    setTransform({ x: 0, y: 0, scale: 1 });
+    // Calculate fit-to-bounds transform based on current node positions
+    const bounds = calculateBounds(nodes);
+    if (bounds) {
+      const fitTransform = calculateFitTransform(bounds, dimensions.width, dimensions.height);
+      setTransform(fitTransform);
+    }
+  }, [nodes, dimensions.width, dimensions.height]);
+
+  // Handle node click - navigate to presentation table
+  const handleNodeClick = useCallback((node: NetworkNode) => {
+    if (!dataIndex || !selection.subjectArea) return;
+
+    // Find presentation tables that use this physical table
+    const records = dataIndex.byPhysicalTable.get(node.id) || [];
+    const presentationTables = new Set<string>();
+
+    for (const record of records) {
+      if (record.subjectArea === selection.subjectArea) {
+        presentationTables.add(record.presentationTable);
+      }
+    }
+
+    const tables = Array.from(presentationTables);
+
+    if (tables.length === 1) {
+      // Single match - navigate directly
+      selectPresentationTable(selection.subjectArea, tables[0]);
+      setViewMode('detailedFlow');
+    } else if (tables.length > 1) {
+      // Multiple matches - navigate to first one (could add picker later)
+      selectPresentationTable(selection.subjectArea, tables[0]);
+      setViewMode('detailedFlow');
+    }
+    // If no matches within this subject area, do nothing
+  }, [dataIndex, selection.subjectArea, selectPresentationTable, setViewMode]);
+
+  // Handle node drag start
+  const handleDragStart = useCallback((node: NetworkNode) => {
+    setDraggingNode(node.id);
+    if (simulationRef.current) {
+      simulationRef.current.alphaTarget(0.3).restart();
+    }
+  }, []);
+
+  // Handle node drag
+  const handleDrag = useCallback((node: NetworkNode, x: number, y: number) => {
+    // Update node position
+    node.fx = x;
+    node.fy = y;
+    setNodes(prev => prev.map(n => n.id === node.id ? { ...n, x, y, fx: x, fy: y } : n));
+  }, []);
+
+  // Handle node drag end
+  const handleDragEnd = useCallback((node: NetworkNode) => {
+    setDraggingNode(null);
+    if (simulationRef.current) {
+      simulationRef.current.alphaTarget(0);
+    }
+    // Release fixed position (node will drift back with physics)
+    // To keep it pinned, remove these two lines:
+    node.fx = null;
+    node.fy = null;
   }, []);
 
   if (nodes.length === 0 && initialNodes.length === 0) {
@@ -420,6 +595,7 @@ export const StarSchemaNetwork: React.FC = () => {
           <g className="nodes">
             {nodes.map((node) => {
               const isHovered = hoveredNode?.id === node.id;
+              const isDragging = draggingNode === node.id;
               const isFact = node.role === 'primaryFact' || node.role === 'secondaryFact';
               const isPrimary = node.role === 'primaryFact';
 
@@ -428,25 +604,63 @@ export const StarSchemaNetwork: React.FC = () => {
               if (isPrimary) fill = CONFIG.PRIMARY_FACT_COLOR;
               else if (node.role === 'secondaryFact') fill = CONFIG.SECONDARY_FACT_COLOR;
 
-              // Hover brightening (lighter variants for dark theme)
-              if (isHovered) {
+              // Hover/drag brightening (lighter variants for dark theme)
+              if (isHovered || isDragging) {
                 fill = isPrimary ? '#c084fc' : node.role === 'secondaryFact' ? '#a78bfa' : '#60a5fa';
               }
 
               return (
                 <g
                   key={node.id}
-                  onMouseEnter={() => setHoveredNode(node)}
+                  onMouseEnter={() => !draggingNode && setHoveredNode(node)}
                   onMouseLeave={() => setHoveredNode(null)}
-                  className="cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!draggingNode) handleNodeClick(node);
+                  }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    if (isPrimary) return; // Primary fact is fixed
+                    const startX = e.clientX;
+                    const startY = e.clientY;
+                    const nodeStartX = node.x || 0;
+                    const nodeStartY = node.y || 0;
+                    let hasDragged = false;
+
+                    handleDragStart(node);
+
+                    const onMouseMove = (moveEvent: MouseEvent) => {
+                      const dx = (moveEvent.clientX - startX) / transform.scale;
+                      const dy = (moveEvent.clientY - startY) / transform.scale;
+                      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+                        hasDragged = true;
+                      }
+                      handleDrag(node, nodeStartX + dx, nodeStartY + dy);
+                    };
+
+                    const onMouseUp = () => {
+                      document.removeEventListener('mousemove', onMouseMove);
+                      document.removeEventListener('mouseup', onMouseUp);
+                      handleDragEnd(node);
+                      // Prevent click if we dragged
+                      if (hasDragged) {
+                        e.preventDefault();
+                      }
+                    };
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                  }}
+                  className={`cursor-pointer ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                  style={{ transition: isDragging ? 'none' : 'transform 0.1s ease-out' }}
                 >
                   {/* Node circle */}
                   <circle
                     cx={node.x}
                     cy={node.y}
-                    r={isHovered ? node.radius + 3 : node.radius}
+                    r={isHovered || isDragging ? node.radius + 3 : node.radius}
                     fill={fill}
-                    stroke={isHovered ? '#2c3e50' : 'none'}
+                    stroke={isHovered || isDragging ? '#60a5fa' : 'none'}
                     strokeWidth={2}
                   />
 
@@ -487,23 +701,21 @@ export const StarSchemaNetwork: React.FC = () => {
         </g>
       </svg>
 
-      {/* Info overlay */}
-      <div className="absolute top-4 left-4 bg-slate-900/95 border border-slate-700 rounded-lg px-4 py-3 backdrop-blur-sm">
-        <div className="text-sm font-semibold text-white mb-2">Star Schema</div>
-        <div className="space-y-1.5 text-xs">
+      {/* Star Schema Legend */}
+      <div className="absolute top-4 right-4 z-10 bg-slate-900/90 backdrop-blur-sm rounded-lg border border-slate-700 p-3">
+        <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-2 font-medium">Legend</div>
+        <div className="flex flex-col gap-2 text-xs text-slate-300">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CONFIG.PRIMARY_FACT_COLOR }} />
-            <span className="text-purple-400 font-medium">{stats.primary}</span>
+            <span className="w-4 h-4 rounded-full bg-purple-600 border-2 border-purple-400" />
+            <span>Primary Fact Table</span>
           </div>
-          {stats.secondaryCount > 0 && (
-            <div className="flex items-center gap-2">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CONFIG.SECONDARY_FACT_COLOR }} />
-              <span className="text-slate-400">{stats.secondaryCount} related fact{stats.secondaryCount > 1 ? 's' : ''}</span>
-            </div>
-          )}
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: CONFIG.DIMENSION_COLOR }} />
-            <span className="text-slate-400">{stats.dimCount} dimension{stats.dimCount !== 1 ? 's' : ''}</span>
+            <span className="w-3 h-3 rounded-full bg-violet-500" />
+            <span>Secondary Fact Tables</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+            <span>Dimension Tables</span>
           </div>
         </div>
       </div>
@@ -511,13 +723,35 @@ export const StarSchemaNetwork: React.FC = () => {
       {/* Controls */}
       <div className="absolute bottom-4 left-4 flex flex-col gap-1">
         <button
-          onClick={() => setTransform(t => ({ ...t, scale: Math.min(t.scale * 1.3, 5) }))}
+          onClick={() => {
+            const centerX = dimensions.width / 2;
+            const centerY = dimensions.height / 2;
+            setTransform(t => {
+              const newScale = Math.min(t.scale * 1.3, 5);
+              const scaleChange = newScale / t.scale;
+              // Keep the center point fixed while zooming
+              const newX = centerX - (centerX - t.x) * scaleChange;
+              const newY = centerY - (centerY - t.y) * scaleChange;
+              return { x: newX, y: newY, scale: newScale };
+            });
+          }}
           className="w-8 h-8 bg-slate-800 border border-slate-700 rounded text-slate-400 hover:bg-slate-700 hover:text-white transition-colors text-lg"
         >
           +
         </button>
         <button
-          onClick={() => setTransform(t => ({ ...t, scale: Math.max(t.scale * 0.7, 0.3) }))}
+          onClick={() => {
+            const centerX = dimensions.width / 2;
+            const centerY = dimensions.height / 2;
+            setTransform(t => {
+              const newScale = Math.max(t.scale * 0.7, 0.3);
+              const scaleChange = newScale / t.scale;
+              // Keep the center point fixed while zooming
+              const newX = centerX - (centerX - t.x) * scaleChange;
+              const newY = centerY - (centerY - t.y) * scaleChange;
+              return { x: newX, y: newY, scale: newScale };
+            });
+          }}
           className="w-8 h-8 bg-slate-800 border border-slate-700 rounded text-slate-400 hover:bg-slate-700 hover:text-white transition-colors text-lg"
         >
           −
@@ -539,6 +773,12 @@ export const StarSchemaNetwork: React.FC = () => {
           </div>
           <div className="text-xs text-slate-400 mt-0.5">
             {hoveredNode.columnCount} columns
+          </div>
+          <div className="text-[10px] text-blue-400 mt-1.5 pt-1.5 border-t border-slate-700">
+            {hoveredNode.role === 'primaryFact'
+              ? 'Click to view lineage'
+              : 'Drag to reposition • Click to view lineage'
+            }
           </div>
         </div>
       )}

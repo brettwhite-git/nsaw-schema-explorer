@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Search, Layers, Database, Table2, FileText, Code, Home } from 'lucide-react';
+import { Search, Layers, Database, Table2, FileText, Code } from 'lucide-react';
 import { useData } from '../data/DataContext';
 import { groupSearchResults, getResultTypeLabel } from '../data/searchIndex';
 import { SearchResultType } from '../types';
@@ -13,7 +13,7 @@ const resultTypeIcons: Record<SearchResultType, React.ReactNode> = {
 };
 
 export const TopNav: React.FC = () => {
-  const { searchQuery, setSearchQuery, searchResults, selectFromSearchResult, clearSelection } = useData();
+  const { searchQuery, setSearchQuery, searchResults, selectFromSearchResult } = useData();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -51,13 +51,6 @@ export const TopNav: React.FC = () => {
     <header className="h-16 border-b border-slate-800 grid grid-cols-3 items-center px-6 bg-slate-900/50 backdrop-blur-md z-20">
       {/* Left - Logo */}
       <div className="flex items-center gap-3">
-        <button
-          onClick={clearSelection}
-          className="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 hover:border-slate-600 transition-colors"
-          title="Home"
-        >
-          <Home className="w-5 h-5 text-slate-400 hover:text-white" />
-        </button>
         <span className="text-sm font-semibold tracking-tight text-white">NetSuite Analytics Warehouse Explorer</span>
       </div>
 
