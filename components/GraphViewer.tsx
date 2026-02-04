@@ -22,6 +22,13 @@ import { TableView } from './views/TableView';
 import { SubjectAreaNetworkView } from './views/SubjectAreaNetworkView';
 import { DataStackHero } from './views/DataStackHero';
 
+/** Helper to read a CSS custom property from the document root */
+function getThemeColor(varName: string, fallback: string): string {
+  if (typeof document === 'undefined') return fallback;
+  const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return value || fallback;
+}
+
 /**
  * Returns appropriate fitView options based on graph size.
  * Smaller graphs get tighter padding and higher min zoom.
@@ -83,27 +90,26 @@ const DetailedFlowContent: React.FC<DetailedFlowContentProps> = ({
       maxZoom={2}
       defaultEdgeOptions={{
         type: 'smoothstep',
-        style: { stroke: '#475569', strokeWidth: 2 },
+        style: { stroke: 'var(--theme-rf-edge-primary)', strokeWidth: 2 },
       }}
-      className="bg-slate-900/20"
+      style={{ background: 'var(--theme-bg-surface)' }}
     >
-      <Background color="#334155" gap={20} size={1} />
-      <Controls className="!bg-slate-800 !border-slate-700 [&>button]:!bg-slate-800 [&>button]:!border-slate-700 [&>button]:!text-slate-300 [&>button:hover]:!bg-slate-700" />
+      <Background color="var(--theme-rf-bg)" gap={20} size={1} />
+      <Controls />
       <MiniMap
         nodeColor={(node) => {
           switch (node.data?.nodeType) {
             case 'presentationColumn':
-              return '#3b82f6'; // Blue
+              return getThemeColor('--theme-accent-blue', '#3b82f6');
             case 'physicalTable':
-              return '#a855f7'; // Purple
+              return getThemeColor('--theme-accent-purple', '#a855f7');
             case 'physicalColumn':
-              return '#f97316'; // Orange
+              return getThemeColor('--theme-accent-orange', '#f97316');
             default:
-              return '#64748b'; // Slate
+              return getThemeColor('--theme-text-muted', '#64748b');
           }
         }}
-        className="!bg-slate-900 !border-slate-700"
-        maskColor="rgba(15, 23, 42, 0.8)"
+        maskColor={getThemeColor('--theme-bg-overlay', 'rgba(15, 23, 42, 0.8)')}
       />
     </ReactFlow>
   );
@@ -214,19 +220,30 @@ export const GraphViewer: React.FC = () => {
       </ReactFlowProvider>
 
       {/* Detailed Flow Legend */}
-      <div className="absolute top-4 right-4 z-10 bg-slate-900/90 backdrop-blur-sm rounded-lg border border-slate-700 p-3">
-        <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-2 font-medium">Legend</div>
-        <div className="flex flex-col gap-2 text-xs text-slate-300">
+      <div
+        className="absolute top-4 right-4 z-10 backdrop-blur-sm rounded-lg border p-3"
+        style={{
+          backgroundColor: 'var(--theme-surface-legend)',
+          borderColor: 'var(--theme-border-strong)',
+        }}
+      >
+        <div
+          className="text-[10px] uppercase tracking-wider mb-2 font-medium"
+          style={{ color: 'var(--theme-text-tertiary)' }}
+        >
+          Legend
+        </div>
+        <div className="flex flex-col gap-2 text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-blue-500" />
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--theme-accent-blue)' }} />
             <span>Presentation Fields</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-purple-500" />
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--theme-accent-purple)' }} />
             <span>DW Tables</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-orange-500" />
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--theme-accent-orange)' }} />
             <span>DW Columns</span>
           </div>
         </div>
@@ -234,8 +251,11 @@ export const GraphViewer: React.FC = () => {
 
       {/* Empty state overlay */}
       {selectedRecords.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center bg-slate-900/50">
-          <div className="text-slate-500 text-center">
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          style={{ backgroundColor: 'var(--theme-bg-overlay)' }}
+        >
+          <div className="text-center" style={{ color: 'var(--theme-text-muted)' }}>
             <Database className="w-8 h-8 mx-auto mb-2 opacity-50" />
             No field mappings found for this table.
           </div>

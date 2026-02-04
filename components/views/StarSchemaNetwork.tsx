@@ -21,6 +21,7 @@ import {
 import { drag } from 'd3-drag';
 import { select } from 'd3-selection';
 import { useData } from '../../data/DataContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { parsePhysicalTableType, PhysicalTableType } from '../../types';
 
 // ======================
@@ -49,14 +50,6 @@ const CONFIG = {
   PRIMARY_FACT_RADIUS: 50,      // Large hub
   SECONDARY_FACT_RADIUS: 30,    // Medium nodes
   DIMENSION_RADIUS: 10,         // Small endpoints
-
-  // Colors - matching app's dark theme (purple facts, blue dimensions)
-  PRIMARY_FACT_COLOR: '#a855f7',    // Purple-500 (matches physicalTable)
-  SECONDARY_FACT_COLOR: '#7c3aed',  // Violet-600
-  DIMENSION_COLOR: '#3b82f6',       // Blue-500 (matches presentationColumn)
-  EDGE_COLOR: '#475569',            // Slate-600
-  TEXT_COLOR: '#e2e8f0',            // Slate-200 (light text for dark bg)
-  TEXT_COLOR_LIGHT: '#f8fafc',      // Slate-50
 
   // Force parameters - pushed out for better text visibility
   LINK_DISTANCE: 180,
@@ -114,7 +107,7 @@ function cleanLabel(tableName: string): string {
 // Truncate label for display
 function truncateLabel(label: string, maxLen: number): string {
   if (label.length <= maxLen) return label;
-  return label.substring(0, maxLen - 1) + '…';
+  return label.substring(0, maxLen - 1) + '\u2026';
 }
 
 // Viewport-responsive radial distances
@@ -197,9 +190,42 @@ function forceOrbital(centerX: number, centerY: number, speed: number = 0.002) {
 
 export const StarSchemaNetwork: React.FC = () => {
   const { dataIndex, selection, selectPresentationTable, setViewMode } = useData();
+  const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const simulationRef = useRef<ReturnType<typeof forceSimulation<NetworkNode>> | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+
+  // Resolve CSS custom properties into concrete values for D3 computed logic.
+  // Re-evaluated when theme changes so the force graph picks up new palette.
+  const colors = useMemo(() => {
+    const get = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return {
+      primaryFact: get('--theme-accent-purple'),
+      secondaryFact: get('--theme-accent-purple-dark'),
+      dimension: get('--theme-accent-blue'),
+      edge: get('--theme-d3-edge'),
+      text: get('--theme-d3-text'),
+      textBright: get('--theme-d3-text-bright'),
+      hoverPrimary: get('--theme-d3-hover-primary'),
+      hoverSecondary: get('--theme-d3-hover-secondary'),
+      hoverDimension: get('--theme-d3-hover-dimension'),
+      hoverStroke: get('--theme-d3-hover-stroke'),
+      bgElevated: get('--theme-bg-elevated'),
+      bgHover: get('--theme-bg-hover'),
+      bgSurface: get('--theme-bg-surface'),
+      bgPanel: get('--theme-bg-panel'),
+      borderDefault: get('--theme-border-default'),
+      borderStrong: get('--theme-border-strong'),
+      textPrimary: get('--theme-text-primary'),
+      textDefault: get('--theme-text-default'),
+      textSecondary: get('--theme-text-secondary'),
+      textMuted: get('--theme-text-muted'),
+      surfaceLegend: get('--theme-surface-legend'),
+      gridDot: get('--theme-grid-dot'),
+      accentPurpleText: get('--theme-accent-purple-text'),
+      accentBlueText: get('--theme-accent-blue-text'),
+    };
+  }, [theme]);
 
   // Start with 0x0 - ResizeObserver will provide real dimensions once the
   // container div mounts. This prevents building a simulation with wrong coordinates.
@@ -619,14 +645,22 @@ export const StarSchemaNetwork: React.FC = () => {
   const showEmpty = nodes.length === 0 && initialNodes.length === 0;
 
   return (
-    <div ref={containerRef} className="flex-1 w-full h-full relative overflow-visible bg-slate-950" style={{ backgroundImage: 'radial-gradient(circle, #334155 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+    <div
+      ref={containerRef}
+      className="flex-1 w-full h-full relative overflow-visible"
+      style={{
+        background: 'var(--theme-bg-base)',
+        backgroundImage: `radial-gradient(circle, var(--theme-grid-dot) 1px, transparent 1px)`,
+        backgroundSize: '20px 20px',
+      }}
+    >
       {showEmpty ? (
-        <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+        <div className="absolute inset-0 flex items-center justify-center" style={{ color: 'var(--theme-text-muted)' }}>
           <p className="text-lg">No physical tables found</p>
         </div>
       ) : !isReady ? (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-slate-500 text-sm">Loading graph...</div>
+          <div className="text-sm" style={{ color: 'var(--theme-text-muted)' }}>Loading graph...</div>
         </div>
       ) : (
       <>
@@ -662,7 +696,7 @@ export const StarSchemaNetwork: React.FC = () => {
                   y1={source.y}
                   x2={target.x}
                   y2={target.y}
-                  stroke={CONFIG.EDGE_COLOR}
+                  stroke="var(--theme-d3-edge)"
                   strokeWidth={isHovered ? 2 : 1}
                   opacity={isHovered ? 0.8 : 0.5}
                 />
@@ -678,14 +712,14 @@ export const StarSchemaNetwork: React.FC = () => {
               const isFact = node.role === 'primaryFact' || node.role === 'secondaryFact';
               const isPrimary = node.role === 'primaryFact';
 
-              // Color based on role
-              let fill = CONFIG.DIMENSION_COLOR;
-              if (isPrimary) fill = CONFIG.PRIMARY_FACT_COLOR;
-              else if (node.role === 'secondaryFact') fill = CONFIG.SECONDARY_FACT_COLOR;
+              // Color based on role -- use resolved CSS variable values
+              let fill = colors.dimension;
+              if (isPrimary) fill = colors.primaryFact;
+              else if (node.role === 'secondaryFact') fill = colors.secondaryFact;
 
-              // Hover/drag brightening (lighter variants for dark theme)
+              // Hover/drag brightening
               if (isHovered || isDragging) {
-                fill = isPrimary ? '#c084fc' : node.role === 'secondaryFact' ? '#a78bfa' : '#60a5fa';
+                fill = isPrimary ? colors.hoverPrimary : node.role === 'secondaryFact' ? colors.hoverSecondary : colors.hoverDimension;
               }
 
               return (
@@ -739,7 +773,7 @@ export const StarSchemaNetwork: React.FC = () => {
                     cy={node.y}
                     r={isHovered || isDragging ? node.radius + 3 : node.radius}
                     fill={fill}
-                    stroke={isHovered || isDragging ? '#60a5fa' : 'none'}
+                    stroke={isHovered || isDragging ? colors.hoverStroke : 'none'}
                     strokeWidth={2}
                   />
 
@@ -751,7 +785,7 @@ export const StarSchemaNetwork: React.FC = () => {
                       y={node.y}
                       textAnchor="middle"
                       dominantBaseline="middle"
-                      fill={CONFIG.TEXT_COLOR_LIGHT}
+                      fill="var(--theme-d3-text-bright)"
                       fontSize={isPrimary ? 11 : 9}
                       fontWeight={600}
                       className="pointer-events-none select-none"
@@ -765,7 +799,7 @@ export const StarSchemaNetwork: React.FC = () => {
                       y={(node.y || 0) - node.radius - 4}
                       textAnchor="middle"
                       dominantBaseline="auto"
-                      fill={CONFIG.TEXT_COLOR}
+                      fill="var(--theme-d3-text)"
                       fontSize={9}
                       fontWeight={isHovered ? 600 : 400}
                       className="pointer-events-none select-none"
@@ -781,19 +815,25 @@ export const StarSchemaNetwork: React.FC = () => {
       </svg>
 
       {/* Star Schema Legend */}
-      <div className="absolute top-4 right-4 z-10 bg-slate-900/90 backdrop-blur-sm rounded-lg border border-slate-700 p-3">
-        <div className="text-[10px] text-slate-400 uppercase tracking-wider mb-2 font-medium">Legend</div>
-        <div className="flex flex-col gap-2 text-xs text-slate-300">
+      <div
+        className="absolute top-4 right-4 z-10 backdrop-blur-sm rounded-lg p-3"
+        style={{
+          background: colors.surfaceLegend,
+          border: `1px solid ${colors.borderStrong}`,
+        }}
+      >
+        <div className="text-[10px] uppercase tracking-wider mb-2 font-medium" style={{ color: colors.textMuted }}>Legend</div>
+        <div className="flex flex-col gap-2 text-xs" style={{ color: colors.textSecondary }}>
           <div className="flex items-center gap-2">
-            <span className="w-4 h-4 rounded-full bg-purple-600 border-2 border-purple-400" />
+            <span className="w-4 h-4 rounded-full" style={{ background: colors.primaryFact, border: `2px solid ${colors.hoverPrimary}` }} />
             <span>Primary Fact Table</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-violet-500" />
+            <span className="w-3 h-3 rounded-full" style={{ background: colors.secondaryFact }} />
             <span>Secondary Fact Tables</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: colors.dimension }} />
             <span>Dimension Tables</span>
           </div>
         </div>
@@ -814,7 +854,14 @@ export const StarSchemaNetwork: React.FC = () => {
               return { x: newX, y: newY, scale: newScale };
             });
           }}
-          className="w-8 h-8 bg-slate-800 border border-slate-700 rounded text-slate-400 hover:bg-slate-700 hover:text-white transition-colors text-lg"
+          className="w-8 h-8 rounded transition-colors text-lg"
+          style={{
+            background: 'var(--theme-bg-elevated)',
+            border: `1px solid var(--theme-border-strong)`,
+            color: 'var(--theme-text-tertiary)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-bg-hover)'; e.currentTarget.style.color = 'var(--theme-text-primary)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--theme-bg-elevated)'; e.currentTarget.style.color = 'var(--theme-text-tertiary)'; }}
         >
           +
         </button>
@@ -831,13 +878,27 @@ export const StarSchemaNetwork: React.FC = () => {
               return { x: newX, y: newY, scale: newScale };
             });
           }}
-          className="w-8 h-8 bg-slate-800 border border-slate-700 rounded text-slate-400 hover:bg-slate-700 hover:text-white transition-colors text-lg"
+          className="w-8 h-8 rounded transition-colors text-lg"
+          style={{
+            background: 'var(--theme-bg-elevated)',
+            border: `1px solid var(--theme-border-strong)`,
+            color: 'var(--theme-text-tertiary)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-bg-hover)'; e.currentTarget.style.color = 'var(--theme-text-primary)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--theme-bg-elevated)'; e.currentTarget.style.color = 'var(--theme-text-tertiary)'; }}
         >
           −
         </button>
         <button
           onClick={resetView}
-          className="w-8 h-8 bg-slate-800 border border-slate-700 rounded text-slate-400 hover:bg-slate-700 hover:text-white transition-colors text-xs"
+          className="w-8 h-8 rounded transition-colors text-xs"
+          style={{
+            background: 'var(--theme-bg-elevated)',
+            border: `1px solid var(--theme-border-strong)`,
+            color: 'var(--theme-text-tertiary)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--theme-bg-hover)'; e.currentTarget.style.color = 'var(--theme-text-primary)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--theme-bg-elevated)'; e.currentTarget.style.color = 'var(--theme-text-tertiary)'; }}
           title="Reset view"
         >
           ⟲
@@ -846,17 +907,23 @@ export const StarSchemaNetwork: React.FC = () => {
 
       {/* Hover tooltip for extra details */}
       {hoveredNode && (
-        <div className="absolute bottom-4 right-4 bg-slate-900/95 border border-slate-700 rounded-lg px-3 py-2 backdrop-blur-sm">
-          <div className="text-sm font-medium text-white">
+        <div
+          className="absolute bottom-4 right-4 rounded-lg px-3 py-2 backdrop-blur-sm"
+          style={{
+            background: colors.surfaceLegend,
+            border: `1px solid ${colors.borderStrong}`,
+          }}
+        >
+          <div className="text-sm font-medium" style={{ color: colors.textPrimary }}>
             {hoveredNode.label}
           </div>
-          <div className="text-xs text-slate-400 mt-0.5">
+          <div className="text-xs mt-0.5" style={{ color: colors.textMuted }}>
             {hoveredNode.columnCount} columns
           </div>
-          <div className="text-[10px] text-blue-400 mt-1.5 pt-1.5 border-t border-slate-700">
+          <div className="text-[10px] mt-1.5 pt-1.5" style={{ color: colors.accentBlueText, borderTop: `1px solid ${colors.borderStrong}` }}>
             {hoveredNode.role === 'primaryFact'
               ? 'Click to view lineage'
-              : 'Drag to reposition • Click to view lineage'
+              : 'Drag to reposition \u2022 Click to view lineage'
             }
           </div>
         </div>

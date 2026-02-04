@@ -62,7 +62,7 @@ export const TableView: React.FC<TableViewProps> = ({ records }) => {
 
   if (records.length === 0) {
     return (
-      <div className="flex-1 flex items-center justify-center text-slate-500">
+      <div className="flex-1 flex items-center justify-center" style={{ color: 'var(--theme-text-muted)' }}>
         <div className="text-center">
           <p className="text-lg">No records to display</p>
           <p className="text-sm mt-1">Select a presentation table from the sidebar</p>
@@ -72,14 +72,23 @@ export const TableView: React.FC<TableViewProps> = ({ records }) => {
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-slate-950/30">
+    <div className="flex-1 overflow-auto" style={{ backgroundColor: 'var(--theme-bg-base)' }}>
       <table className="w-full text-sm">
-        <thead className="sticky top-0 bg-slate-900 border-b border-slate-700">
+        <thead
+          className="sticky top-0"
+          style={{
+            backgroundColor: 'var(--theme-bg-panel)',
+            borderBottom: '1px solid var(--theme-border-strong)',
+          }}
+        >
           <tr>
             <th className="px-4 py-3 text-left">
               <button
                 onClick={() => handleSort('presentationColumn')}
-                className="flex items-center gap-1 text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider transition-colors"
+                style={{ color: 'var(--theme-text-tertiary)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--theme-text-primary)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--theme-text-tertiary)'; }}
               >
                 Presentation Column <SortIcon field="presentationColumn" />
               </button>
@@ -87,7 +96,10 @@ export const TableView: React.FC<TableViewProps> = ({ records }) => {
             <th className="px-4 py-3 text-left">
               <button
                 onClick={() => handleSort('physicalTable')}
-                className="flex items-center gap-1 text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider transition-colors"
+                style={{ color: 'var(--theme-text-tertiary)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--theme-text-primary)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--theme-text-tertiary)'; }}
               >
                 Physical Table <SortIcon field="physicalTable" />
               </button>
@@ -95,7 +107,10 @@ export const TableView: React.FC<TableViewProps> = ({ records }) => {
             <th className="px-4 py-3 text-left">
               <button
                 onClick={() => handleSort('physicalColumn')}
-                className="flex items-center gap-1 text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider transition-colors"
+                style={{ color: 'var(--theme-text-tertiary)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--theme-text-primary)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--theme-text-tertiary)'; }}
               >
                 Physical Column <SortIcon field="physicalColumn" />
               </button>
@@ -103,32 +118,47 @@ export const TableView: React.FC<TableViewProps> = ({ records }) => {
             <th className="px-4 py-3 text-left">
               <button
                 onClick={() => handleSort('inferredRecord')}
-                className="flex items-center gap-1 text-xs font-semibold text-slate-400 uppercase tracking-wider hover:text-white transition-colors"
+                className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wider transition-colors"
+                style={{ color: 'var(--theme-text-tertiary)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--theme-text-primary)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--theme-text-tertiary)'; }}
               >
                 NetSuite Record <SortIcon field="inferredRecord" />
               </button>
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-800/50">
+        <tbody style={{ borderColor: 'var(--theme-border-subtle)' }}>
           {sortedRecords.map((record, idx) => (
-            <tr key={idx} className="hover:bg-slate-800/50 transition-colors">
-              <td className="px-4 py-2.5 text-blue-400 font-medium">
+            <tr
+              key={idx}
+              className="transition-colors"
+              style={{ borderBottom: '1px solid var(--theme-border-subtle)' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--theme-bg-inset)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; }}
+            >
+              <td className="px-4 py-2.5 font-medium" style={{ color: 'var(--theme-accent-blue-text)' }}>
                 {record.presentationColumn}
               </td>
-              <td className="px-4 py-2.5 font-mono text-xs text-purple-300">
+              <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--theme-accent-purple-text)' }}>
                 {record.physicalTable}
               </td>
-              <td className="px-4 py-2.5 font-mono text-xs text-orange-300">
+              <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--theme-accent-orange-text)' }}>
                 {record.physicalColumn}
               </td>
               <td className="px-4 py-2.5">
                 {record.inferredSource.isNsawGenerated ? (
-                  <span className="text-amber-500 text-xs bg-amber-500/10 px-2 py-0.5 rounded">
+                  <span
+                    className="text-xs px-2 py-0.5 rounded"
+                    style={{
+                      color: 'var(--theme-accent-amber-text)',
+                      backgroundColor: 'var(--theme-accent-amber-bg)',
+                    }}
+                  >
                     NSAW Generated
                   </span>
                 ) : (
-                  <span className="text-emerald-400">
+                  <span style={{ color: 'var(--theme-accent-emerald-text)' }}>
                     {record.inferredSource.recordType || '-'}
                   </span>
                 )}
@@ -139,7 +169,14 @@ export const TableView: React.FC<TableViewProps> = ({ records }) => {
       </table>
 
       {/* Footer with stats */}
-      <div className="sticky bottom-0 bg-slate-900 border-t border-slate-700 px-4 py-2 text-xs text-slate-500">
+      <div
+        className="sticky bottom-0 px-4 py-2 text-xs"
+        style={{
+          backgroundColor: 'var(--theme-bg-panel)',
+          borderTop: '1px solid var(--theme-border-strong)',
+          color: 'var(--theme-text-muted)',
+        }}
+      >
         {records.length} field mapping{records.length !== 1 ? 's' : ''}
       </div>
     </div>

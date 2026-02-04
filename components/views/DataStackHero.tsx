@@ -6,15 +6,21 @@ export const DataStackHero: React.FC = () => {
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null);
 
   return (
-    <div className="flex-1 w-full h-full relative blueprint-grid overflow-hidden bg-slate-900/20">
+    <div
+      className="flex-1 w-full h-full relative blueprint-grid overflow-hidden"
+      style={{ background: 'var(--theme-bg-inset)' }}
+    >
       {/* HUD inner border */}
-      <div className="absolute inset-0 border border-cyan-900/30 m-4 pointer-events-none" />
+      <div
+        className="absolute inset-0 m-4 pointer-events-none"
+        style={{ border: '1px solid var(--theme-accent-cyan-border)', opacity: 0.6 }}
+      />
 
       {/* Corner brackets */}
-      <div className="absolute top-4 left-4 w-3 h-3 border-t border-l border-cyan-500/50 z-20" />
-      <div className="absolute top-4 right-4 w-3 h-3 border-t border-r border-cyan-500/50 z-20" />
-      <div className="absolute bottom-4 left-4 w-3 h-3 border-b border-l border-cyan-500/50 z-20" />
-      <div className="absolute bottom-4 right-4 w-3 h-3 border-b border-r border-cyan-500/50 z-20" />
+      <div className="absolute top-4 left-4 w-3 h-3 z-20" style={{ borderTop: '1px solid var(--theme-accent-cyan-border)', borderLeft: '1px solid var(--theme-accent-cyan-border)' }} />
+      <div className="absolute top-4 right-4 w-3 h-3 z-20" style={{ borderTop: '1px solid var(--theme-accent-cyan-border)', borderRight: '1px solid var(--theme-accent-cyan-border)' }} />
+      <div className="absolute bottom-4 left-4 w-3 h-3 z-20" style={{ borderBottom: '1px solid var(--theme-accent-cyan-border)', borderLeft: '1px solid var(--theme-accent-cyan-border)' }} />
+      <div className="absolute bottom-4 right-4 w-3 h-3 z-20" style={{ borderBottom: '1px solid var(--theme-accent-cyan-border)', borderRight: '1px solid var(--theme-accent-cyan-border)' }} />
 
       {/* Isometric 3D data stack */}
       <main className="w-full h-full flex items-center justify-center p-8">

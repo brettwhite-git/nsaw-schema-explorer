@@ -18,25 +18,25 @@ import { Columns, Database, Table2 } from 'lucide-react';
 
 const NODE_STYLES = {
   presentationColumn: {
-    borderColor: 'border-blue-500/50',
-    borderColorSelected: 'border-blue-400',
-    accentColor: 'bg-blue-500',
-    ringColor: 'ring-blue-500/30',
-    iconColor: 'text-blue-400',
+    borderColor: 'var(--theme-accent-blue-border-half)',
+    borderColorSelected: 'var(--theme-accent-blue-border)',
+    accentColor: 'var(--theme-accent-blue)',
+    ringColor: 'var(--theme-accent-blue-ring)',
+    iconColor: 'var(--theme-accent-blue-text)',
   },
   physicalTable: {
-    borderColor: 'border-purple-500/50',
-    borderColorSelected: 'border-purple-400',
-    accentColor: 'bg-purple-500',
-    ringColor: 'ring-purple-500/30',
-    iconColor: 'text-purple-400',
+    borderColor: 'var(--theme-accent-purple-border-half)',
+    borderColorSelected: 'var(--theme-accent-purple-border)',
+    accentColor: 'var(--theme-accent-purple)',
+    ringColor: 'var(--theme-accent-purple-ring)',
+    iconColor: 'var(--theme-accent-purple-text)',
   },
   physicalColumn: {
-    borderColor: 'border-orange-500/50',
-    borderColorSelected: 'border-orange-400',
-    accentColor: 'bg-orange-500',
-    ringColor: 'ring-orange-500/30',
-    iconColor: 'text-orange-400',
+    borderColor: 'var(--theme-accent-orange-border-half)',
+    borderColorSelected: 'var(--theme-accent-orange-border)',
+    accentColor: 'var(--theme-accent-orange)',
+    ringColor: 'var(--theme-accent-orange-ring)',
+    iconColor: 'var(--theme-accent-orange-text)',
   },
 };
 
@@ -62,36 +62,38 @@ const LineageNode: React.FC<NodeProps<LineageNodeData>> = ({ data, selected }) =
     <div
       className={`
         relative w-[280px] min-h-[80px]
-        bg-slate-800/80 backdrop-blur-sm
+        backdrop-blur-sm
         rounded-lg border-2 transition-all duration-150 cursor-pointer
-        ${isHighlighted
-          ? `${styles.borderColorSelected} ring-2 ${styles.ringColor}`
-          : `${styles.borderColor} hover:border-opacity-100`
-        }
       `}
+      style={{
+        backgroundColor: 'var(--theme-surface-card)',
+        borderColor: isHighlighted ? styles.borderColorSelected : styles.borderColor,
+        boxShadow: isHighlighted ? `0 0 0 2px ${styles.ringColor}` : undefined,
+      }}
     >
       {/* Left accent stripe */}
       <div
-        className={`
-          absolute left-0 top-0 bottom-0 w-1
-          ${styles.accentColor}
-          rounded-l-md
-        `}
+        className="absolute left-0 top-0 bottom-0 w-1 rounded-l-md"
+        style={{ backgroundColor: styles.accentColor }}
       />
 
       {/* Content */}
       <div className="pl-4 pr-3 py-3">
         {/* Header row with icon */}
         <div className="flex items-start gap-2">
-          <NodeIcon className={`w-4 h-4 mt-0.5 flex-shrink-0 ${styles.iconColor}`} />
+          <NodeIcon
+            className="w-4 h-4 mt-0.5 flex-shrink-0"
+            style={{ color: styles.iconColor }}
+          />
           <div className="flex-1 min-w-0">
             {/* Label */}
             <div
               className={`
-                text-sm font-medium text-slate-100 leading-tight
+                text-sm font-medium leading-tight
                 ${nodeType === 'physicalColumn' ? 'font-mono text-xs' : ''}
                 ${nodeType === 'physicalTable' ? 'truncate' : 'line-clamp-2'}
               `}
+              style={{ color: 'var(--theme-text-default)' }}
               title={label}
             >
               {label}
@@ -99,7 +101,11 @@ const LineageNode: React.FC<NodeProps<LineageNodeData>> = ({ data, selected }) =
 
             {/* Sublabel */}
             {sublabel && (
-              <div className="text-[10px] text-slate-400 mt-0.5 truncate" title={sublabel}>
+              <div
+                className="text-[10px] mt-0.5 truncate"
+                style={{ color: 'var(--theme-text-tertiary)' }}
+                title={sublabel}
+              >
                 {sublabel}
               </div>
             )}
@@ -111,14 +117,23 @@ const LineageNode: React.FC<NodeProps<LineageNodeData>> = ({ data, selected }) =
           <div className="mt-2 flex items-center gap-2 flex-wrap">
             {/* Column count badge */}
             {columnCount !== undefined && (
-              <span className="text-[10px] text-slate-500 bg-slate-700/50 px-1.5 py-0.5 rounded">
+              <span
+                className="text-[10px] px-1.5 py-0.5 rounded"
+                style={{
+                  color: 'var(--theme-text-muted)',
+                  backgroundColor: 'var(--theme-bg-inset)',
+                }}
+              >
                 {columnCount} columns
               </span>
             )}
 
             {/* NSAW Generated badge */}
             {isNsawGenerated && (
-              <span className="text-[10px] text-amber-500 font-medium uppercase">
+              <span
+                className="text-[10px] font-medium uppercase"
+                style={{ color: 'var(--theme-accent-amber-text)' }}
+              >
                 NSAW
               </span>
             )}
@@ -127,7 +142,11 @@ const LineageNode: React.FC<NodeProps<LineageNodeData>> = ({ data, selected }) =
 
         {/* Physical Column - show inferred field name */}
         {nodeType === 'physicalColumn' && inferredSource?.fieldName && !isNsawGenerated && (
-          <div className="mt-1 text-[10px] text-emerald-400 truncate" title={inferredSource.fieldName}>
+          <div
+            className="mt-1 text-[10px] truncate"
+            style={{ color: 'var(--theme-accent-emerald-text)' }}
+            title={inferredSource.fieldName}
+          >
             {inferredSource.fieldName}
           </div>
         )}
@@ -137,12 +156,20 @@ const LineageNode: React.FC<NodeProps<LineageNodeData>> = ({ data, selected }) =
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-2 !h-2 !bg-slate-500 !border-slate-600"
+        className="!w-2 !h-2"
+        style={{
+          backgroundColor: 'var(--theme-text-muted)',
+          borderColor: 'var(--theme-text-faint)',
+        }}
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-2 !h-2 !bg-slate-500 !border-slate-600"
+        className="!w-2 !h-2"
+        style={{
+          backgroundColor: 'var(--theme-text-muted)',
+          borderColor: 'var(--theme-text-faint)',
+        }}
       />
     </div>
   );

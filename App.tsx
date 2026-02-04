@@ -7,6 +7,7 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { ViewModeSelector } from './components/ViewModeSelector';
 import { Breadcrumbs } from './components/Breadcrumbs';
 import { DataProvider, useData } from './data/DataContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 const AppContent: React.FC = () => {
   const { isLoading, error, dataIndex, selection, selectedRecords } = useData();
@@ -28,8 +29,8 @@ const AppContent: React.FC = () => {
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
 
-        <main className="flex-1 flex flex-col min-w-0 bg-slate-950">
-          <div className="p-4 px-6 border-b border-slate-900 bg-slate-900/20">
+        <main className="flex-1 flex flex-col min-w-0" style={{ backgroundColor: 'var(--theme-bg-surface)' }}>
+          <div className="p-4 px-6" style={{ borderBottom: '1px solid var(--theme-border-subtle)', backgroundColor: 'var(--theme-bg-inset)' }}>
             <div className="flex items-start justify-between">
               <div>
                 <Breadcrumbs />
@@ -48,17 +49,17 @@ const AppContent: React.FC = () => {
         <DetailPanel />
       </div>
 
-      <footer className="h-8 border-t border-slate-900 bg-slate-950 flex items-center justify-between px-6 text-[10px] text-slate-600 font-mono tracking-wider">
+      <footer className="h-8 flex items-center justify-between px-6 text-[10px] font-mono tracking-wider" style={{ borderTop: '1px solid var(--theme-border-subtle)', backgroundColor: 'var(--theme-bg-base)', color: 'var(--theme-text-faint)' }}>
         <div className="flex gap-4 uppercase">
           <span>Status: {isLoading ? 'Loading' : 'Ready'}</span>
         </div>
         <div className="flex gap-4 uppercase">
-          <span><span className="text-blue-400">{dataIndex?.subjectAreas.length || '-'}</span> Subject Areas</span>
-          <span><span className="text-purple-400">{dataIndex?.presentationTables.length || '-'}</span> Tables</span>
-          <span><span className="text-emerald-400">{dataIndex?.totalRecords.toLocaleString() || '-'}</span> Fields</span>
+          <span><span style={{ color: 'var(--theme-accent-blue-text)' }}>{dataIndex?.subjectAreas.length || '-'}</span> Subject Areas</span>
+          <span><span style={{ color: 'var(--theme-accent-purple-text)' }}>{dataIndex?.presentationTables.length || '-'}</span> Tables</span>
+          <span><span style={{ color: 'var(--theme-accent-emerald-text)' }}>{dataIndex?.totalRecords.toLocaleString() || '-'}</span> Fields</span>
         </div>
         <div className="flex gap-4">
-          <span className="text-blue-500/80">
+          <span style={{ color: 'var(--theme-accent-blue)', opacity: 0.8 }}>
             Load Time: {dataIndex?.loadTimeMs ? `${dataIndex.loadTimeMs.toFixed(0)}ms` : '-'}
           </span>
         </div>
@@ -69,9 +70,11 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <DataProvider>
-      <AppContent />
-    </DataProvider>
+    <ThemeProvider>
+      <DataProvider>
+        <AppContent />
+      </DataProvider>
+    </ThemeProvider>
   );
 };
 

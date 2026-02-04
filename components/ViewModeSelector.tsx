@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Workflow, LayoutGrid } from 'lucide-react';
 import { useData } from '../data/DataContext';
 import { ViewMode } from '../types';
@@ -13,7 +13,13 @@ export const ViewModeSelector: React.FC = () => {
   const isTableModeDisabled = !selection.presentationTable;
 
   return (
-    <div className="flex items-center gap-1 bg-slate-900/80 rounded-lg p-1 border border-slate-800">
+    <div
+      className="flex items-center gap-1 rounded-lg p-1 border"
+      style={{
+        backgroundColor: 'var(--theme-bg-panel)',
+        borderColor: 'var(--theme-border-default)',
+      }}
+    >
       <ViewModeButton
         mode="detailedFlow"
         currentMode={viewMode}
@@ -57,18 +63,37 @@ const ViewModeButton: React.FC<ViewModeButtonProps> = ({
   disabled = false,
 }) => {
   const isActive = mode === currentMode;
+  const [hovered, setHovered] = useState(false);
+
+  const getStyle = (): React.CSSProperties => {
+    if (disabled) {
+      return { color: 'var(--theme-text-faint)', opacity: 0.5 };
+    }
+    if (isActive) {
+      return {
+        backgroundColor: 'var(--theme-accent-blue-dark)',
+        color: 'var(--theme-text-primary)',
+      };
+    }
+    if (hovered) {
+      return {
+        color: 'var(--theme-text-primary)',
+        backgroundColor: 'var(--theme-bg-hover)',
+      };
+    }
+    return { color: 'var(--theme-text-tertiary)' };
+  };
 
   return (
     <button
       onClick={() => !disabled && onClick(mode)}
       disabled={disabled}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md transition-all ${
-        disabled
-          ? 'text-slate-600 cursor-not-allowed opacity-50'
-          : isActive
-            ? 'bg-blue-600 text-white'
-            : 'text-slate-400 hover:text-white hover:bg-slate-800'
+        disabled ? 'cursor-not-allowed' : ''
       }`}
+      style={getStyle()}
       title={tooltip || label}
     >
       {icon}

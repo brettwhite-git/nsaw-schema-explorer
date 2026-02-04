@@ -209,7 +209,7 @@ export function transformRecordsToGraph(
           target: nodeId,
           type: 'smoothstep',
           animated: false,
-          style: { stroke: '#64748b', strokeWidth: 2 },
+          style: { stroke: 'var(--theme-rf-edge-primary)', strokeWidth: 2 },
         });
       }
     }
@@ -256,7 +256,7 @@ export function transformRecordsToGraph(
           target: nodeId,
           type: 'smoothstep',
           animated: false,
-          style: { stroke: '#475569', strokeWidth: 1.5 },
+          style: { stroke: 'var(--theme-rf-edge)', strokeWidth: 1.5 },
         });
       }
     }
@@ -290,13 +290,13 @@ export function transformRecordsToGraph(
 export function getEdgeColor(sourceType: LineageNodeType): string {
   switch (sourceType) {
     case 'presentationColumn':
-      return '#3b82f6';  // Blue
+      return 'var(--theme-accent-blue)';
     case 'physicalTable':
-      return '#64748b';  // Slate
+      return 'var(--theme-rf-edge-primary)';
     case 'physicalColumn':
-      return '#475569';  // Darker slate
+      return 'var(--theme-rf-edge)';
     default:
-      return '#64748b';
+      return 'var(--theme-rf-edge-primary)';
   }
 }
 
@@ -305,18 +305,18 @@ export function getEdgeColor(sourceType: LineageNodeType): string {
  */
 export function getNodeColor(nodeType: LineageNodeType, isNsawGenerated?: boolean): string {
   if (isNsawGenerated) {
-    return '#1e293b';  // Darker for NSAW-generated
+    return 'var(--theme-bg-elevated)';
   }
 
   switch (nodeType) {
     case 'presentationColumn':
-      return '#1e40af';  // Blue-800
+      return 'var(--theme-accent-blue-dark)';
     case 'physicalTable':
-      return '#166534';  // Green-800
+      return 'var(--theme-accent-emerald)';
     case 'physicalColumn':
-      return '#115e59';  // Teal-800
+      return 'var(--theme-accent-cyan-dark)';
     default:
-      return '#374151';  // Gray-700
+      return 'var(--theme-border-strong)';
   }
 }
 
@@ -325,18 +325,18 @@ export function getNodeColor(nodeType: LineageNodeType, isNsawGenerated?: boolea
  */
 export function getNodeBorderColor(nodeType: LineageNodeType, isNsawGenerated?: boolean): string {
   if (isNsawGenerated) {
-    return '#475569';  // Slate-600 for NSAW-generated
+    return 'var(--theme-text-faint)';
   }
 
   switch (nodeType) {
     case 'presentationColumn':
-      return '#3b82f6';  // Blue-500
+      return 'var(--theme-accent-blue)';
     case 'physicalTable':
-      return '#22c55e';  // Green-500
+      return 'var(--theme-accent-emerald)';
     case 'physicalColumn':
-      return '#14b8a6';  // Teal-500
+      return 'var(--theme-accent-cyan)';
     default:
-      return '#6b7280';  // Gray-500
+      return 'var(--theme-text-muted)';
   }
 }
 

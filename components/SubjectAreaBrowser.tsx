@@ -72,7 +72,7 @@ export const SubjectAreaBrowser: React.FC = () => {
 
   if (!dataIndex) {
     return (
-      <div className="px-3 py-2 text-sm text-slate-500">
+      <div className="px-3 py-2 text-sm" style={{ color: 'var(--theme-text-muted)' }}>
         Loading...
       </div>
     );
@@ -80,7 +80,7 @@ export const SubjectAreaBrowser: React.FC = () => {
 
   if (functionalAreaGroups.length === 0) {
     return (
-      <div className="px-3 py-2 text-sm text-slate-500">
+      <div className="px-3 py-2 text-sm" style={{ color: 'var(--theme-text-muted)' }}>
         No subject areas found
       </div>
     );
@@ -97,18 +97,34 @@ export const SubjectAreaBrowser: React.FC = () => {
               {/* Functional Area Header */}
               <button
                 onClick={() => toggleFunctionalArea(group.name)}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-all text-slate-300 hover:bg-slate-800 hover:text-white"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer transition-all"
+                style={{ color: 'var(--theme-text-secondary)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'var(--theme-bg-hover)';
+                  e.currentTarget.style.color = 'var(--theme-text-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '';
+                  e.currentTarget.style.color = 'var(--theme-text-secondary)';
+                }}
               >
                 <ChevronRight
-                  className={`w-3 h-3 text-slate-500 transition-transform duration-200 ${
+                  className={`w-3 h-3 transition-transform duration-200 ${
                     isFaExpanded ? 'rotate-90' : ''
                   }`}
+                  style={{ color: 'var(--theme-text-muted)' }}
                 />
-                <FolderOpen className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <FolderOpen className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--theme-accent-amber-text)' }} />
                 <span className="flex-1 text-left text-sm font-semibold truncate">
                   {group.name}
                 </span>
-                <span className="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">
+                <span
+                  className="text-[10px] px-1.5 py-0.5 rounded"
+                  style={{
+                    color: 'var(--theme-text-muted)',
+                    backgroundColor: 'var(--theme-bg-elevated)',
+                  }}
+                >
                   {group.subjectAreas.length}
                 </span>
               </button>
@@ -125,16 +141,40 @@ export const SubjectAreaBrowser: React.FC = () => {
                         {/* Subject Area Header */}
                         <button
                           onClick={() => handleSubjectAreaClick(area.name)}
-                          className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-all ${
+                          className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-md cursor-pointer transition-all border ${
                             isSelected
-                              ? 'bg-blue-600/10 text-blue-400 border border-blue-500/20'
-                              : 'text-slate-400 hover:bg-slate-800 hover:text-white border border-transparent'
+                              ? ''
+                              : 'border-transparent'
                           }`}
+                          style={
+                            isSelected
+                              ? {
+                                  backgroundColor: 'var(--theme-accent-blue-bg)',
+                                  color: 'var(--theme-accent-blue-text)',
+                                  borderColor: 'var(--theme-accent-blue-border)',
+                                }
+                              : {
+                                  color: 'var(--theme-text-tertiary)',
+                                }
+                          }
+                          onMouseEnter={(e) => {
+                            if (!isSelected) {
+                              e.currentTarget.style.backgroundColor = 'var(--theme-bg-hover)';
+                              e.currentTarget.style.color = 'var(--theme-text-primary)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSelected) {
+                              e.currentTarget.style.backgroundColor = '';
+                              e.currentTarget.style.color = 'var(--theme-text-tertiary)';
+                            }
+                          }}
                         >
                           <ChevronRight
-                            className={`w-3 h-3 text-slate-500 transition-transform duration-200 ${
+                            className={`w-3 h-3 transition-transform duration-200 ${
                               isExpanded ? 'rotate-90' : ''
                             }`}
+                            style={{ color: 'var(--theme-text-muted)' }}
                           />
                           <Layers className="w-3.5 h-3.5 flex-shrink-0" />
                           <span className="flex-1 text-left text-xs font-medium truncate">
@@ -154,11 +194,29 @@ export const SubjectAreaBrowser: React.FC = () => {
                                 <button
                                   key={tableName}
                                   onClick={(e) => handleTableClick(e, area.name, tableName)}
-                                  className={`w-full flex items-center gap-2 pl-4 pr-2 py-1 text-left rounded transition-all ${
+                                  className="w-full flex items-center gap-2 pl-4 pr-2 py-1 text-left rounded transition-all"
+                                  style={
                                     isTableSelected
-                                      ? 'text-blue-400 bg-blue-600/5'
-                                      : 'text-slate-500 hover:text-white hover:bg-slate-800/50'
-                                  }`}
+                                      ? {
+                                          color: 'var(--theme-accent-blue-text)',
+                                          backgroundColor: 'var(--theme-accent-blue-bg)',
+                                        }
+                                      : {
+                                          color: 'var(--theme-text-muted)',
+                                        }
+                                  }
+                                  onMouseEnter={(e) => {
+                                    if (!isTableSelected) {
+                                      e.currentTarget.style.color = 'var(--theme-text-primary)';
+                                      e.currentTarget.style.backgroundColor = 'var(--theme-bg-inset)';
+                                    }
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (!isTableSelected) {
+                                      e.currentTarget.style.color = 'var(--theme-text-muted)';
+                                      e.currentTarget.style.backgroundColor = '';
+                                    }
+                                  }}
                                 >
                                   <Table2 className="w-3 h-3 flex-shrink-0" />
                                   <span className="text-xs truncate">{tableName}</span>

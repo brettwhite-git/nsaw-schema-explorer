@@ -39,12 +39,6 @@ export const LAYERS: ArchitectureLayer[] = [
   },
 ];
 
-export const STACK_COLORS = {
-  cyan: '#22d3ee',
-  line: 'rgba(186, 230, 253, 0.4)',
-  lineHighlight: '#7dd3fc',
-};
-
 // ---------- Icon resolver ----------
 
 const ICON_MAP = {
@@ -88,7 +82,7 @@ const Slab: React.FC<SlabProps> = ({ x, y, width, height, type, title, isActive,
       {isActive && (
         <polygon
           points={pointsStr}
-          fill={STACK_COLORS.cyan}
+          fill="var(--theme-accent-cyan)"
           fillOpacity="0.05"
           filter="blur(10px)"
         />
@@ -97,8 +91,8 @@ const Slab: React.FC<SlabProps> = ({ x, y, width, height, type, title, isActive,
       {/* Main face */}
       <polygon
         points={pointsStr}
-        fill={isActive ? 'rgba(34, 211, 238, 0.1)' : 'rgba(30, 41, 59, 0.4)'}
-        stroke={isActive ? STACK_COLORS.cyan : STACK_COLORS.line}
+        fill={isActive ? 'var(--theme-svg-slab-active)' : 'var(--theme-svg-slab-inactive)'}
+        stroke={isActive ? 'var(--theme-accent-cyan)' : 'var(--theme-svg-line)'}
         strokeWidth="1.5"
         className="transition-colors duration-300"
       />
@@ -106,25 +100,26 @@ const Slab: React.FC<SlabProps> = ({ x, y, width, height, type, title, isActive,
       {/* Side faces (3D depth) */}
       <polygon
         points={`${isoPoints[2].x},${isoPoints[2].y} ${isoPoints[1].x},${isoPoints[1].y} ${isoPoints[1].x},${isoPoints[1].y + 10} ${isoPoints[2].x},${isoPoints[2].y + 10}`}
-        fill="rgba(30, 41, 59, 0.6)"
-        stroke={isActive ? STACK_COLORS.cyan : STACK_COLORS.line}
+        fill="var(--theme-svg-slab-side)"
+        stroke={isActive ? 'var(--theme-accent-cyan)' : 'var(--theme-svg-line)'}
         strokeWidth="1"
       />
       <polygon
         points={`${isoPoints[2].x},${isoPoints[2].y} ${isoPoints[3].x},${isoPoints[3].y} ${isoPoints[3].x},${isoPoints[3].y + 10} ${isoPoints[2].x},${isoPoints[2].y + 10}`}
-        fill="rgba(30, 41, 59, 0.6)"
-        stroke={isActive ? STACK_COLORS.cyan : STACK_COLORS.line}
+        fill="var(--theme-svg-slab-side)"
+        stroke={isActive ? 'var(--theme-accent-cyan)' : 'var(--theme-svg-line)'}
         strokeWidth="1"
       />
 
       {/* Internal grid lines */}
-      <line x1={x - width * 0.5} y1={y + height * 0.25} x2={x + width * 0.5} y2={y + height * 0.75} stroke={STACK_COLORS.line} strokeWidth="0.5" strokeOpacity="0.3" />
-      <line x1={x + width * 0.5} y1={y + height * 0.25} x2={x - width * 0.5} y2={y + height * 0.75} stroke={STACK_COLORS.line} strokeWidth="0.5" strokeOpacity="0.3" />
+      <line x1={x - width * 0.5} y1={y + height * 0.25} x2={x + width * 0.5} y2={y + height * 0.75} stroke="var(--theme-svg-line)" strokeWidth="0.5" strokeOpacity="0.3" />
+      <line x1={x + width * 0.5} y1={y + height * 0.25} x2={x - width * 0.5} y2={y + height * 0.75} stroke="var(--theme-svg-line)" strokeWidth="0.5" strokeOpacity="0.3" />
 
       {/* Icon and label */}
       <foreignObject x={x - 40} y={y + height * 0.3} width="80" height="80">
-        <div className="flex flex-col items-center justify-center text-sky-200/60 transition-colors duration-300">
-          <Icon className={`w-8 h-8 mb-1 ${isActive ? 'text-cyan-400' : ''}`} />
+        <div className="flex flex-col items-center justify-center transition-colors duration-300"
+          style={{ color: 'var(--theme-svg-line)' }}>
+          <Icon className={`w-8 h-8 mb-1`} style={isActive ? { color: 'var(--theme-accent-cyan-text)' } : undefined} />
           <span className="text-[8px] uppercase tracking-widest font-mono text-center leading-tight">
             {title}
           </span>
@@ -175,14 +170,14 @@ export const IsometricStack: React.FC<IsometricStackProps> = ({ onLayerSelect })
             y1={baseCenterY - LAYERS[0].zOffset + offset.dy}
             x2={centerX + offset.dx}
             y2={baseCenterY - LAYERS[2].zOffset + offset.dy}
-            stroke={STACK_COLORS.line}
+            stroke="var(--theme-svg-line)"
             strokeWidth="0.5"
             strokeDasharray="4,4"
             className="opacity-50"
           />
         ))}
 
-        {/* Isometric slabs (bottom → top) */}
+        {/* Isometric slabs (bottom -> top) */}
         {LAYERS.map((layer) => (
           <Slab
             key={layer.id}
@@ -208,18 +203,21 @@ export const IsometricStack: React.FC<IsometricStackProps> = ({ onLayerSelect })
               <path
                 d={`M ${centerX + slabWidth} ${yPos} L ${centerX + slabWidth + 60} ${yPos} L ${centerX + slabWidth + 100} ${yPos - 30}`}
                 fill="none"
-                stroke={isActive ? STACK_COLORS.cyan : STACK_COLORS.line}
+                stroke={isActive ? 'var(--theme-accent-cyan)' : 'var(--theme-svg-line)'}
                 strokeWidth="1"
               />
               <foreignObject x={centerX + slabWidth + 110} y={yPos - 60} width="200" height="100">
                 <div className="flex flex-col text-left">
-                  <span className={`text-[10px] font-mono tracking-tighter uppercase ${isActive ? 'text-cyan-400' : 'text-slate-500'}`}>
+                  <span className="text-[10px] font-mono tracking-tighter uppercase"
+                    style={{ color: isActive ? 'var(--theme-accent-cyan-text)' : 'var(--theme-text-muted)' }}>
                     Layer_0{idx + 1}
                   </span>
-                  <span className={`text-sm font-semibold tracking-wide ${isActive ? 'text-white' : 'text-slate-400'}`}>
+                  <span className="text-sm font-semibold tracking-wide"
+                    style={{ color: isActive ? 'var(--theme-text-primary)' : 'var(--theme-text-tertiary)' }}>
                     {layer.title}
                   </span>
-                  <span className={`text-[9px] uppercase tracking-widest ${isActive ? 'text-cyan-500' : 'text-slate-600'}`}>
+                  <span className="text-[9px] uppercase tracking-widest"
+                    style={{ color: isActive ? 'var(--theme-accent-cyan-dark)' : 'var(--theme-text-faint)' }}>
                     {layer.subtitle}
                   </span>
                 </div>
