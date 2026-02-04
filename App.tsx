@@ -51,13 +51,16 @@ const AppContent: React.FC = () => {
       <footer className="h-8 border-t border-slate-900 bg-slate-950 flex items-center justify-between px-6 text-[10px] text-slate-600 font-mono tracking-wider">
         <div className="flex gap-4 uppercase">
           <span>Status: {isLoading ? 'Loading' : 'Ready'}</span>
-          <span>Records: {dataIndex?.totalRecords.toLocaleString() || '-'}</span>
+        </div>
+        <div className="flex gap-4 uppercase">
+          <span><span className="text-blue-400">{dataIndex?.subjectAreas.length || '-'}</span> Subject Areas</span>
+          <span><span className="text-purple-400">{dataIndex?.presentationTables.length || '-'}</span> Tables</span>
+          <span><span className="text-emerald-400">{dataIndex?.totalRecords.toLocaleString() || '-'}</span> Fields</span>
         </div>
         <div className="flex gap-4">
           <span className="text-blue-500/80">
             Load Time: {dataIndex?.loadTimeMs ? `${dataIndex.loadTimeMs.toFixed(0)}ms` : '-'}
           </span>
-          <span>Subject Areas: {dataIndex?.subjectAreas.length || '-'}</span>
         </div>
       </footer>
     </div>

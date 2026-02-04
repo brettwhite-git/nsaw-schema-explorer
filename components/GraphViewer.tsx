@@ -20,6 +20,7 @@ import { transformRecordsToDetailedGraph, LineageNodeData } from '../utils/graph
 import { lineageNodeTypes } from './nodes/LineageNode';
 import { TableView } from './views/TableView';
 import { SubjectAreaNetworkView } from './views/SubjectAreaNetworkView';
+import { DataStackHero } from './views/DataStackHero';
 
 /**
  * Returns appropriate fitView options based on graph size.
@@ -187,50 +188,8 @@ export const GraphViewer: React.FC = () => {
     if (selection.subjectArea) {
       return <SubjectAreaNetworkView />;
     }
-    // Welcome state
-    return (
-      <div className="flex-1 w-full h-full relative blueprint-grid overflow-auto bg-slate-900/20 flex items-center justify-center">
-        <div className="text-center max-w-md p-8 mx-auto">
-          <div className="p-4 bg-blue-600/10 rounded-xl border border-blue-500/20 inline-block mb-6">
-            <Database className="w-12 h-12 text-blue-400" />
-          </div>
-          <h2 className="text-xl font-semibold text-white mb-3">
-            Select a Presentation Table
-          </h2>
-          <p className="text-sm text-slate-400 mb-6">
-            Use the sidebar to browse Subject Areas and select a table, or search for a specific field using the search bar above.
-          </p>
-          {dataIndex && (
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700">
-                <div className="text-2xl font-bold text-blue-400">
-                  {dataIndex.subjectAreas.length}
-                </div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider">
-                  Subject Areas
-                </div>
-              </div>
-              <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700">
-                <div className="text-2xl font-bold text-purple-400">
-                  {dataIndex.presentationTables.length}
-                </div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider">
-                  Tables
-                </div>
-              </div>
-              <div className="p-3 bg-slate-800/50 rounded-lg border border-slate-700">
-                <div className="text-2xl font-bold text-emerald-400">
-                  {dataIndex.totalRecords.toLocaleString()}
-                </div>
-                <div className="text-xs text-slate-500 uppercase tracking-wider">
-                  Fields
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
+    // Welcome state — isometric data stack hero
+    return <DataStackHero />;
   }
 
   // Route to correct view based on viewMode

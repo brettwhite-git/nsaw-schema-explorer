@@ -53,7 +53,11 @@ App.tsx (wraps with DataProvider)
 │   │   ├── LineageNode.tsx     # Custom node for detailed flow view
 │   │   └── OverviewNodes.tsx   # Custom nodes for overview map
 │   └── views/
-│       ├── OverviewFlowView.tsx       # 3-tier data lineage overview map (NEW)
+│       ├── DataStackHero.tsx          # Welcome state: isometric 3D data stack (orchestrator)
+│       ├── IsometricStack.tsx         # SVG isometric visualization (3 layers + leader lines)
+│       ├── StackInfoPanel.tsx         # Hover overlay: layer specs + technical properties
+│       ├── StackIcons.tsx             # SVG icons: DatabaseIcon, WarehouseIcon, AnalyticsIcon
+│       ├── OverviewFlowView.tsx       # 3-tier data lineage overview map
 │       ├── TableView.tsx              # Sortable spreadsheet view
 │       ├── StarSchemaNetwork.tsx      # D3 force radial layout for subject areas (see D3 patterns below)
 │       └── SubjectAreaNetworkView.tsx # Re-export of StarSchemaNetwork
@@ -62,18 +66,19 @@ App.tsx (wraps with DataProvider)
 
 ### Navigation Flow
 ```
-Overview (3-tier map) ─────────────────────────────────────────────────────┐
+Welcome (Isometric Data Stack hero, no selection) ─────────────────────────┐
   │                                                                         │
-  ├─ Click Functional Area ──► Star Schema Network (D3 radial graph)       │
+  ├─ Select Subject Area ──► Star Schema Network (D3 radial graph)         │
   │     │                                                                   │
   │     └─ Click Table Node ──► Detailed Flow View (field-level lineage)   │
   │           │                                                             │
   │           └─ Click Column ──► Detail Panel (NS source info)            │
   │                                                                         │
-  └─ Always accessible via "Overview" button (never disabled) ◄────────────┘
+  └─ Always accessible via clearing selection ◄────────────────────────────┘
 ```
 
 ### View Modes
+- Welcome state - Isometric 3D data stack hero (no selection)
 - `overview` - High-level 3-tier data architecture map (NS Source → DW → Semantic)
 - `detailedFlow` - Field-level lineage graph (dagre layout, 3 columns)
 - `table` - Sortable spreadsheet view
@@ -203,6 +208,25 @@ return <div ref={containerRef}>...</div>;
 - Auto-fit via `computeFitTransform()` after settling — computes bounding box and scales/translates to center
 
 **Primary fact detection:** Uses token-overlap matching (≥50% of subject area name tokens must appear in table name). Falls back to promoting the most-connected dimension as a virtual hub when no fact tables exist.
+
+### Isometric Data Stack (DataStackHero / IsometricStack)
+
+**Welcome state visualization** showing 3 architecture layers as an exploded isometric view:
+- NetSuite ERP (bottom) → Autonomous AI Datawarehouse (middle) → Semantic Layer (top)
+- Hover highlights layer with cyan glow and shows System Specification panel
+
+**Isometric diamond formula** (SVG polygons, no CSS 3D transforms):
+```
+top:    (x, y)          right:  (x + width, y + height * 0.5)
+bottom: (x, y + height) left:   (x - width, y + height * 0.5)
+```
+Plus two side-face polygons offset 10px down for 3D depth effect.
+
+**Glow effect:** Extra blurred polygon overlay (`filter="blur(10px)"`, `fillOpacity="0.05"`) on active slab.
+
+**Icons inside SVG:** Uses `<foreignObject>` to embed React components (StackIcons) within the SVG coordinate space.
+
+**Dataset metrics** (Subject Areas, Tables, Fields) live in the site footer bar (`App.tsx`), not in the visualization.
 
 ## Type System (types.ts)
 
