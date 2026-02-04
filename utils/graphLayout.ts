@@ -25,6 +25,7 @@ export interface LineageNodeData {
   inferredSource?: InferredSource;
   columnCount?: number;  // Number of columns for physical tables
   isSelected?: boolean;  // Whether this node is currently selected
+  isHovered?: boolean;   // Whether this node is hovered or connected to hovered node
 }
 
 export type LineageNode = Node<LineageNodeData>;

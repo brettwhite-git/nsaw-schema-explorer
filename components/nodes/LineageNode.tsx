@@ -45,7 +45,7 @@ const NODE_STYLES = {
 // ======================
 
 const LineageNode: React.FC<NodeProps<LineageNodeData>> = ({ data, selected }) => {
-  const { label, sublabel, nodeType, isNsawGenerated, inferredSource, columnCount, isSelected } = data;
+  const { label, sublabel, nodeType, isNsawGenerated, inferredSource, columnCount, isSelected, isHovered } = data;
   const styles = NODE_STYLES[nodeType];
 
   // Use either React Flow's selected state or our custom isSelected from data
@@ -67,8 +67,16 @@ const LineageNode: React.FC<NodeProps<LineageNodeData>> = ({ data, selected }) =
       `}
       style={{
         backgroundColor: 'var(--theme-surface-card)',
-        borderColor: isHighlighted ? styles.borderColorSelected : styles.borderColor,
-        boxShadow: isHighlighted ? `0 0 0 2px ${styles.ringColor}` : undefined,
+        borderColor: isHighlighted
+          ? styles.borderColorSelected
+          : isHovered
+            ? styles.borderColorSelected
+            : styles.borderColor,
+        boxShadow: isHighlighted
+          ? `0 0 0 2px ${styles.ringColor}`
+          : isHovered
+            ? `0 0 0 1px ${styles.ringColor}`
+            : undefined,
       }}
     >
       {/* Left accent stripe */}

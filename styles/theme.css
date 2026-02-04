@@ -67,6 +67,7 @@
   --theme-border-subtle:  #0f172a;                  /* slate-900 */
   --theme-border-strong:  #334155;                  /* slate-700 */
   --theme-border-hover:   #475569;                  /* slate-600 */
+  --theme-hud-border:     rgba(248, 250, 252, 0.15); /* white @ 15% for HUD frame */
 
   /* --- Accent: Blue (Presentation / Semantic layer) ----------------------- */
   --theme-accent-blue:             #3b82f6;
@@ -116,18 +117,19 @@
   --theme-accent-amber-text:   #fbbf24;                        /* amber-400 */
 
   /* --- Accent: Cyan (Welcome / Highlights) -------------------------------- */
-  --theme-accent-cyan:        #22d3ee;
-  --theme-accent-cyan-dark:   #0891b2;
-  --theme-accent-cyan-faint:  rgba(34, 211, 238, 0.1);
-  --theme-accent-cyan-text:   #22d3ee;
-  --theme-accent-cyan-border: rgba(34, 211, 238, 0.5);
+  /* Shifted from vivid cyan-400 (#22d3ee) to softer sky-300 (#7dd3fc) */
+  --theme-accent-cyan:        #7dd3fc;
+  --theme-accent-cyan-dark:   #38bdf8;
+  --theme-accent-cyan-faint:  rgba(125, 211, 252, 0.1);
+  --theme-accent-cyan-text:   #7dd3fc;
+  --theme-accent-cyan-border: rgba(125, 211, 252, 0.4);
 
   /* --- Additional accent text (TopNav search results) --------------------- */
   --theme-accent-green-text:  #4ade80;                         /* green-400 */
   --theme-accent-yellow-text: #facc15;                         /* yellow-400 */
 
   /* --- Grid --------------------------------------------------------------- */
-  --theme-grid-dot: #334155;                                   /* slate-700 */
+  --theme-grid-dot: #475569;                                   /* slate-600 (was slate-700, more visible) */
 
   /* --- Scrollbar ---------------------------------------------------------- */
   --theme-scrollbar-thumb:       #334155;
@@ -135,7 +137,7 @@
 
   /* --- SVG (IsometricStack) ----------------------------------------------- */
   --theme-svg-slab-inactive: rgba(30, 41, 59, 0.4);
-  --theme-svg-slab-active:   rgba(34, 211, 238, 0.1);
+  --theme-svg-slab-active:   rgba(125, 211, 252, 0.08);        /* softer sky-300 tint */
   --theme-svg-slab-side:     rgba(30, 41, 59, 0.6);
   --theme-svg-line:          rgba(186, 230, 253, 0.4);
   --theme-svg-line-highlight: #7dd3fc;
@@ -152,7 +154,7 @@
   /* --- React Flow --------------------------------------------------------- */
   --theme-rf-edge:         #475569;
   --theme-rf-edge-primary: #64748b;
-  --theme-rf-bg:           #334155;
+  --theme-rf-bg:           #475569;                            /* aligned with --theme-grid-dot */
   --theme-rf-minimap-mask: rgba(15, 23, 42, 0.8);
 
   /* --- Node active state -------------------------------------------------- */
@@ -203,6 +205,7 @@
   --theme-border-subtle:  #e2e8f0;                  /* slate-200 */
   --theme-border-strong:  #cbd5e1;                  /* slate-300 */
   --theme-border-hover:   #94a3b8;                  /* slate-400 */
+  --theme-hud-border:     rgba(100, 116, 139, 0.25); /* slate-500 @ 25% for HUD frame */
 
   /* --- Accent: Blue (slightly darker for light bg contrast) --------------- */
   --theme-accent-blue:             #2563eb;
@@ -252,18 +255,19 @@
   --theme-accent-amber-text:   #b45309;
 
   /* --- Accent: Cyan ------------------------------------------------------- */
-  --theme-accent-cyan:        #0891b2;
-  --theme-accent-cyan-dark:   #0e7490;
-  --theme-accent-cyan-faint:  rgba(8, 145, 178, 0.08);
-  --theme-accent-cyan-text:   #0891b2;
-  --theme-accent-cyan-border: rgba(8, 145, 178, 0.4);
+  /* Shifted to sky-600/700 for better contrast on light backgrounds */
+  --theme-accent-cyan:        #0284c7;
+  --theme-accent-cyan-dark:   #0369a1;
+  --theme-accent-cyan-faint:  rgba(2, 132, 199, 0.08);
+  --theme-accent-cyan-text:   #0284c7;
+  --theme-accent-cyan-border: rgba(2, 132, 199, 0.35);
 
   /* --- Additional accent text --------------------------------------------- */
   --theme-accent-green-text:  #16a34a;              /* green-600 */
   --theme-accent-yellow-text: #ca8a04;              /* yellow-600 */
 
   /* --- Grid --------------------------------------------------------------- */
-  --theme-grid-dot: #e2e8f0;
+  --theme-grid-dot: #cbd5e1;                        /* slate-300 (was slate-200, more visible) */
 
   /* --- Scrollbar ---------------------------------------------------------- */
   --theme-scrollbar-thumb:       #cbd5e1;
@@ -271,10 +275,10 @@
 
   /* --- SVG (IsometricStack) ----------------------------------------------- */
   --theme-svg-slab-inactive: rgba(241, 245, 249, 0.6);
-  --theme-svg-slab-active:   rgba(8, 145, 178, 0.1);
+  --theme-svg-slab-active:   rgba(2, 132, 199, 0.08);  /* softer sky-600 tint */
   --theme-svg-slab-side:     rgba(226, 232, 240, 0.7);
   --theme-svg-line:          rgba(71, 85, 105, 0.5);   /* slate-600 base, higher opacity */
-  --theme-svg-line-highlight: #0891b2;
+  --theme-svg-line-highlight: #0284c7;
 
   /* --- D3 (StarSchemaNetwork) --------------------------------------------- */
   --theme-d3-edge:             #cbd5e1;
@@ -288,7 +292,7 @@
   /* --- React Flow --------------------------------------------------------- */
   --theme-rf-edge:         #cbd5e1;
   --theme-rf-edge-primary: #94a3b8;
-  --theme-rf-bg:           #e2e8f0;
+  --theme-rf-bg:           #cbd5e1;                  /* aligned with --theme-grid-dot */
   --theme-rf-minimap-mask: rgba(255, 255, 255, 0.8);
 
   /* --- Node active state -------------------------------------------------- */

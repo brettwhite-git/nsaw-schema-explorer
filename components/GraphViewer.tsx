@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useCallback } from 'react';
+import React, { useMemo, useEffect, useCallback, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -68,6 +68,9 @@ const DetailedFlowContent: React.FC<DetailedFlowContentProps> = ({
 }) => {
   const { fitView } = useReactFlow();
 
+  // Track which node is currently hovered for edge highlighting
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+
   // Fit view on initial render and when nodes change significantly
   // Using onInit ensures React Flow is ready before fitting
   const handleInit = useCallback(() => {
@@ -77,13 +80,65 @@ const DetailedFlowContent: React.FC<DetailedFlowContentProps> = ({
     }, 50);
   }, [fitView, nodes.length]);
 
+  // Node hover handlers for edge highlighting
+  const onNodeMouseEnter = useCallback((_: React.MouseEvent, node: Node) => {
+    setHoveredNodeId(node.id);
+  }, []);
+
+  const onNodeMouseLeave = useCallback(() => {
+    setHoveredNodeId(null);
+  }, []);
+
+  // Compute which nodes are connected to the hovered node
+  const connectedNodeIds = useMemo(() => {
+    if (!hoveredNodeId) return new Set<string>();
+    const connected = new Set<string>([hoveredNodeId]);
+    for (const edge of edges) {
+      if (edge.source === hoveredNodeId) connected.add(edge.target);
+      if (edge.target === hoveredNodeId) connected.add(edge.source);
+    }
+    return connected;
+  }, [hoveredNodeId, edges]);
+
+  // Update nodes with hover state for visual feedback
+  const displayNodes = useMemo(() => {
+    if (!hoveredNodeId) return nodes;
+    return nodes.map(node => ({
+      ...node,
+      data: {
+        ...node.data,
+        isHovered: connectedNodeIds.has(node.id),
+      },
+    }));
+  }, [nodes, hoveredNodeId, connectedNodeIds]);
+
+  // Update edges with hover highlighting - brighten connected, dim others
+  const displayEdges = useMemo(() => {
+    if (!hoveredNodeId) return edges;
+    return edges.map(edge => {
+      const isConnected = edge.source === hoveredNodeId || edge.target === hoveredNodeId;
+      return {
+        ...edge,
+        style: {
+          ...edge.style,
+          stroke: isConnected ? 'var(--theme-node-active-border)' : 'var(--theme-rf-edge)',
+          strokeWidth: isConnected ? 3 : 1.5,
+          opacity: isConnected ? 1 : 0.3,
+        },
+        animated: isConnected,
+      };
+    });
+  }, [edges, hoveredNodeId]);
+
   return (
     <ReactFlow
-      nodes={nodes}
-      edges={edges}
+      nodes={displayNodes}
+      edges={displayEdges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       onNodeClick={onNodeClick}
+      onNodeMouseEnter={onNodeMouseEnter}
+      onNodeMouseLeave={onNodeMouseLeave}
       onInit={handleInit}
       nodeTypes={lineageNodeTypes}
       minZoom={0.1}
@@ -94,7 +149,7 @@ const DetailedFlowContent: React.FC<DetailedFlowContentProps> = ({
       }}
       style={{ background: 'var(--theme-bg-surface)' }}
     >
-      <Background color="var(--theme-rf-bg)" gap={20} size={1} />
+      <Background color="var(--theme-grid-dot)" gap={20} size={1.5} />
       <Controls />
       <MiniMap
         nodeColor={(node) => {
