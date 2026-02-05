@@ -10,33 +10,49 @@
 import React, { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { LineageNodeData } from '../../utils/graphLayout';
-import { Columns, Database, Table2 } from 'lucide-react';
+import { Columns, Database, Table2, Cloud, Zap } from 'lucide-react';
 
 // ======================
 // Node Style Constants
 // ======================
 
+// Node styles using layer-based semantic colors:
+// NetSuite Source (blue) → DW Physical (purple) → Semantic/Presentation (green)
 const NODE_STYLES = {
-  presentationColumn: {
-    borderColor: 'var(--theme-accent-blue-border-half)',
-    borderColorSelected: 'var(--theme-accent-blue-border)',
-    accentColor: 'var(--theme-accent-blue)',
-    ringColor: 'var(--theme-accent-blue-ring)',
-    iconColor: 'var(--theme-accent-blue-text)',
+  netsuiteSource: {
+    borderColor: 'var(--theme-layer-netsuite-border-half)',
+    borderColorSelected: 'var(--theme-layer-netsuite-border)',
+    accentColor: 'var(--theme-layer-netsuite)',
+    ringColor: 'var(--theme-layer-netsuite-ring)',
+    iconColor: 'var(--theme-layer-netsuite-text)',
   },
   physicalTable: {
-    borderColor: 'var(--theme-accent-purple-border-half)',
-    borderColorSelected: 'var(--theme-accent-purple-border)',
-    accentColor: 'var(--theme-accent-purple)',
-    ringColor: 'var(--theme-accent-purple-ring)',
-    iconColor: 'var(--theme-accent-purple-text)',
+    borderColor: 'var(--theme-layer-dw-border-half)',
+    borderColorSelected: 'var(--theme-layer-dw-border)',
+    accentColor: 'var(--theme-layer-dw)',
+    ringColor: 'var(--theme-layer-dw-ring)',
+    iconColor: 'var(--theme-layer-dw-text)',
   },
   physicalColumn: {
-    borderColor: 'var(--theme-accent-orange-border-half)',
-    borderColorSelected: 'var(--theme-accent-orange-border)',
-    accentColor: 'var(--theme-accent-orange)',
-    ringColor: 'var(--theme-accent-orange-ring)',
-    iconColor: 'var(--theme-accent-orange-text)',
+    borderColor: 'var(--theme-layer-dw-border-half)',
+    borderColorSelected: 'var(--theme-layer-dw-border)',
+    accentColor: 'var(--theme-layer-dw-dark)',
+    ringColor: 'var(--theme-layer-dw-ring)',
+    iconColor: 'var(--theme-layer-dw-text)',
+  },
+  presentationColumn: {
+    borderColor: 'var(--theme-layer-semantic-border-half)',
+    borderColorSelected: 'var(--theme-layer-semantic-border)',
+    accentColor: 'var(--theme-layer-semantic)',
+    ringColor: 'var(--theme-layer-semantic-ring)',
+    iconColor: 'var(--theme-layer-semantic-text)',
+  },
+  derivedColumn: {
+    borderColor: 'var(--theme-layer-derived-border-half)',
+    borderColorSelected: 'var(--theme-layer-derived-border)',
+    accentColor: 'var(--theme-layer-derived)',
+    ringColor: 'var(--theme-layer-derived-ring)',
+    iconColor: 'var(--theme-layer-derived-text)',
   },
 };
 
@@ -52,11 +68,15 @@ const LineageNode: React.FC<NodeProps<LineageNodeData>> = ({ data, selected }) =
   const isHighlighted = selected || isSelected;
 
   // Determine icon based on node type
-  const NodeIcon = nodeType === 'presentationColumn'
-    ? Columns
+  const NodeIcon = nodeType === 'netsuiteSource'
+    ? Cloud
     : nodeType === 'physicalTable'
       ? Database
-      : Table2;
+      : nodeType === 'physicalColumn'
+        ? Table2
+        : nodeType === 'derivedColumn'
+          ? Zap
+          : Columns;
 
   return (
     <div
@@ -123,6 +143,22 @@ const LineageNode: React.FC<NodeProps<LineageNodeData>> = ({ data, selected }) =
         {/* Physical Table specific content */}
         {nodeType === 'physicalTable' && (
           <div className="mt-2 flex items-center gap-2 flex-wrap">
+            {/* Table type badge (Fact/Dimension/Hierarchy) */}
+            {data.tableType && (
+              <span
+                className="text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider"
+                style={{
+                  color: data.tableType === 'fact' ? 'var(--theme-accent-amber-text)' : 'var(--theme-layer-dw-text)',
+                  backgroundColor: data.tableType === 'fact' ? 'var(--theme-accent-amber-bg)' : 'var(--theme-layer-dw-bg)',
+                  border: `1px solid ${data.tableType === 'fact' ? 'var(--theme-accent-amber-border)' : 'var(--theme-layer-dw-border)'}`,
+                }}
+              >
+                {data.tableType === 'fact' ? 'FACT' :
+                 data.tableType === 'dimension' ? 'DIMENSION' :
+                 data.tableType === 'hierarchy' ? 'HIERARCHY' : 'TABLE'}
+              </span>
+            )}
+
             {/* Column count badge */}
             {columnCount !== undefined && (
               <span

@@ -68,11 +68,13 @@ App.tsx (wraps with DataProvider)
 ```
 Welcome (Isometric Data Stack hero, no selection) ─────────────────────────┐
   │                                                                         │
-  ├─ Select Subject Area ──► Star Schema Network (D3 radial graph)         │
+  ├─ Select Subject Area ──► Star Schema Network (D3 3-ring radial graph)  │
   │     │                                                                   │
-  │     └─ Click Table Node ──► Detailed Flow View (field-level lineage)   │
+  │     ├─ Click Inner DW Node ──► Detailed Flow (finds matching pres tbl) │
+  │     │                                                                   │
+  │     └─ Click Outer Pres Node ──► Detailed Flow (direct navigation)     │
   │           │                                                             │
-  │           └─ Click Column ──► Detail Panel (NS source info)            │
+  │           └─ Click Column ──► Detail Panel (full lineage path)         │
   │                                                                         │
   └─ Always accessible via clearing selection ◄────────────────────────────┘
 ```
@@ -120,9 +122,11 @@ utils/
 ```
 components/nodes/
 ├── LineageNode.tsx    # Node component for detailed flow view
-│                      # - presentationColumn (blue)
-│                      # - physicalTable (purple)
-│                      # - physicalColumn (orange)
+│                      # - netsuiteSource (blue) - Inferred NS record type
+│                      # - physicalTable (purple) - DW table with fact/dim badge
+│                      # - physicalColumn (purple-dark) - DW column
+│                      # - presentationColumn (green) - Semantic layer field
+│                      # - derivedColumn (orange) - NSAW-derived field
 └── OverviewNodes.tsx  # Node component for Overview map
                        # - sourceRecord (emerald) - NetSuite record types
                        # - dwGroup (purple/blue) - DW table groupings
@@ -140,9 +144,15 @@ components/nodes/
 
 ### Graph Layout (graphLayout.ts)
 Creates a left-to-right (LR) layout using dagre:
-- **Column 1 (Left)**: Presentation columns (blue)
-- **Column 2 (Right)**: Physical tables (purple)
-- Optional Column 3: Physical columns (orange) - for detailed view
+- **Column 1 (Left)**: NetSuite source nodes (blue) — grouped by inferred record type
+- **Column 2 (Center)**: Physical DW tables (purple) — with fact/dimension/hierarchy `tableType` badge
+- **Column 3 (Right)**: Semantic fields (green) + NSAW-derived fields (orange)
+  - `presentationColumn` — fields from non-NSAW tables (green)
+  - `derivedColumn` — fields where ALL source DW tables are NSAW-generated (orange)
+
+**Node type system:** `LineageNodeType = 'netsuiteSource' | 'physicalTable' | 'physicalColumn' | 'presentationColumn' | 'derivedColumn'`
+
+**Table type classification:** `parsePhysicalTableType()` → `tableType` field on physical table nodes. Used by `LineageNode.tsx` to render FACT / DIMENSION / HIERARCHY badges.
 
 ### React Flow Patterns
 
@@ -200,14 +210,27 @@ return <div ref={containerRef}>...</div>;
 
 **Initial dimensions must be `{0, 0}`:** Start with zero dimensions and guard the `useMemo` to skip graph building until ResizeObserver provides real measurements. Never hardcode initial dimensions (e.g., 1000x700) — they'll be wrong for the actual container size.
 
-**Force simulation architecture:**
+**Force simulation architecture (3-ring layout):**
 - Primary fact node pinned at center with `fx`/`fy` (immovable hub)
 - No `forceCenter` — it fights `forceRadial`. The pinned hub + radial force handles centering.
-- `forceRadial` with viewport-responsive ring distances (computed from container dimensions)
-- Custom `forceOrbital` force for smooth infinite animation of dimension nodes
+- `forceRadial` with viewport-responsive ring distances (computed from container dimensions):
+  - **Inner ring**: Secondary fact tables (43% of max radius)
+  - **Middle ring**: Dimension tables (max radius)
+  - **Outer ring**: Presentation tables + NSAW-derived tables (140% of middle ring, capped at 40 nodes)
+- Custom `forceOrbital` force: dimension nodes orbit at full speed, outer nodes at 30% speed
 - Auto-fit via `computeFitTransform()` after settling — computes bounding box and scales/translates to center
 
+**Outer ring nodes (presentation tables):**
+- Built from `dataIndex.bySubjectArea` records, grouped by `presentationTable`
+- `role: 'presentation'` (green filled) — semantic layer tables
+- `role: 'derived'` (orange filled) — tables where ALL physical sources are NSAW-generated
+- Classified via `isNsawGeneratedTable()` check on every connected physical table
+- Clicking an outer node navigates to `detailedFlow` for that presentation table
+- Capped at `MAX_OUTER_NODES: 40` for performance
+
 **Primary fact detection:** Uses token-overlap matching (≥50% of subject area name tokens must appear in table name). Falls back to promoting the most-connected dimension as a virtual hub when no fact tables exist.
+
+**D3+CSS double-opacity trap:** Always use solid hex colors for `--theme-d3-*` variables, never `rgba()`. SVG elements apply their own `opacity` attribute; if the CSS color also has alpha, they multiply (e.g., 0.3 × 0.3 = 0.09 effective visibility). Control transparency exclusively via SVG `opacity`.
 
 ### Isometric Data Stack (DataStackHero / IsometricStack)
 
@@ -276,15 +299,30 @@ DW tables follow suffix patterns that indicate their role:
 - **Blue** - DW Dimension table groups
 - **Amber** - Functional Areas / NSAW-generated
 
+### Star Schema Network
+- **Purple (filled)** - Fact tables (center hub + inner ring)
+- **Purple (hollow ring)** - Dimension tables (middle ring)
+- **Green (filled)** - Presentation/semantic tables (outer ring)
+- **Orange (filled)** - NSAW-derived tables (outer ring)
+
 ### Detailed Flow View
-- **Blue** - Presentation columns (semantic layer)
-- **Purple** - Physical DW tables
-- **Orange** - Physical DW columns
+- **Blue** - NetSuite source fields (left column)
+- **Purple** - Physical DW tables with fact/dim badge (center column)
+- **Green** - Semantic layer fields (right column)
+- **Orange** - NSAW-derived fields & calculations (right column)
 
 ### Detail Panel
-- **Blue** - Presentation layer
-- **Purple** - DW layer
-- **Green** - Inferred NetSuite source
+- **Blue** - NetSuite source layer
+- **Purple** - DW layer (with table type badge: Fact/Dimension/Hierarchy)
+- **Green** - Semantic layer
+- **Orange** - NSAW-derived field indicator
+
+### CSS Layer Variables
+Four layer color sets in `styles/theme.css` (each with `-light`, `-dark`, `-bg`, `-border`, `-glow`, `-ring`, `-text` variants):
+- `--theme-layer-netsuite-*` — Blue
+- `--theme-layer-dw-*` — Purple
+- `--theme-layer-semantic-*` — Green
+- `--theme-layer-derived-*` — Orange (NSAW-derived/calculated)
 
 ## Dependencies
 

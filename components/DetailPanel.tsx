@@ -1,6 +1,20 @@
 import React, { useMemo, useState } from 'react';
 import { useData } from '../data/DataContext';
-import { FileText, Database, Info, Code, Layers, ChevronRight, Columns, ArrowDown, Table2 } from 'lucide-react';
+import { FileText, Database, Info, Code, Layers, ChevronRight, Columns, ArrowDown, Table2, Zap } from 'lucide-react';
+import { parsePhysicalTableType } from '../types';
+
+function getTableTypeBadge(tableName: string): string {
+  const type = parsePhysicalTableType(tableName);
+  switch (type) {
+    case 'fact': return 'Fact Table';
+    case 'enhanced': return 'Enhanced Fact';
+    case 'dimension': return 'Dimension Table';
+    case 'hierarchy': return 'Hierarchy Table';
+    case 'global': return 'Global Table';
+    case 'calculated': return 'Calculated';
+    default: return 'DW Table';
+  }
+}
 
 export const DetailPanel: React.FC = () => {
   const { selection, selectedRecords, dataIndex } = useData();
@@ -58,22 +72,22 @@ export const DetailPanel: React.FC = () => {
       ? 'table'
       : 'subjectArea';
 
-  // Badge styles by detail type
+  // Badge styles by detail type - using layer-based colors
   const badgeStyles: Record<string, React.CSSProperties> = {
     column: {
-      backgroundColor: 'var(--theme-accent-emerald-bg)',
-      color: 'var(--theme-accent-emerald-text)',
-      borderColor: 'var(--theme-accent-emerald-border)',
+      backgroundColor: 'var(--theme-layer-semantic-bg)',
+      color: 'var(--theme-layer-semantic-text)',
+      borderColor: 'var(--theme-layer-semantic-border)',
     },
     table: {
-      backgroundColor: 'var(--theme-accent-blue-bg)',
-      color: 'var(--theme-accent-blue-text)',
-      borderColor: 'var(--theme-accent-blue-border)',
+      backgroundColor: 'var(--theme-layer-semantic-bg)',
+      color: 'var(--theme-layer-semantic-text)',
+      borderColor: 'var(--theme-layer-semantic-border)',
     },
     subjectArea: {
-      backgroundColor: 'var(--theme-accent-purple-bg)',
-      color: 'var(--theme-accent-purple-text)',
-      borderColor: 'var(--theme-accent-purple-border)',
+      backgroundColor: 'var(--theme-layer-dw-bg)',
+      color: 'var(--theme-layer-dw-text)',
+      borderColor: 'var(--theme-layer-dw-border)',
     },
   };
 
@@ -153,104 +167,29 @@ export const DetailPanel: React.FC = () => {
 
       <div className="p-6 space-y-6">
         {/* Column-level Lineage Path (when a column is selected) */}
+        {/* Shows correct data flow: NetSuite Source → DW → Semantic */}
         {selectedColumnRecord && (
           <section>
             <div className="flex items-center gap-2 mb-4" style={{ color: 'var(--theme-text-secondary)' }}>
-              <Code className="w-4 h-4" style={{ color: 'var(--theme-accent-blue-text)' }} />
-              <h3 className="text-sm font-medium">Column Lineage Path</h3>
+              <Code className="w-4 h-4" style={{ color: 'var(--theme-layer-semantic-text)' }} />
+              <h3 className="text-sm font-medium">Data Lineage Path</h3>
             </div>
 
-            {/* 3-Layer Visual Path */}
+            {/* 3-Layer Visual Path - flows top to bottom: NS → DW → Semantic */}
             <div className="space-y-0">
-              {/* Presentation Layer */}
+              {/* NetSuite Source Layer (TOP - data origin) */}
               <div
                 className="p-4 rounded-t-lg"
                 style={{
-                  backgroundColor: 'var(--theme-accent-blue-bg)',
-                  border: '2px solid var(--theme-accent-blue-border)',
+                  backgroundColor: 'var(--theme-layer-netsuite-bg)',
+                  border: '2px solid var(--theme-layer-netsuite-border)',
                 }}
               >
                 <div className="flex items-center gap-2 mb-2">
-                  <Columns className="w-4 h-4" style={{ color: 'var(--theme-accent-blue-text)' }} />
+                  <Table2 className="w-4 h-4" style={{ color: 'var(--theme-layer-netsuite-text)' }} />
                   <span
                     className="text-[10px] uppercase tracking-wider font-semibold"
-                    style={{ color: 'var(--theme-accent-blue-text)' }}
-                  >
-                    Presentation Layer
-                  </span>
-                </div>
-                <div
-                  className="text-sm font-semibold mb-1"
-                  style={{ color: 'var(--theme-text-primary)' }}
-                >
-                  {selectedColumnRecord.presentationColumn}
-                </div>
-                <div className="text-xs" style={{ color: 'var(--theme-text-tertiary)' }}>
-                  Table: {selectedColumnRecord.presentationTable}
-                </div>
-              </div>
-
-              {/* Arrow Down */}
-              <div
-                className="flex justify-center py-1"
-                style={{ backgroundColor: 'var(--theme-bg-panel)' }}
-              >
-                <ArrowDown className="w-4 h-4" style={{ color: 'var(--theme-text-muted)' }} />
-              </div>
-
-              {/* Data Warehouse Layer */}
-              <div
-                className="p-4"
-                style={{
-                  backgroundColor: 'var(--theme-accent-purple-bg)',
-                  borderLeft: '2px solid var(--theme-accent-purple-border)',
-                  borderRight: '2px solid var(--theme-accent-purple-border)',
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Database className="w-4 h-4" style={{ color: 'var(--theme-accent-purple-text)' }} />
-                  <span
-                    className="text-[10px] uppercase tracking-wider font-semibold"
-                    style={{ color: 'var(--theme-accent-purple-text)' }}
-                  >
-                    Data Warehouse
-                  </span>
-                </div>
-                <div
-                  className="font-mono text-xs mb-1 break-all"
-                  style={{ color: 'var(--theme-accent-purple-text)' }}
-                >
-                  {selectedColumnRecord.physicalTable}
-                </div>
-                <div
-                  className="font-mono text-xs"
-                  style={{ color: 'var(--theme-text-secondary)' }}
-                >
-                  Column: <span style={{ color: 'var(--theme-accent-purple-text)' }}>{selectedColumnRecord.physicalColumn}</span>
-                </div>
-              </div>
-
-              {/* Arrow Down */}
-              <div
-                className="flex justify-center py-1"
-                style={{ backgroundColor: 'var(--theme-bg-panel)' }}
-              >
-                <ArrowDown className="w-4 h-4" style={{ color: 'var(--theme-text-muted)' }} />
-              </div>
-
-              {/* NetSuite Source Layer */}
-              <div
-                className="p-4 rounded-b-lg"
-                style={{
-                  backgroundColor: 'var(--theme-accent-emerald-bg)',
-                  border: '2px solid var(--theme-accent-emerald-border)',
-                }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Table2 className="w-4 h-4" style={{ color: 'var(--theme-accent-emerald-text)' }} />
-                  <span
-                    className="text-[10px] uppercase tracking-wider font-semibold"
-                    style={{ color: 'var(--theme-accent-emerald-text)' }}
+                    style={{ color: 'var(--theme-layer-netsuite-text)' }}
                   >
                     NetSuite Source
                   </span>
@@ -274,15 +213,139 @@ export const DetailPanel: React.FC = () => {
                   <>
                     {selectedColumnRecord.inferredSource.recordType && (
                       <div className="text-sm mb-1" style={{ color: 'var(--theme-text-primary)' }}>
-                        Record: <span className="font-medium" style={{ color: 'var(--theme-accent-emerald-text)' }}>{selectedColumnRecord.inferredSource.recordType}</span>
+                        Record: <span className="font-medium" style={{ color: 'var(--theme-layer-netsuite-text)' }}>{selectedColumnRecord.inferredSource.recordType}</span>
                       </div>
                     )}
                     {selectedColumnRecord.inferredSource.fieldName && (
                       <div className="text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
-                        Field: <span className="font-mono" style={{ color: 'var(--theme-accent-emerald-text)' }}>{selectedColumnRecord.inferredSource.fieldName}</span>
+                        Field: <span className="font-mono" style={{ color: 'var(--theme-layer-netsuite-text)' }}>{selectedColumnRecord.inferredSource.fieldName}</span>
                       </div>
                     )}
                   </>
+                )}
+              </div>
+
+              {/* Arrow Down */}
+              <div
+                className="flex justify-center py-1"
+                style={{ backgroundColor: 'var(--theme-bg-panel)' }}
+              >
+                <ArrowDown className="w-4 h-4" style={{ color: 'var(--theme-text-muted)' }} />
+              </div>
+
+              {/* Data Warehouse Layer (MIDDLE) */}
+              <div
+                className="p-4"
+                style={{
+                  backgroundColor: 'var(--theme-layer-dw-bg)',
+                  borderLeft: '2px solid var(--theme-layer-dw-border)',
+                  borderRight: '2px solid var(--theme-layer-dw-border)',
+                }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <Database className="w-4 h-4" style={{ color: 'var(--theme-layer-dw-text)' }} />
+                  <span
+                    className="text-[10px] uppercase tracking-wider font-semibold"
+                    style={{ color: 'var(--theme-layer-dw-text)' }}
+                  >
+                    Data Warehouse
+                  </span>
+                </div>
+                <div className="text-[10px] mb-1" style={{ color: 'var(--theme-text-muted)' }}>
+                  Table:
+                </div>
+                <div
+                  className="font-mono text-xs mb-3 break-all px-2 py-1 rounded"
+                  style={{
+                    color: 'var(--theme-layer-dw-text)',
+                    backgroundColor: 'var(--theme-layer-dw-bg)',
+                  }}
+                >
+                  {selectedColumnRecord.physicalTable}
+                </div>
+                <div className="text-[10px] mb-1" style={{ color: 'var(--theme-text-muted)' }}>
+                  Column:
+                </div>
+                <div
+                  className="font-mono text-xs break-all px-2 py-1 rounded"
+                  style={{
+                    color: 'var(--theme-layer-dw-text)',
+                    backgroundColor: 'var(--theme-layer-dw-bg)',
+                  }}
+                >
+                  {selectedColumnRecord.physicalColumn}
+                </div>
+                {/* Table type badge */}
+                <div className="mt-3">
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider"
+                    style={{
+                      color: getTableTypeBadge(selectedColumnRecord.physicalTable).includes('Fact')
+                        ? 'var(--theme-accent-amber-text)'
+                        : 'var(--theme-layer-dw-text)',
+                      backgroundColor: getTableTypeBadge(selectedColumnRecord.physicalTable).includes('Fact')
+                        ? 'var(--theme-accent-amber-bg)'
+                        : 'var(--theme-layer-dw-bg)',
+                      border: `1px solid ${getTableTypeBadge(selectedColumnRecord.physicalTable).includes('Fact')
+                        ? 'var(--theme-accent-amber-border)'
+                        : 'var(--theme-layer-dw-border)'}`,
+                    }}
+                  >
+                    {getTableTypeBadge(selectedColumnRecord.physicalTable)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Arrow Down */}
+              <div
+                className="flex justify-center py-1"
+                style={{ backgroundColor: 'var(--theme-bg-panel)' }}
+              >
+                <ArrowDown className="w-4 h-4" style={{ color: 'var(--theme-text-muted)' }} />
+              </div>
+
+              {/* Semantic/Presentation Layer (BOTTOM - data destination) */}
+              <div
+                className="p-4 rounded-b-lg"
+                style={{
+                  backgroundColor: 'var(--theme-layer-semantic-bg)',
+                  border: '2px solid var(--theme-layer-semantic-border)',
+                }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Columns className="w-4 h-4" style={{ color: 'var(--theme-layer-semantic-text)' }} />
+                  <span
+                    className="text-[10px] uppercase tracking-wider font-semibold"
+                    style={{ color: 'var(--theme-layer-semantic-text)' }}
+                  >
+                    Semantic Layer
+                  </span>
+                </div>
+                <div
+                  className="text-sm font-semibold mb-1"
+                  style={{ color: 'var(--theme-text-primary)' }}
+                >
+                  {selectedColumnRecord.presentationColumn}
+                </div>
+                <div className="text-xs" style={{ color: 'var(--theme-text-tertiary)' }}>
+                  Table: {selectedColumnRecord.presentationTable}
+                </div>
+                {selectedColumnRecord.inferredSource.isNsawGenerated && (
+                  <div
+                    className="mt-2 inline-flex items-center gap-1 px-2 py-1 rounded"
+                    style={{
+                      backgroundColor: 'var(--theme-layer-derived-bg)',
+                      border: '1px solid var(--theme-layer-derived-border)',
+                    }}
+                  >
+                    <Zap className="w-3 h-3" style={{ color: 'var(--theme-layer-derived-text)' }} />
+                    <span
+                      className="text-[10px] font-medium uppercase"
+                      style={{ color: 'var(--theme-layer-derived-text)' }}
+                    >
+                      NSAW Derived Field
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
@@ -293,7 +356,7 @@ export const DetailPanel: React.FC = () => {
         {!selectedColumnRecord && (
           <section>
             <div className="flex items-center gap-2 mb-3" style={{ color: 'var(--theme-text-secondary)' }}>
-              <Info className="w-4 h-4" style={{ color: 'var(--theme-accent-blue-text)' }} />
+              <Info className="w-4 h-4" style={{ color: 'var(--theme-layer-semantic-text)' }} />
               <h3 className="text-sm font-medium">Summary</h3>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -304,7 +367,7 @@ export const DetailPanel: React.FC = () => {
                   border: '1px solid var(--theme-border-default)',
                 }}
               >
-                <div className="text-lg font-bold" style={{ color: 'var(--theme-accent-blue-text)' }}>
+                <div className="text-lg font-bold" style={{ color: 'var(--theme-layer-semantic-text)' }}>
                   {selection.presentationTable
                     ? selectedRecords.length
                     : subjectAreaInfo?.presentationTables.length || 0}
@@ -323,7 +386,7 @@ export const DetailPanel: React.FC = () => {
                   border: '1px solid var(--theme-border-default)',
                 }}
               >
-                <div className="text-lg font-bold" style={{ color: 'var(--theme-accent-purple-text)' }}>
+                <div className="text-lg font-bold" style={{ color: 'var(--theme-layer-dw-text)' }}>
                   {selection.presentationTable
                     ? new Set(selectedRecords.map(r => r.physicalTable)).size
                     : subjectAreaInfo?.recordCount || 0}
@@ -343,8 +406,8 @@ export const DetailPanel: React.FC = () => {
         {selection.presentationTable && !selectedColumnRecord && selectedRecords.length > 0 && (
           <section>
             <div className="flex items-center gap-2 mb-3" style={{ color: 'var(--theme-text-secondary)' }}>
-              <Database className="w-4 h-4" style={{ color: 'var(--theme-accent-blue-text)' }} />
-              <h3 className="text-sm font-medium">Physical Tables</h3>
+              <Database className="w-4 h-4" style={{ color: 'var(--theme-layer-dw-text)' }} />
+              <h3 className="text-sm font-medium">DW Tables</h3>
             </div>
             <div className="space-y-2">
               {Array.from(new Set(selectedRecords.map(r => r.physicalTable))).map((table) => {
@@ -367,7 +430,7 @@ export const DetailPanel: React.FC = () => {
                     <div className="flex items-start justify-between">
                       <div
                         className="font-mono text-xs break-all"
-                        style={{ color: 'var(--theme-accent-purple-text)' }}
+                        style={{ color: 'var(--theme-layer-dw-text)' }}
                       >
                         {table}
                       </div>
@@ -384,7 +447,7 @@ export const DetailPanel: React.FC = () => {
                         className="mt-1 text-[10px]"
                         style={{ color: 'var(--theme-text-muted)' }}
                       >
-                        NetSuite: <span style={{ color: 'var(--theme-accent-emerald-text)' }}>{inferredRecord}</span>
+                        NetSuite: <span style={{ color: 'var(--theme-layer-netsuite-text)' }}>{inferredRecord}</span>
                       </div>
                     )}
                   </div>
@@ -398,8 +461,8 @@ export const DetailPanel: React.FC = () => {
         {!selection.presentationTable && subjectAreaInfo && (
           <section>
             <div className="flex items-center gap-2 mb-3" style={{ color: 'var(--theme-text-secondary)' }}>
-              <Layers className="w-4 h-4" style={{ color: 'var(--theme-accent-blue-text)' }} />
-              <h3 className="text-sm font-medium">Presentation Tables</h3>
+              <Layers className="w-4 h-4" style={{ color: 'var(--theme-layer-semantic-text)' }} />
+              <h3 className="text-sm font-medium">Semantic Tables</h3>
             </div>
             <div className="space-y-1 max-h-64 overflow-y-auto">
               {subjectAreaInfo.presentationTables.slice(0, 15).map((table) => {
@@ -417,7 +480,7 @@ export const DetailPanel: React.FC = () => {
                     <span
                       className="text-xs transition-colors"
                       style={{
-                        color: isHovered ? 'var(--theme-accent-blue-text)' : 'var(--theme-text-secondary)',
+                        color: isHovered ? 'var(--theme-layer-semantic-text)' : 'var(--theme-text-secondary)',
                       }}
                     >
                       {table}
@@ -438,11 +501,12 @@ export const DetailPanel: React.FC = () => {
         )}
 
         {/* Generic 3-Layer Legend (show when table selected but no column) */}
+        {/* Shows correct data flow: NetSuite → DW → Semantic */}
         {selection.presentationTable && !selectedColumnRecord && selectedRecords.length > 0 && (
           <section>
             <div className="flex items-center gap-2 mb-3" style={{ color: 'var(--theme-text-secondary)' }}>
-              <Code className="w-4 h-4" style={{ color: 'var(--theme-accent-blue-text)' }} />
-              <h3 className="text-sm font-medium">Lineage Layers</h3>
+              <Code className="w-4 h-4" style={{ color: 'var(--theme-layer-semantic-text)' }} />
+              <h3 className="text-sm font-medium">Data Flow Layers</h3>
             </div>
             <p
               className="text-[10px] mb-3"
@@ -451,39 +515,41 @@ export const DetailPanel: React.FC = () => {
               Click a column node in the graph to view its full lineage path.
             </p>
             <div className="flex flex-col gap-2">
+              {/* NetSuite Source - data origin */}
               <div
                 className="flex items-center gap-2 p-2 rounded"
                 style={{
-                  backgroundColor: 'var(--theme-accent-blue-bg)',
-                  border: '1px dashed var(--theme-accent-blue-border)',
+                  backgroundColor: 'var(--theme-layer-netsuite-bg)',
+                  border: '1px dashed var(--theme-layer-netsuite-border)',
                 }}
               >
                 <span
                   className="w-2 h-2 rounded-full"
                   style={{
-                    backgroundColor: 'var(--theme-accent-blue)',
-                    boxShadow: '0 0 8px var(--theme-accent-blue-glow)',
+                    backgroundColor: 'var(--theme-layer-netsuite)',
+                    boxShadow: '0 0 8px var(--theme-layer-netsuite-glow)',
                   }}
                 />
                 <span
                   className="text-[10px] uppercase tracking-tight"
                   style={{ color: 'var(--theme-text-tertiary)' }}
                 >
-                  Presentation Layer
+                  NetSuite Source
                 </span>
               </div>
+              {/* DW - middle layer */}
               <div
                 className="flex items-center gap-2 p-2 rounded"
                 style={{
-                  backgroundColor: 'var(--theme-accent-purple-bg)',
-                  border: '1px dashed var(--theme-accent-purple-border)',
+                  backgroundColor: 'var(--theme-layer-dw-bg)',
+                  border: '1px dashed var(--theme-layer-dw-border)',
                 }}
               >
                 <span
                   className="w-2 h-2 rounded-full"
                   style={{
-                    backgroundColor: 'var(--theme-accent-purple)',
-                    boxShadow: '0 0 8px var(--theme-accent-purple-glow)',
+                    backgroundColor: 'var(--theme-layer-dw)',
+                    boxShadow: '0 0 8px var(--theme-layer-dw-glow)',
                   }}
                 />
                 <span
@@ -493,25 +559,48 @@ export const DetailPanel: React.FC = () => {
                   Data Warehouse (DW)
                 </span>
               </div>
+              {/* Semantic - data destination */}
               <div
                 className="flex items-center gap-2 p-2 rounded"
                 style={{
-                  backgroundColor: 'var(--theme-accent-emerald-bg)',
-                  border: '1px dashed var(--theme-accent-emerald-border)',
+                  backgroundColor: 'var(--theme-layer-semantic-bg)',
+                  border: '1px dashed var(--theme-layer-semantic-border)',
                 }}
               >
                 <span
                   className="w-2 h-2 rounded-full"
                   style={{
-                    backgroundColor: 'var(--theme-accent-emerald)',
-                    boxShadow: '0 0 8px var(--theme-accent-emerald-glow)',
+                    backgroundColor: 'var(--theme-layer-semantic)',
+                    boxShadow: '0 0 8px var(--theme-layer-semantic-glow)',
                   }}
                 />
                 <span
                   className="text-[10px] uppercase tracking-tight"
                   style={{ color: 'var(--theme-text-tertiary)' }}
                 >
-                  NetSuite Source (Inferred)
+                  Semantic Layer
+                </span>
+              </div>
+              {/* Derived - NSAW calculations */}
+              <div
+                className="flex items-center gap-2 p-2 rounded"
+                style={{
+                  backgroundColor: 'var(--theme-layer-derived-bg)',
+                  border: '1px dashed var(--theme-layer-derived-border)',
+                }}
+              >
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{
+                    backgroundColor: 'var(--theme-layer-derived)',
+                    boxShadow: '0 0 8px var(--theme-layer-derived-glow)',
+                  }}
+                />
+                <span
+                  className="text-[10px] uppercase tracking-tight"
+                  style={{ color: 'var(--theme-text-tertiary)' }}
+                >
+                  NSAW Derived
                 </span>
               </div>
             </div>

@@ -1,5 +1,68 @@
 # Changelog
 
+## Star Schema Node Styling & Layout Polish (2026-02-05)
+
+### What Changed
+- Outer ring nodes (semantic + NSAW derived) now **solid filled** instead of border-only (emerald/orange)
+- Outer node radius increased from 6→10px, dimension nodes from 10→12px
+- Fact node labels use **multi-line wrapping** at underscore boundaries (via `wrapLabel()` + SVG `<tspan>`)
+- All ring distances tightened ~25% for a more compact layout (`computeRadii` scaling)
+- Settling transition smoothed: viewport `<g>` gets `transition: transform 0.6s ease-out`, post-settle charge reduced from -120→-60 (was -20, too abrupt)
+- Legend updated to show filled dots for presentation layer entries
+
+## Star Schema Outer Ring + Detailed Flow Redesign (2026-02-05)
+
+### What Changed
+
+**Star Schema Network — 3-Ring Layout with Outer Presentation Nodes**
+- Added outer ring of presentation table nodes beyond the existing dimension ring
+- **Green border-only** circles: Semantic/presentation tables (non-NSAW)
+- **Orange border-only** circles: NSAW-derived tables (all source DW tables are NSAW-generated)
+- Edges connect DW table nodes (inner) → presentation table nodes (outer) via solid lines
+- Outer ring at 140% of dimension ring distance, capped at 40 nodes (`MAX_OUTER_NODES`)
+- `forceOrbital` expanded: outer nodes orbit at 30% of dimension node speed
+- `forceRadial` returns `outerRing` distance for `presentation`/`derived` roles with stronger pull (0.5 vs 0.3)
+- Clicking an outer node navigates directly to that presentation table's detailed flow view
+- Legend updated with "Presentation Layer" section showing green + orange border-only circles
+- Tooltip shows "Semantic Table" / "NSAW Derived Table" for outer nodes
+
+**Detailed Flow View — 3-Column Layout Matching Data Flow**
+- Column layout: NetSuite Source (blue, left) → DW Tables (purple, center) → Semantic Fields (green/orange, right)
+- Added `derivedColumn` node type (orange) for presentation columns whose ALL source tables are NSAW-generated
+- Physical table nodes now display **FACT / DIMENSION / HIERARCHY** badges via `parsePhysicalTableType()`
+- `tableType` field added to `LineageNodeData`: `'fact' | 'dimension' | 'hierarchy' | 'other'`
+- Edge colors differentiated: derived edges use `--theme-layer-derived`, normal use `--theme-layer-dw`
+- MiniMap, legend, and click handlers updated to support `derivedColumn` type
+
+**Detail Panel — Enhanced Lineage Info**
+- DW section now shows explicit "Table:" and "Column:" labels with styled backgrounds
+- Table type badge (Fact Table / Dimension Table / Hierarchy / etc.) using `parsePhysicalTableType()`
+- "NSAW Derived Field" badge with Zap icon for derived fields in the semantic layer section
+- Data Flow Layers legend now includes the orange "NSAW Derived" layer
+
+**Theme Variables — New Derived Layer Colors**
+- Added `--theme-layer-derived-*` (9 variables) in both dark and light mode
+- Added `--theme-d3-outer-*` (5 variables) for star schema outer ring styling
+- Added `.glow-derived` utility class
+
+### Bug Fix
+
+**Double-opacity on outer edges (invisible edges)**
+- `--theme-d3-edge-outer` was `rgba(71, 85, 105, 0.3)` — alpha baked into CSS color
+- SVG `opacity={0.3}` applied on top → effective visibility: 0.3 × 0.3 = 9% (invisible)
+- **Fix:** Changed to solid hex `#475569`, controlling opacity exclusively via SVG `opacity` attribute
+- **Lesson:** Never use `rgba()` for D3 stroke/fill CSS variables. D3 SVG applies its own `opacity` attr, causing multiplication.
+
+### Files Modified
+- `styles/theme.css` — Derived layer + D3 outer ring color variables
+- `utils/graphLayout.ts` — `derivedColumn` type, `tableType` classification, edge color split
+- `components/nodes/LineageNode.tsx` — Derived node style, fact/dim badge, Zap icon
+- `components/views/StarSchemaNetwork.tsx` — Outer ring nodes, 3-ring force simulation, SVG rendering
+- `components/DetailPanel.tsx` — Enhanced DW info, table type badge, NSAW derived indicator
+- `components/GraphViewer.tsx` — Legend, minimap, click handler for derived type
+
+---
+
 ## StarSchemaNetwork - D3 Force Graph Overhaul (2026-02-03)
 
 ### What's Working Now

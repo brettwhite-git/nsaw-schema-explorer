@@ -7,13 +7,13 @@
 
 import { Node, Edge } from 'reactflow';
 import dagre from 'dagre';
-import { EnrichedLineageRecord, InferredSource } from '../types';
+import { EnrichedLineageRecord, InferredSource, parsePhysicalTableType } from '../types';
 
 // ======================
 // Type Definitions
 // ======================
 
-export type LineageNodeType = 'presentationColumn' | 'physicalTable' | 'physicalColumn';
+export type LineageNodeType = 'netsuiteSource' | 'physicalTable' | 'physicalColumn' | 'presentationColumn' | 'derivedColumn';
 
 export interface LineageNodeData {
   label: string;
@@ -24,6 +24,8 @@ export interface LineageNodeData {
   isNsawGenerated?: boolean;
   inferredSource?: InferredSource;
   columnCount?: number;  // Number of columns for physical tables
+  tableType?: 'fact' | 'dimension' | 'hierarchy' | 'other';  // For DW table badge display
+  isDerived?: boolean;  // Whether this presentation column comes from NSAW-derived tables
   isSelected?: boolean;  // Whether this node is currently selected
   isHovered?: boolean;   // Whether this node is hovered or connected to hovered node
 }
@@ -53,6 +55,13 @@ const LAYOUT_CONFIG = {
 // ======================
 
 /**
+ * Generate unique ID for NetSuite source node (grouped by inferred record type)
+ */
+export function getNetSuiteSourceId(recordType: string): string {
+  return `ns-source-${recordType.replace(/\s+/g, '-').toLowerCase()}`;
+}
+
+/**
  * Generate unique ID for presentation column node
  */
 export function getPresentationColumnId(presentationColumn: string): string {
@@ -80,10 +89,12 @@ export function getPhysicalColumnId(physicalTable: string, physicalColumn: strin
 /**
  * Transform lineage records into React Flow nodes and edges
  *
- * Creates a 3-column layout:
- * - Column 1 (left): Presentation columns
- * - Column 2 (center): Physical tables (grouped)
- * - Column 3 (right): Physical columns (optional, when detailed view needed)
+ * Creates a 3-column layout with correct data flow direction:
+ * - Column 1 (left): NetSuite source records (inferred, grouped by record type)
+ * - Column 2 (center): Physical DW tables
+ * - Column 3 (right): Presentation/Semantic columns
+ *
+ * Flow direction: NetSuite Source → DW → Semantic (left to right)
  *
  * @param records - Array of EnrichedLineageRecord from selected presentation table
  * @param includePhysicalColumns - Whether to show individual physical columns (default: false)
@@ -101,8 +112,11 @@ export function transformRecordsToGraph(
   const presentationColumns = new Map<string, EnrichedLineageRecord[]>();
   const physicalTables = new Map<string, EnrichedLineageRecord[]>();
   const physicalColumns = new Map<string, EnrichedLineageRecord>();
+  // NEW: Group by inferred NetSuite record type
+  const nsSourcesByType = new Map<string, Set<string>>(); // recordType → Set of physicalTables
+  const nsawGeneratedTables = new Set<string>(); // Tables that are NSAW-generated (no NS source)
 
-  // Group records by presentation column and physical table
+  // Group records by presentation column, physical table, and inferred NS source
   for (const record of records) {
     // Group by presentation column
     const presColKey = record.presentationColumn;
@@ -123,6 +137,17 @@ export function transformRecordsToGraph(
       const physColKey = `${record.physicalTable}-${record.physicalColumn}`;
       physicalColumns.set(physColKey, record);
     }
+
+    // Group by inferred NS record type
+    const recordType = record.inferredSource.recordType;
+    if (record.inferredSource.isNsawGenerated) {
+      nsawGeneratedTables.add(physTableKey);
+    } else if (recordType) {
+      if (!nsSourcesByType.has(recordType)) {
+        nsSourcesByType.set(recordType, new Set());
+      }
+      nsSourcesByType.get(recordType)!.add(physTableKey);
+    }
   }
 
   // Create dagre graph
@@ -139,10 +164,95 @@ export function transformRecordsToGraph(
   const edges: LineageEdge[] = [];
   const edgeSet = new Set<string>();  // Prevent duplicate edges
 
-  // 1. Create presentation column nodes
+  // 1. Create NetSuite source nodes (LEFT column)
+  for (const [recordType, physTables] of nsSourcesByType) {
+    const nodeId = getNetSuiteSourceId(recordType);
+
+    // Add to dagre with dimensions
+    dagreGraph.setNode(nodeId, {
+      width: LAYOUT_CONFIG.nodeWidth,
+      height: LAYOUT_CONFIG.nodeHeight,
+    });
+
+    // Create React Flow node
+    nodes.push({
+      id: nodeId,
+      type: 'default',
+      position: { x: 0, y: 0 },  // Will be set by dagre
+      data: {
+        label: recordType,
+        sublabel: `${physTables.size} DW table${physTables.size > 1 ? 's' : ''}`,
+        nodeType: 'netsuiteSource',
+      },
+    });
+  }
+
+  // 2. Create physical table nodes (CENTER column)
+  for (const [physTable, tableRecords] of physicalTables) {
+    const nodeId = getPhysicalTableId(physTable);
+    const firstRecord = tableRecords[0];
+    const uniqueColumns = new Set(tableRecords.map(r => r.physicalColumn));
+    const recordType = firstRecord.inferredSource.recordType;
+
+    // Add to dagre with dimensions
+    dagreGraph.setNode(nodeId, {
+      width: LAYOUT_CONFIG.nodeWidth,
+      height: LAYOUT_CONFIG.nodeHeight,
+    });
+
+    // Create React Flow node
+    nodes.push({
+      id: nodeId,
+      type: 'default',
+      position: { x: 0, y: 0 },  // Will be set by dagre
+      data: {
+        label: physTable,
+        sublabel: recordType
+          ? `NetSuite: ${recordType}`
+          : undefined,
+        nodeType: 'physicalTable',
+        records: tableRecords,
+        isNsawGenerated: firstRecord.inferredSource.isNsawGenerated,
+        inferredSource: firstRecord.inferredSource,
+        columnCount: uniqueColumns.size,
+        tableType: (() => {
+          const pt = parsePhysicalTableType(physTable);
+          if (pt === 'fact' || pt === 'enhanced') return 'fact' as const;
+          if (pt === 'dimension') return 'dimension' as const;
+          if (pt === 'hierarchy') return 'hierarchy' as const;
+          return 'other' as const;
+        })(),
+      },
+    });
+
+    // Create edge from NetSuite source to physical table (if not NSAW-generated)
+    if (recordType && !firstRecord.inferredSource.isNsawGenerated) {
+      const sourceId = getNetSuiteSourceId(recordType);
+      const edgeKey = `${sourceId}-${nodeId}`;
+
+      if (!edgeSet.has(edgeKey)) {
+        edgeSet.add(edgeKey);
+        dagreGraph.setEdge(sourceId, nodeId);
+
+        edges.push({
+          id: `edge-${edgeKey}`,
+          source: sourceId,
+          target: nodeId,
+          type: 'smoothstep',
+          animated: false,
+          style: { stroke: 'var(--theme-layer-netsuite)', strokeWidth: 2 },
+        });
+      }
+    }
+  }
+
+  // 3. Create presentation column nodes (RIGHT column)
   for (const [presCol, presRecords] of presentationColumns) {
     const nodeId = getPresentationColumnId(presCol);
     const firstRecord = presRecords[0];
+
+    // Determine if this is a derived column (ALL its physical tables are NSAW-generated)
+    const isDerived = presRecords.every(r => r.inferredSource.isNsawGenerated);
 
     // Add to dagre with dimensions
     dagreGraph.setNode(nodeId, {
@@ -158,46 +268,17 @@ export function transformRecordsToGraph(
       data: {
         label: presCol,
         sublabel: firstRecord.presentationTable,
-        nodeType: 'presentationColumn',
+        nodeType: isDerived ? 'derivedColumn' : 'presentationColumn',
+        isDerived,
         record: firstRecord,
         records: presRecords,
       },
     });
-  }
 
-  // 2. Create physical table nodes
-  for (const [physTable, tableRecords] of physicalTables) {
-    const nodeId = getPhysicalTableId(physTable);
-    const firstRecord = tableRecords[0];
-    const uniqueColumns = new Set(tableRecords.map(r => r.physicalColumn));
-
-    // Add to dagre with dimensions (same as presentation columns for consistency)
-    dagreGraph.setNode(nodeId, {
-      width: LAYOUT_CONFIG.nodeWidth,
-      height: LAYOUT_CONFIG.nodeHeight,
-    });
-
-    // Create React Flow node
-    nodes.push({
-      id: nodeId,
-      type: 'default',
-      position: { x: 0, y: 0 },  // Will be set by dagre
-      data: {
-        label: physTable,
-        sublabel: firstRecord.inferredSource.recordType
-          ? `NetSuite: ${firstRecord.inferredSource.recordType}`
-          : undefined,
-        nodeType: 'physicalTable',
-        records: tableRecords,
-        isNsawGenerated: firstRecord.inferredSource.isNsawGenerated,
-        inferredSource: firstRecord.inferredSource,
-        columnCount: uniqueColumns.size,
-      },
-    });
-
-    // Create edges from presentation columns to this physical table
-    for (const record of tableRecords) {
-      const sourceId = getPresentationColumnId(record.presentationColumn);
+    // Create edges from physical tables to presentation columns
+    // (Reversed direction: DW → Semantic)
+    for (const record of presRecords) {
+      const sourceId = getPhysicalTableId(record.physicalTable);
       const edgeKey = `${sourceId}-${nodeId}`;
 
       if (!edgeSet.has(edgeKey)) {
@@ -210,13 +291,13 @@ export function transformRecordsToGraph(
           target: nodeId,
           type: 'smoothstep',
           animated: false,
-          style: { stroke: 'var(--theme-rf-edge-primary)', strokeWidth: 2 },
+          style: { stroke: isDerived ? 'var(--theme-layer-derived)' : 'var(--theme-layer-dw)', strokeWidth: 2 },
         });
       }
     }
   }
 
-  // 3. Create physical column nodes (if enabled)
+  // 4. Create physical column nodes (if enabled) - these appear between DW tables and Presentation
   if (includePhysicalColumns) {
     for (const [physColKey, record] of physicalColumns) {
       const nodeId = getPhysicalColumnId(record.physicalTable, record.physicalColumn);
@@ -257,7 +338,7 @@ export function transformRecordsToGraph(
           target: nodeId,
           type: 'smoothstep',
           animated: false,
-          style: { stroke: 'var(--theme-rf-edge)', strokeWidth: 1.5 },
+          style: { stroke: 'var(--theme-layer-dw-dark)', strokeWidth: 1.5 },
         });
       }
     }
@@ -287,15 +368,19 @@ export function transformRecordsToGraph(
 
 /**
  * Get edge color based on source node type
+ * Uses layer-based colors: NS (blue) → DW (purple) → Semantic (green)
  */
 export function getEdgeColor(sourceType: LineageNodeType): string {
   switch (sourceType) {
-    case 'presentationColumn':
-      return 'var(--theme-accent-blue)';
+    case 'netsuiteSource':
+      return 'var(--theme-layer-netsuite)';
     case 'physicalTable':
-      return 'var(--theme-rf-edge-primary)';
     case 'physicalColumn':
-      return 'var(--theme-rf-edge)';
+      return 'var(--theme-layer-dw)';
+    case 'presentationColumn':
+      return 'var(--theme-layer-semantic)';
+    case 'derivedColumn':
+      return 'var(--theme-layer-derived)';
     default:
       return 'var(--theme-rf-edge-primary)';
   }
@@ -303,6 +388,7 @@ export function getEdgeColor(sourceType: LineageNodeType): string {
 
 /**
  * Get node background color based on type
+ * Uses layer-based colors: NS (blue) → DW (purple) → Semantic (green)
  */
 export function getNodeColor(nodeType: LineageNodeType, isNsawGenerated?: boolean): string {
   if (isNsawGenerated) {
@@ -310,12 +396,16 @@ export function getNodeColor(nodeType: LineageNodeType, isNsawGenerated?: boolea
   }
 
   switch (nodeType) {
-    case 'presentationColumn':
-      return 'var(--theme-accent-blue-dark)';
+    case 'netsuiteSource':
+      return 'var(--theme-layer-netsuite-dark)';
     case 'physicalTable':
-      return 'var(--theme-accent-emerald)';
+      return 'var(--theme-layer-dw-dark)';
     case 'physicalColumn':
-      return 'var(--theme-accent-cyan-dark)';
+      return 'var(--theme-layer-dw)';
+    case 'presentationColumn':
+      return 'var(--theme-layer-semantic-dark)';
+    case 'derivedColumn':
+      return 'var(--theme-layer-derived-bg)';
     default:
       return 'var(--theme-border-strong)';
   }
@@ -323,6 +413,7 @@ export function getNodeColor(nodeType: LineageNodeType, isNsawGenerated?: boolea
 
 /**
  * Get node border color based on type
+ * Uses layer-based colors: NS (blue) → DW (purple) → Semantic (green)
  */
 export function getNodeBorderColor(nodeType: LineageNodeType, isNsawGenerated?: boolean): string {
   if (isNsawGenerated) {
@@ -330,12 +421,15 @@ export function getNodeBorderColor(nodeType: LineageNodeType, isNsawGenerated?: 
   }
 
   switch (nodeType) {
-    case 'presentationColumn':
-      return 'var(--theme-accent-blue)';
+    case 'netsuiteSource':
+      return 'var(--theme-layer-netsuite)';
     case 'physicalTable':
-      return 'var(--theme-accent-emerald)';
     case 'physicalColumn':
-      return 'var(--theme-accent-cyan)';
+      return 'var(--theme-layer-dw)';
+    case 'presentationColumn':
+      return 'var(--theme-layer-semantic)';
+    case 'derivedColumn':
+      return 'var(--theme-layer-derived)';
     default:
       return 'var(--theme-text-muted)';
   }

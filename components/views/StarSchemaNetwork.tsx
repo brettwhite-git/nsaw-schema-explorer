@@ -22,7 +22,7 @@ import { drag } from 'd3-drag';
 import { select } from 'd3-selection';
 import { useData } from '../../data/DataContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { parsePhysicalTableType, PhysicalTableType } from '../../types';
+import { parsePhysicalTableType, PhysicalTableType, isNsawGeneratedTable } from '../../types';
 
 // ======================
 // Types
@@ -31,7 +31,7 @@ import { parsePhysicalTableType, PhysicalTableType } from '../../types';
 interface NetworkNode extends SimulationNodeDatum {
   id: string;
   label: string;
-  role: 'primaryFact' | 'secondaryFact' | 'dimension';
+  role: 'primaryFact' | 'secondaryFact' | 'dimension' | 'presentation' | 'derived';
   columnCount: number;
   radius: number;
 }
@@ -49,13 +49,18 @@ const CONFIG = {
   // Node radii
   PRIMARY_FACT_RADIUS: 50,      // Large hub
   SECONDARY_FACT_RADIUS: 30,    // Medium nodes
-  DIMENSION_RADIUS: 10,         // Small endpoints
+  DIMENSION_RADIUS: 12,         // Small endpoints
 
   // Force parameters - pushed out for better text visibility
   LINK_DISTANCE: 180,
   CHARGE_STRENGTH: -120,
   COLLISION_PADDING: 20,
   RADIAL_STRENGTH: 0.3,      // Increased from 0.15 for better ring cohesion
+
+  // Outer ring (presentation tables)
+  OUTER_RADIUS: 10,          // Filled dots, slightly smaller than dimension (12)
+  OUTER_BORDER_WIDTH: 2,     // Border-only styling
+  MAX_OUTER_NODES: 40,       // Performance cap
 
   // Animation - smooth and gentle
   ALPHA_START: 0.4,
@@ -110,15 +115,44 @@ function truncateLabel(label: string, maxLen: number): string {
   return label.substring(0, maxLen - 1) + '\u2026';
 }
 
+// Wrap label into multiple lines, breaking at underscores
+function wrapLabel(label: string, maxCharsPerLine: number, maxLines: number): string[] {
+  if (label.length <= maxCharsPerLine) return [label];
+  const parts = label.split('_');
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (let i = 0; i < parts.length; i++) {
+    const separator = currentLine ? '_' : '';
+    const tentative = currentLine + separator + parts[i];
+    if (tentative.length > maxCharsPerLine && currentLine) {
+      lines.push(currentLine);
+      currentLine = parts[i];
+      if (lines.length >= maxLines - 1) {
+        // Last line — join remaining parts and truncate
+        const remaining = parts.slice(i).join('_');
+        lines.push(truncateLabel(remaining, maxCharsPerLine));
+        return lines;
+      }
+    } else {
+      currentLine = tentative;
+    }
+  }
+  if (currentLine) lines.push(currentLine);
+  return lines;
+}
+
 // Viewport-responsive radial distances
 function computeRadii(width: number, height: number, nodeCount: number) {
   const maxRadius = Math.min(width, height) / 2 - 80;
   const scaleFactor = Math.min(1, Math.max(0.5, nodeCount / 30));
-  const dimensionRing = maxRadius * scaleFactor;
+  const dimensionRing = maxRadius * scaleFactor * 0.75;
   const secondaryRing = dimensionRing * 0.43;
+  const outerRing = Math.max(dimensionRing * 1.35, 180);
   return {
-    secondaryRing: Math.max(secondaryRing, 80),
-    dimensionRing: Math.max(dimensionRing, 150),
+    secondaryRing: Math.max(secondaryRing, 60),
+    dimensionRing: Math.max(dimensionRing, 120),
+    outerRing,
   };
 }
 
@@ -164,8 +198,12 @@ function forceOrbital(centerX: number, centerY: number, speed: number = 0.002) {
 
   const force: any = (alpha: number) => {
     for (const node of nodes) {
-      if (node.role !== 'dimension') continue;
       if (node.fx != null) continue;
+
+      let nodeSpeed = 0;
+      if (node.role === 'dimension') nodeSpeed = speed;
+      else if (node.role === 'presentation' || node.role === 'derived') nodeSpeed = speed * 0.3;
+      else continue;
 
       const x = (node.x ?? 0) - centerX;
       const y = (node.y ?? 0) - centerY;
@@ -175,8 +213,8 @@ function forceOrbital(centerX: number, centerY: number, speed: number = 0.002) {
       const tx = -y / dist;
       const ty = x / dist;
 
-      node.vx = (node.vx ?? 0) + tx * speed * dist * 0.01;
-      node.vy = (node.vy ?? 0) + ty * speed * dist * 0.01;
+      node.vx = (node.vx ?? 0) + tx * nodeSpeed * dist * 0.01;
+      node.vy = (node.vy ?? 0) + ty * nodeSpeed * dist * 0.01;
     }
   };
 
@@ -197,19 +235,22 @@ export const StarSchemaNetwork: React.FC = () => {
 
   // Resolve CSS custom properties into concrete values for D3 computed logic.
   // Re-evaluated when theme changes so the force graph picks up new palette.
+  // ALL nodes are DW tables, so we use purple (DW layer color) throughout
   const colors = useMemo(() => {
     const get = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     return {
-      primaryFact: get('--theme-accent-purple'),
-      secondaryFact: get('--theme-accent-purple-dark'),
-      dimension: get('--theme-accent-blue'),
+      // All nodes are purple (DW layer) - facts are filled, dimensions are rings
+      primaryFact: get('--theme-layer-dw'),
+      secondaryFact: get('--theme-layer-dw-dark'),
+      dimension: get('--theme-layer-dw'),  // Changed from blue to purple
+      dimensionStroke: get('--theme-layer-dw'),  // For hollow ring stroke
       edge: get('--theme-d3-edge'),
       text: get('--theme-d3-text'),
       textBright: get('--theme-d3-text-bright'),
-      hoverPrimary: get('--theme-d3-hover-primary'),
-      hoverSecondary: get('--theme-d3-hover-secondary'),
-      hoverDimension: get('--theme-d3-hover-dimension'),
-      hoverStroke: get('--theme-d3-hover-stroke'),
+      hoverPrimary: get('--theme-layer-dw-light'),
+      hoverSecondary: get('--theme-layer-dw'),
+      hoverDimension: get('--theme-layer-dw-light'),  // Changed from blue hover to purple hover
+      hoverStroke: get('--theme-layer-dw-light'),
       bgElevated: get('--theme-bg-elevated'),
       bgHover: get('--theme-bg-hover'),
       bgSurface: get('--theme-bg-surface'),
@@ -222,8 +263,14 @@ export const StarSchemaNetwork: React.FC = () => {
       textMuted: get('--theme-text-muted'),
       surfaceLegend: get('--theme-surface-legend'),
       gridDot: get('--theme-grid-dot'),
-      accentPurpleText: get('--theme-accent-purple-text'),
+      accentPurpleText: get('--theme-layer-dw-text'),
       accentBlueText: get('--theme-accent-blue-text'),
+      // Outer ring (presentation layer) colors
+      outerPresentation: get('--theme-d3-outer-presentation'),
+      outerDerived: get('--theme-d3-outer-derived'),
+      hoverOuterPres: get('--theme-d3-outer-hover-pres'),
+      hoverOuterDerived: get('--theme-d3-outer-hover-derived'),
+      edgeOuter: get('--theme-d3-edge-outer'),
     };
   }, [theme]);
 
@@ -268,12 +315,12 @@ export const StarSchemaNetwork: React.FC = () => {
   // Build network data
   const { initialNodes, initialLinks, stats, radii } = useMemo(() => {
     if (!dataIndex || !selection.subjectArea || dimensions.width === 0 || dimensions.height === 0) {
-      return { initialNodes: [], initialLinks: [], stats: { primary: '', secondaryCount: 0, dimCount: 0 }, radii: { secondaryRing: 80, dimensionRing: 150 } };
+      return { initialNodes: [], initialLinks: [], stats: { primary: '', secondaryCount: 0, dimCount: 0 }, radii: { secondaryRing: 80, dimensionRing: 150, outerRing: 220 } };
     }
 
     const records = dataIndex.bySubjectArea.get(selection.subjectArea) || [];
     if (records.length === 0) {
-      return { initialNodes: [], initialLinks: [], stats: { primary: '', secondaryCount: 0, dimCount: 0 }, radii: { secondaryRing: 80, dimensionRing: 150 } };
+      return { initialNodes: [], initialLinks: [], stats: { primary: '', secondaryCount: 0, dimCount: 0 }, radii: { secondaryRing: 80, dimensionRing: 150, outerRing: 220 } };
     }
 
     const subjectAreaKey = extractSubjectAreaKey(selection.subjectArea);
@@ -346,7 +393,7 @@ export const StarSchemaNetwork: React.FC = () => {
 
     // Compute viewport-responsive radii
     const totalNodeCount = (primaryFact ? 1 : 0) + secondaryFacts.length + dimensionTables.length;
-    const { secondaryRing, dimensionRing } = computeRadii(dimensions.width, dimensions.height, totalNodeCount);
+    const { secondaryRing, dimensionRing, outerRing } = computeRadii(dimensions.width, dimensions.height, totalNodeCount);
 
     // Build nodes
     const networkNodes: NetworkNode[] = [];
@@ -408,6 +455,56 @@ export const StarSchemaNetwork: React.FC = () => {
       }
     });
 
+    // === Build outer ring nodes (presentation tables) ===
+    const presentationTableMap = new Map<string, {
+      physicalTables: Set<string>;
+      columnCount: number;
+    }>();
+
+    for (const record of records) {
+      const presTable = record.presentationTable;
+      if (!presentationTableMap.has(presTable)) {
+        presentationTableMap.set(presTable, {
+          physicalTables: new Set(),
+          columnCount: 0,
+        });
+      }
+      const info = presentationTableMap.get(presTable)!;
+      info.physicalTables.add(record.physicalTable);
+      info.columnCount++;
+    }
+
+    // Create outer nodes - cap at MAX_OUTER_NODES for performance
+    const outerEntries = Array.from(presentationTableMap.entries())
+      .slice(0, CONFIG.MAX_OUTER_NODES);
+
+    outerEntries.forEach(([presTable, info], index) => {
+      // A presentation table is "derived" if ALL its physical tables are NSAW-generated
+      const isDerived = Array.from(info.physicalTables).every(pt => isNsawGeneratedTable(pt));
+      const role: NetworkNode['role'] = isDerived ? 'derived' : 'presentation';
+      const nodeId = `pres-${presTable.replace(/\s+/g, '-')}`;
+      const angle = (2 * Math.PI * index) / outerEntries.length;
+      const radius = outerRing + (Math.random() - 0.5) * 30;
+
+      networkNodes.push({
+        id: nodeId,
+        label: presTable,
+        role: role,
+        columnCount: info.columnCount,
+        radius: CONFIG.OUTER_RADIUS,
+        x: centerX + Math.cos(angle) * radius,
+        y: centerY + Math.sin(angle) * radius,
+      });
+
+      // Create edges from physical tables to this presentation node
+      for (const physTable of info.physicalTables) {
+        const physNodeExists = networkNodes.some(n => n.id === physTable);
+        if (physNodeExists) {
+          networkLinks.push({ source: physTable, target: nodeId });
+        }
+      }
+    });
+
     return {
       initialNodes: networkNodes,
       initialLinks: networkLinks,
@@ -416,7 +513,7 @@ export const StarSchemaNetwork: React.FC = () => {
         secondaryCount: secondaryFacts.length,
         dimCount: dimensionTables.length,
       },
-      radii: { secondaryRing, dimensionRing },
+      radii: { secondaryRing, dimensionRing, outerRing },
     };
   }, [dataIndex, selection.subjectArea, dimensions]);
 
@@ -452,14 +549,25 @@ export const StarSchemaNetwork: React.FC = () => {
         .strength(CONFIG.CHARGE_STRENGTH)
       )
       .force('collide', forceCollide<NetworkNode>()
-        .radius(d => d.radius + CONFIG.COLLISION_PADDING)
+        .radius(d => {
+          if (d.role === 'presentation' || d.role === 'derived') return d.radius + 5;
+          return d.radius + CONFIG.COLLISION_PADDING;
+        })
         .strength(0.8)
       )
       .force('radial', forceRadial<NetworkNode>(
-        d => d.role === 'dimension' ? radii.dimensionRing : d.role === 'secondaryFact' ? radii.secondaryRing : 0,
+        d => {
+          if (d.role === 'presentation' || d.role === 'derived') return radii.outerRing;
+          if (d.role === 'dimension') return radii.dimensionRing;
+          if (d.role === 'secondaryFact') return radii.secondaryRing;
+          return 0;
+        },
         centerX,
         centerY
-      ).strength(CONFIG.RADIAL_STRENGTH))
+      ).strength(d => {
+        if (d.role === 'presentation' || d.role === 'derived') return 0.5;
+        return CONFIG.RADIAL_STRENGTH;
+      }))
       .force('orbital', forceOrbital(centerX, centerY, 0.003))
       .alpha(CONFIG.ALPHA_START)
       .alphaDecay(CONFIG.ALPHA_DECAY)
@@ -504,14 +612,14 @@ export const StarSchemaNetwork: React.FC = () => {
         simulation.alphaDecay(0);
         simulation.alphaTarget(0.01);
 
-        // Reduce forces during floating to prevent jitter
+        // Gently reduce forces for floating — keep enough charge to prevent springy expansion
         simulation.force('charge', forceManyBody<NetworkNode>()
-          .strength(-20)
+          .strength(-60)
         );
         simulation.force('link', forceLink<NetworkNode, NetworkLink>(simLinks)
           .id(d => d.id)
           .distance(CONFIG.LINK_DISTANCE)
-          .strength(0.1)
+          .strength(0.2)
         );
       }
     });
@@ -586,6 +694,13 @@ export const StarSchemaNetwork: React.FC = () => {
   // Handle node click - navigate to presentation table
   const handleNodeClick = useCallback((node: NetworkNode) => {
     if (!dataIndex || !selection.subjectArea) return;
+
+    // Outer nodes (presentation/derived) navigate directly to detailed flow
+    if (node.role === 'presentation' || node.role === 'derived') {
+      selectPresentationTable(selection.subjectArea!, node.label);
+      setViewMode('detailedFlow');
+      return;
+    }
 
     // Find presentation tables that use this physical table
     const records = dataIndex.byPhysicalTable.get(node.id) || [];
@@ -678,6 +793,7 @@ export const StarSchemaNetwork: React.FC = () => {
       >
         <g
           transform={`translate(${transform.x}, ${transform.y}) scale(${transform.scale})`}
+          style={{ transition: isPanning || draggingNode ? 'none' : 'transform 0.6s ease-out' }}
         >
           {/* Edges - always visible, subtle gray */}
           <g className="edges">
@@ -689,6 +805,10 @@ export const StarSchemaNetwork: React.FC = () => {
               const isHovered = hoveredNode &&
                 (hoveredNode.id === source.id || hoveredNode.id === target.id);
 
+              // Outer edge styling: edges connecting to presentation/derived nodes
+              const isOuterEdge = target.role === 'presentation' || target.role === 'derived'
+                || source.role === 'presentation' || source.role === 'derived';
+
               return (
                 <line
                   key={i}
@@ -696,9 +816,9 @@ export const StarSchemaNetwork: React.FC = () => {
                   y1={source.y}
                   x2={target.x}
                   y2={target.y}
-                  stroke="var(--theme-d3-edge)"
-                  strokeWidth={isHovered ? 2 : 1}
-                  opacity={isHovered ? 0.8 : 0.5}
+                  stroke={isOuterEdge ? colors.edgeOuter : 'var(--theme-d3-edge)'}
+                  strokeWidth={isOuterEdge ? (isHovered ? 1.5 : 0.8) : (isHovered ? 2 : 1)}
+                  opacity={isOuterEdge ? (isHovered ? 0.7 : 0.35) : (isHovered ? 0.8 : 0.5)}
                 />
               );
             })}
@@ -711,15 +831,34 @@ export const StarSchemaNetwork: React.FC = () => {
               const isDragging = draggingNode === node.id;
               const isFact = node.role === 'primaryFact' || node.role === 'secondaryFact';
               const isPrimary = node.role === 'primaryFact';
+              const isDimension = node.role === 'dimension';
+              const isOuter = node.role === 'presentation' || node.role === 'derived';
 
-              // Color based on role -- use resolved CSS variable values
-              let fill = colors.dimension;
-              if (isPrimary) fill = colors.primaryFact;
-              else if (node.role === 'secondaryFact') fill = colors.secondaryFact;
+              // Node styling: facts and outer are filled, dimensions are hollow rings
+              let fill: string;
+              let stroke: string;
+              let strokeWidth = 2;
 
-              // Hover/drag brightening
-              if (isHovered || isDragging) {
-                fill = isPrimary ? colors.hoverPrimary : node.role === 'secondaryFact' ? colors.hoverSecondary : colors.hoverDimension;
+              if (isOuter) {
+                fill = node.role === 'presentation' ? colors.outerPresentation : colors.outerDerived;
+                stroke = 'none';
+                if (isHovered || isDragging) {
+                  fill = node.role === 'presentation' ? colors.hoverOuterPres : colors.hoverOuterDerived;
+                }
+              } else if (isFact) {
+                fill = isPrimary ? colors.primaryFact : colors.secondaryFact;
+                stroke = 'none';
+                if (isHovered || isDragging) {
+                  fill = isPrimary ? colors.hoverPrimary : colors.hoverSecondary;
+                  stroke = colors.hoverStroke;
+                }
+              } else {
+                // dimension
+                fill = 'transparent';
+                stroke = colors.dimensionStroke;
+                if (isHovered || isDragging) {
+                  stroke = colors.hoverDimension;
+                }
               }
 
               return (
@@ -767,31 +906,60 @@ export const StarSchemaNetwork: React.FC = () => {
                   className={`cursor-pointer ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                   style={{ transition: isDragging ? 'none' : 'transform 0.1s ease-out' }}
                 >
-                  {/* Node circle */}
+                  {/* Node circle - facts are filled, dimensions and outer are hollow rings */}
                   <circle
                     cx={node.x}
                     cy={node.y}
-                    r={isHovered || isDragging ? node.radius + 3 : node.radius}
+                    r={isHovered || isDragging ? node.radius + (isOuter ? 2 : 3) : node.radius}
                     fill={fill}
-                    stroke={isHovered || isDragging ? colors.hoverStroke : 'none'}
-                    strokeWidth={2}
+                    stroke={stroke}
+                    strokeWidth={strokeWidth}
                   />
 
-                  {/* Label - inside for large nodes, above for small nodes */}
-                  {isFact ? (
-                    // Label inside the node for facts
-                    <text
-                      x={node.x}
-                      y={node.y}
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      fill="var(--theme-d3-text-bright)"
-                      fontSize={isPrimary ? 11 : 9}
-                      fontWeight={600}
-                      className="pointer-events-none select-none"
-                    >
-                      {truncateLabel(node.label, isPrimary ? 14 : 10)}
-                    </text>
+                  {/* Label - inside for large nodes, above for small DW nodes, below for outer (hover only) */}
+                  {isFact ? (() => {
+                    // Multi-line label inside the node for facts
+                    const fontSize = isPrimary ? 11 : 9;
+                    const lineHeight = isPrimary ? 14 : 12;
+                    const maxChars = isPrimary ? 12 : 10;
+                    const maxLines = isPrimary ? 3 : 2;
+                    const lines = wrapLabel(node.label, maxChars, maxLines);
+                    const startY = (node.y || 0) - ((lines.length - 1) * lineHeight) / 2;
+                    return (
+                      <text
+                        x={node.x}
+                        y={startY}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill="var(--theme-d3-text-bright)"
+                        fontSize={fontSize}
+                        fontWeight={600}
+                        className="pointer-events-none select-none"
+                      >
+                        {lines.map((line, i) => (
+                          <tspan key={i} x={node.x} dy={i === 0 ? 0 : lineHeight}>
+                            {line}
+                          </tspan>
+                        ))}
+                      </text>
+                    );
+                  })()
+                  : isOuter ? (
+                    // Label below outer nodes - only visible on hover to reduce clutter
+                    (isHovered || isDragging) && (
+                      <text
+                        x={node.x}
+                        y={(node.y || 0) + node.radius + 11}
+                        textAnchor="middle"
+                        dominantBaseline="auto"
+                        fill={node.role === 'presentation' ? colors.outerPresentation : colors.outerDerived}
+                        fontSize={7}
+                        fontWeight={600}
+                        className="pointer-events-none select-none"
+                      >
+                        {truncateLabel(node.label, 18)}
+                      </text>
+                    )
                   ) : (
                     // Label above the node for dimensions
                     <text
@@ -822,10 +990,10 @@ export const StarSchemaNetwork: React.FC = () => {
           border: `1px solid ${colors.borderStrong}`,
         }}
       >
-        <div className="text-[10px] uppercase tracking-wider mb-2 font-medium" style={{ color: colors.textMuted }}>Legend</div>
+        <div className="text-[10px] uppercase tracking-wider mb-2 font-medium" style={{ color: colors.textMuted }}>DW Tables</div>
         <div className="flex flex-col gap-2 text-xs" style={{ color: colors.textSecondary }}>
           <div className="flex items-center gap-2">
-            <span className="w-4 h-4 rounded-full" style={{ background: colors.primaryFact, border: `2px solid ${colors.hoverPrimary}` }} />
+            <span className="w-4 h-4 rounded-full" style={{ background: colors.primaryFact }} />
             <span>Primary Fact Table</span>
           </div>
           <div className="flex items-center gap-2">
@@ -833,8 +1001,29 @@ export const StarSchemaNetwork: React.FC = () => {
             <span>Secondary Fact Tables</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ background: colors.dimension }} />
+            {/* Hollow ring for dimensions */}
+            <span
+              className="w-2.5 h-2.5 rounded-full"
+              style={{
+                background: 'transparent',
+                border: `2px solid ${colors.dimensionStroke}`,
+              }}
+            />
             <span>Dimension Tables</span>
+          </div>
+        </div>
+        {/* Presentation Layer section */}
+        <div className="text-[10px] uppercase tracking-wider mb-2 mt-3 font-medium" style={{ color: colors.textMuted }}>
+          Presentation Layer
+        </div>
+        <div className="flex flex-col gap-2 text-xs" style={{ color: colors.textSecondary }}>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: colors.outerPresentation }} />
+            <span>Semantic Tables</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: colors.outerDerived }} />
+            <span>NSAW Derived</span>
           </div>
         </div>
       </div>
@@ -918,12 +1107,21 @@ export const StarSchemaNetwork: React.FC = () => {
             {hoveredNode.label}
           </div>
           <div className="text-xs mt-0.5" style={{ color: colors.textMuted }}>
+            {hoveredNode.role === 'presentation'
+              ? 'Semantic Table'
+              : hoveredNode.role === 'derived'
+                ? 'NSAW Derived Table'
+                : ''
+            }
+            {hoveredNode.role === 'presentation' || hoveredNode.role === 'derived' ? ' \u2022 ' : ''}
             {hoveredNode.columnCount} columns
           </div>
           <div className="text-[10px] mt-1.5 pt-1.5" style={{ color: colors.accentBlueText, borderTop: `1px solid ${colors.borderStrong}` }}>
-            {hoveredNode.role === 'primaryFact'
-              ? 'Click to view lineage'
-              : 'Drag to reposition \u2022 Click to view lineage'
+            {hoveredNode.role === 'presentation' || hoveredNode.role === 'derived'
+              ? 'Click to view detailed flow'
+              : hoveredNode.role === 'primaryFact'
+                ? 'Click to view lineage'
+                : 'Drag to reposition \u2022 Click to view lineage'
             }
           </div>
         </div>

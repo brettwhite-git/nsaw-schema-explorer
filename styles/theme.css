@@ -124,6 +124,54 @@
   --theme-accent-cyan-text:   #7dd3fc;
   --theme-accent-cyan-border: rgba(125, 211, 252, 0.4);
 
+  /* --- Layer Colors (Semantic data lineage layers) ------------------------
+     NetSuite Source (left)  → DW Physical (center) → Semantic/Presentation (right)
+     Blue                    → Purple               → Green
+     -------------------------------------------------------------------------- */
+  --theme-layer-netsuite:             #3b82f6;
+  --theme-layer-netsuite-light:       #60a5fa;
+  --theme-layer-netsuite-dark:        #2563eb;
+  --theme-layer-netsuite-bg:          rgba(59, 130, 246, 0.05);
+  --theme-layer-netsuite-border:      rgba(59, 130, 246, 0.3);
+  --theme-layer-netsuite-glow:        rgba(59, 130, 246, 0.5);
+  --theme-layer-netsuite-ring:        rgba(59, 130, 246, 0.3);
+  --theme-layer-netsuite-border-half: rgba(59, 130, 246, 0.5);
+  --theme-layer-netsuite-text:        #60a5fa;
+
+  --theme-layer-dw:                   #a855f7;
+  --theme-layer-dw-light:             #c084fc;
+  --theme-layer-dw-dark:              #7c3aed;
+  --theme-layer-dw-bg:                rgba(168, 85, 247, 0.05);
+  --theme-layer-dw-border:            rgba(168, 85, 247, 0.3);
+  --theme-layer-dw-glow:              rgba(168, 85, 247, 0.5);
+  --theme-layer-dw-ring:              rgba(168, 85, 247, 0.3);
+  --theme-layer-dw-border-half:       rgba(168, 85, 247, 0.5);
+  --theme-layer-dw-text:              #c084fc;
+
+  --theme-layer-semantic:             #10b981;
+  --theme-layer-semantic-light:       #34d399;
+  --theme-layer-semantic-dark:        #059669;
+  --theme-layer-semantic-bg:          rgba(16, 185, 129, 0.05);
+  --theme-layer-semantic-border:      rgba(16, 185, 129, 0.3);
+  --theme-layer-semantic-glow:        rgba(16, 185, 129, 0.5);
+  --theme-layer-semantic-ring:        rgba(16, 185, 129, 0.3);
+  --theme-layer-semantic-border-half: rgba(16, 185, 129, 0.5);
+  --theme-layer-semantic-text:        #34d399;
+
+  /* --- Layer: Derived / NSAW-calculated (orange) -------------------------
+     Used for NSAW-generated fields and derived calculations in both
+     the star schema outer ring and the detailed flow right column.
+     -------------------------------------------------------------------------- */
+  --theme-layer-derived:             #f97316;
+  --theme-layer-derived-light:       #fb923c;
+  --theme-layer-derived-dark:        #ea580c;
+  --theme-layer-derived-bg:          rgba(249, 115, 22, 0.05);
+  --theme-layer-derived-border:      rgba(249, 115, 22, 0.3);
+  --theme-layer-derived-border-half: rgba(249, 115, 22, 0.5);
+  --theme-layer-derived-glow:        rgba(249, 115, 22, 0.5);
+  --theme-layer-derived-ring:        rgba(249, 115, 22, 0.3);
+  --theme-layer-derived-text:        #fb923c;
+
   /* --- Additional accent text (TopNav search results) --------------------- */
   --theme-accent-green-text:  #4ade80;                         /* green-400 */
   --theme-accent-yellow-text: #facc15;                         /* yellow-400 */
@@ -150,6 +198,13 @@
   --theme-d3-hover-secondary:  #a78bfa;
   --theme-d3-hover-dimension:  #60a5fa;
   --theme-d3-hover-stroke:     #60a5fa;
+
+  /* --- D3: Outer ring (presentation/derived nodes in star schema) --------- */
+  --theme-d3-outer-presentation:     #10b981;                       /* emerald-500: green border */
+  --theme-d3-outer-derived:          #f97316;                       /* orange-500: orange border */
+  --theme-d3-outer-hover-pres:       #34d399;                       /* emerald-400 */
+  --theme-d3-outer-hover-derived:    #fb923c;                       /* orange-400 */
+  --theme-d3-edge-outer:             #475569;                       /* solid color, opacity controlled by SVG */
 
   /* --- React Flow --------------------------------------------------------- */
   --theme-rf-edge:         #475569;
@@ -266,6 +321,52 @@
   --theme-accent-green-text:  #16a34a;              /* green-600 */
   --theme-accent-yellow-text: #ca8a04;              /* yellow-600 */
 
+  /* --- Layer Colors (Semantic data lineage layers) ------------------------
+     NetSuite Source (left)  → DW Physical (center) → Semantic/Presentation (right)
+     Blue                    → Purple               → Green
+     Light mode uses darker shades for contrast on white backgrounds
+     -------------------------------------------------------------------------- */
+  --theme-layer-netsuite:             #2563eb;
+  --theme-layer-netsuite-light:       #3b82f6;
+  --theme-layer-netsuite-dark:        #1d4ed8;
+  --theme-layer-netsuite-bg:          rgba(37, 99, 235, 0.06);
+  --theme-layer-netsuite-border:      rgba(37, 99, 235, 0.25);
+  --theme-layer-netsuite-glow:        rgba(37, 99, 235, 0.3);
+  --theme-layer-netsuite-ring:        rgba(37, 99, 235, 0.25);
+  --theme-layer-netsuite-border-half: rgba(37, 99, 235, 0.4);
+  --theme-layer-netsuite-text:        #2563eb;
+
+  --theme-layer-dw:                   #9333ea;
+  --theme-layer-dw-light:             #a855f7;
+  --theme-layer-dw-dark:              #6d28d9;
+  --theme-layer-dw-bg:                rgba(147, 51, 234, 0.06);
+  --theme-layer-dw-border:            rgba(147, 51, 234, 0.25);
+  --theme-layer-dw-glow:              rgba(147, 51, 234, 0.3);
+  --theme-layer-dw-ring:              rgba(147, 51, 234, 0.25);
+  --theme-layer-dw-border-half:       rgba(147, 51, 234, 0.4);
+  --theme-layer-dw-text:              #7c3aed;
+
+  --theme-layer-semantic:             #059669;
+  --theme-layer-semantic-light:       #10b981;
+  --theme-layer-semantic-dark:        #047857;
+  --theme-layer-semantic-bg:          rgba(5, 150, 105, 0.06);
+  --theme-layer-semantic-border:      rgba(5, 150, 105, 0.25);
+  --theme-layer-semantic-glow:        rgba(5, 150, 105, 0.3);
+  --theme-layer-semantic-ring:        rgba(5, 150, 105, 0.25);
+  --theme-layer-semantic-border-half: rgba(5, 150, 105, 0.4);
+  --theme-layer-semantic-text:        #059669;
+
+  /* --- Layer: Derived / NSAW-calculated (orange, darker for light bg) ---- */
+  --theme-layer-derived:             #ea580c;
+  --theme-layer-derived-light:       #f97316;
+  --theme-layer-derived-dark:        #c2410c;
+  --theme-layer-derived-bg:          rgba(234, 88, 12, 0.06);
+  --theme-layer-derived-border:      rgba(234, 88, 12, 0.25);
+  --theme-layer-derived-border-half: rgba(234, 88, 12, 0.4);
+  --theme-layer-derived-glow:        rgba(234, 88, 12, 0.3);
+  --theme-layer-derived-ring:        rgba(234, 88, 12, 0.25);
+  --theme-layer-derived-text:        #ea580c;
+
   /* --- Grid --------------------------------------------------------------- */
   --theme-grid-dot: #cbd5e1;                        /* slate-300 (was slate-200, more visible) */
 
@@ -288,6 +389,13 @@
   --theme-d3-hover-secondary:  #8b5cf6;
   --theme-d3-hover-dimension:  #3b82f6;
   --theme-d3-hover-stroke:     #3b82f6;
+
+  /* --- D3: Outer ring (presentation/derived nodes in star schema) --------- */
+  --theme-d3-outer-presentation:     #059669;                       /* emerald-600 */
+  --theme-d3-outer-derived:          #ea580c;                       /* orange-600 */
+  --theme-d3-outer-hover-pres:       #10b981;                       /* emerald-500 */
+  --theme-d3-outer-hover-derived:    #f97316;                       /* orange-500 */
+  --theme-d3-edge-outer:             #94a3b8;                       /* solid color, opacity controlled by SVG */
 
   /* --- React Flow --------------------------------------------------------- */
   --theme-rf-edge:         #cbd5e1;
@@ -344,6 +452,7 @@
 .glow-purple  { box-shadow: 0 0 8px var(--theme-accent-purple-glow); }
 .glow-emerald { box-shadow: 0 0 8px var(--theme-accent-emerald-glow); }
 .glow-orange  { box-shadow: 0 0 8px var(--theme-accent-orange-glow); }
+.glow-derived { box-shadow: 0 0 8px var(--theme-layer-derived-glow); }
 .glow-active  { box-shadow: 0 0 15px var(--theme-node-active-glow); }
 
 /* --- Theme transition class -----------------------------------------------

@@ -70,6 +70,8 @@ const DetailedFlowContent: React.FC<DetailedFlowContentProps> = ({
 
   // Track which node is currently hovered for edge highlighting
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+  // Track when layout is ready to prevent visible "snap" from corner to center
+  const [isLayoutReady, setIsLayoutReady] = useState(false);
 
   // Fit view on initial render and when nodes change significantly
   // Using onInit ensures React Flow is ready before fitting
@@ -77,6 +79,8 @@ const DetailedFlowContent: React.FC<DetailedFlowContentProps> = ({
     // Delay slightly to ensure dagre positions are applied
     setTimeout(() => {
       fitView(getFitViewOptions(nodes.length));
+      // Mark layout as ready after fitView completes
+      setIsLayoutReady(true);
     }, 50);
   }, [fitView, nodes.length]);
 
@@ -131,42 +135,50 @@ const DetailedFlowContent: React.FC<DetailedFlowContentProps> = ({
   }, [edges, hoveredNodeId]);
 
   return (
-    <ReactFlow
-      nodes={displayNodes}
-      edges={displayEdges}
-      onNodesChange={onNodesChange}
-      onEdgesChange={onEdgesChange}
-      onNodeClick={onNodeClick}
-      onNodeMouseEnter={onNodeMouseEnter}
-      onNodeMouseLeave={onNodeMouseLeave}
-      onInit={handleInit}
-      nodeTypes={lineageNodeTypes}
-      minZoom={0.1}
-      maxZoom={2}
-      defaultEdgeOptions={{
-        type: 'smoothstep',
-        style: { stroke: 'var(--theme-rf-edge-primary)', strokeWidth: 2 },
-      }}
-      style={{ background: 'var(--theme-bg-surface)' }}
+    <div
+      className={`w-full h-full transition-opacity duration-150 ${isLayoutReady ? 'opacity-100' : 'opacity-0'}`}
     >
-      <Background color="var(--theme-grid-dot)" gap={20} size={1.5} />
-      <Controls />
-      <MiniMap
-        nodeColor={(node) => {
-          switch (node.data?.nodeType) {
-            case 'presentationColumn':
-              return getThemeColor('--theme-accent-blue', '#3b82f6');
-            case 'physicalTable':
-              return getThemeColor('--theme-accent-purple', '#a855f7');
-            case 'physicalColumn':
-              return getThemeColor('--theme-accent-orange', '#f97316');
-            default:
-              return getThemeColor('--theme-text-muted', '#64748b');
-          }
+      <ReactFlow
+        nodes={displayNodes}
+        edges={displayEdges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onNodeClick={onNodeClick}
+        onNodeMouseEnter={onNodeMouseEnter}
+        onNodeMouseLeave={onNodeMouseLeave}
+        onInit={handleInit}
+        nodeTypes={lineageNodeTypes}
+        minZoom={0.1}
+        maxZoom={2}
+        defaultEdgeOptions={{
+          type: 'smoothstep',
+          style: { stroke: 'var(--theme-rf-edge-primary)', strokeWidth: 2 },
         }}
-        maskColor={getThemeColor('--theme-bg-overlay', 'rgba(15, 23, 42, 0.8)')}
-      />
-    </ReactFlow>
+        style={{ background: 'var(--theme-bg-surface)' }}
+      >
+        <Background color="var(--theme-grid-dot)" gap={20} size={1.5} />
+        <Controls />
+        <MiniMap
+          nodeColor={(node) => {
+            switch (node.data?.nodeType) {
+              case 'netsuiteSource':
+                return getThemeColor('--theme-layer-netsuite', '#3b82f6');
+              case 'presentationColumn':
+                return getThemeColor('--theme-layer-semantic', '#10b981');
+              case 'derivedColumn':
+                return getThemeColor('--theme-layer-derived', '#f97316');
+              case 'physicalTable':
+                return getThemeColor('--theme-layer-dw', '#a855f7');
+              case 'physicalColumn':
+                return getThemeColor('--theme-layer-dw-dark', '#7c3aed');
+              default:
+                return getThemeColor('--theme-text-muted', '#64748b');
+            }
+          }}
+          maskColor={getThemeColor('--theme-bg-overlay', 'rgba(15, 23, 42, 0.8)')}
+        />
+      </ReactFlow>
+    </div>
   );
 };
 
@@ -195,7 +207,7 @@ export const GraphViewer: React.FC = () => {
       data: {
         ...node.data,
         isSelected:
-          node.data.nodeType === 'presentationColumn'
+          (node.data.nodeType === 'presentationColumn' || node.data.nodeType === 'derivedColumn')
             ? node.data.record?.presentationColumn === selection.presentationColumn
             : node.data.nodeType === 'physicalTable'
               ? node.data.label === selection.physicalTable
@@ -220,8 +232,8 @@ export const GraphViewer: React.FC = () => {
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     const data = node.data as LineageNodeData;
 
-    if (data.nodeType === 'presentationColumn' && data.record) {
-      // Clicking a presentation column selects it and shows its lineage
+    if ((data.nodeType === 'presentationColumn' || data.nodeType === 'derivedColumn') && data.record) {
+      // Clicking a presentation or derived column selects it and shows its lineage
       setSelection({
         presentationColumn: data.record.presentationColumn,
         physicalTable: data.record.physicalTable,
@@ -274,7 +286,7 @@ export const GraphViewer: React.FC = () => {
         />
       </ReactFlowProvider>
 
-      {/* Detailed Flow Legend */}
+      {/* Detailed Flow Legend - shows data flow direction */}
       <div
         className="absolute top-4 right-4 z-10 backdrop-blur-sm rounded-lg border p-3"
         style={{
@@ -286,20 +298,24 @@ export const GraphViewer: React.FC = () => {
           className="text-[10px] uppercase tracking-wider mb-2 font-medium"
           style={{ color: 'var(--theme-text-tertiary)' }}
         >
-          Legend
+          Data Flow →
         </div>
         <div className="flex flex-col gap-2 text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--theme-accent-blue)' }} />
-            <span>Presentation Fields</span>
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--theme-layer-netsuite)' }} />
+            <span>NetSuite Source</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--theme-accent-purple)' }} />
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--theme-layer-dw)' }} />
             <span>DW Tables</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--theme-accent-orange)' }} />
-            <span>DW Columns</span>
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--theme-layer-semantic)' }} />
+            <span>Semantic Fields</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--theme-layer-derived)' }} />
+            <span>NSAW Derived</span>
           </div>
         </div>
       </div>
