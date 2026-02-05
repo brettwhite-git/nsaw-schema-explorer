@@ -205,21 +205,60 @@ export function isNsawGeneratedTable(tableName: string): boolean {
 }
 
 /**
+ * Override map for ALL_CAPS compound words where word boundaries are lost.
+ * Keyed on the extracted middle part (between DW_NS_ prefix and type suffix),
+ * applied only when the extracted name is ALL_CAPS with no underscores.
+ * Values drawn from Entity Key CSV Domain Code column.
+ */
+const RECORD_TYPE_OVERRIDES: Record<string, string> = {
+  'ACCOUNTTYPE': 'accountType',
+  'ACCOUNTINGCONTEXT': 'accountingContext',
+  'BILLINGCLASS': 'billingClass',
+  'COSTESTIMATETYPE': 'costEstimateType',
+  'CUSTOMERSUBSIDIARYRELATIONSHIP': 'customerSubsidiaryRelationship',
+  'VENDORSUBSIDIARYRELATIONSHIP': 'vendorSubsidiaryRelationship',
+  'EMPLOYEESUBSIDIARYRELATIONSHIP': 'employeeSubsidiaryRelationship',
+  'ITEMGROUP': 'itemGroup',
+  'CALENDAREVENT': 'calendarEvent',
+  'PHONECALL': 'phoneCall',
+  'BILLINGACCOUNT': 'billingAccount',
+};
+
+/**
  * Infer NetSuite record type from DW table name
  * DW_NS_CUSTOMER_D → customer
+ * DW_NS_accountingBook_D → accountingBook (preserves authored casing)
+ * DW_NS_SALES_ORDER_LINES_F → salesOrder (strips _LINES suffix)
+ * DW_NS_ACCOUNTTYPE_D → accountType (override for compound ALL_CAPS)
  */
 export function inferRecordType(dwTableName: string): string | null {
   if (isNsawGeneratedTable(dwTableName)) {
     return null;
   }
 
-  // Remove DW_NS_ prefix and _D/_F/_DH suffix
-  const match = dwTableName.match(/^DW_NS_(.+?)(_D|_F|_DH|_EF|_G|_P|_TL|_CF_DH)?(_SEC)?$/);
+  // Remove DW_NS_ prefix, optional _LINES/_SNAPSHOT, type suffix, and _SEC suffix
+  const match = dwTableName.match(/^DW_NS_(.+?)(_LINES|_SNAPSHOT)?(_D|_F|_DH|_EF|_G|_P|_TL|_CF_DH)?(_SEC)?$/);
   if (!match) return null;
 
   let recordName = match[1];
 
-  // Convert UPPER_SNAKE to camelCase
+  // If the extracted name already contains lowercase letters, it was authored
+  // with intentional casing (e.g., accountingBook) — preserve it, just ensure
+  // the first letter is lowercase for consistency with NS record ID conventions.
+  const hasLowercase = /[a-z]/.test(recordName);
+  if (hasLowercase) {
+    return recordName.charAt(0).toLowerCase() + recordName.slice(1);
+  }
+
+  // ALL_CAPS path: check override map for compound words without underscores
+  if (!recordName.includes('_')) {
+    const override = RECORD_TYPE_OVERRIDES[recordName];
+    if (override) {
+      return override;
+    }
+  }
+
+  // Standard ALL_CAPS with underscores: convert UPPER_SNAKE to camelCase
   recordName = recordName
     .toLowerCase()
     .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());

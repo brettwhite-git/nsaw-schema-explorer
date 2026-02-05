@@ -44,7 +44,7 @@ npm run preview  # Preview production build
 ### Component Hierarchy
 ```
 App.tsx (wraps with DataProvider)
-├── LoadingScreen.tsx   # Shown during CSV load
+├── LoadingScreen.tsx   # ASCII ∞ infinity loop animation during CSV load
 ├── TopNav.tsx          # Search bar with grouped results dropdown
 ├── ViewModeSelector.tsx # View mode buttons (Overview, Detailed, Table)
 ├── GraphLegend.tsx     # Color legend for graph
@@ -99,7 +99,7 @@ config/
 ```
 data/
 ├── DataContext.tsx    # React Context: selection state, search, data index
-├── dataLoader.ts      # CSV parsing with PapaParse, builds DataIndex
+├── dataLoader.ts      # CSV parsing with PapaParse (worker mode), builds DataIndex
 └── searchIndex.ts     # FlexSearch integration for fast fuzzy search
 ```
 
@@ -270,6 +270,16 @@ The 3-layer lineage path (NS → DW → Semantic) uses a connected pipeline patt
 - Between sections: `2px` gradient separator using `linear-gradient(to right, colorA, colorB)`
 - No arrow icons — the colored left rail implies top-to-bottom directionality
 
+### LoadingScreen Infinity Animation (LoadingScreen.tsx)
+- Hand-crafted Unicode box-drawing ∞ symbol (╭╮╰╯╱╲╳─│), 5 rows × 25 chars
+- `InfinityLoader` extracted as separate component to avoid conditional hooks (error branch returns early in parent)
+- 44-position `TRACE_PATH` traces figure-8 outline; animated tracer with 10-frame fade trail
+- `<pre>` block with per-character `<span>` coloring using `var(--theme-accent-cyan-text)` and `var(--theme-text-faint)`
+- JetBrains Mono font at 16px, `FRAME_MS` and `STEPS_PER_TICK` constants control speed
+
+### PapaParse Main Thread Blocking Trap
+`Papa.parse()` runs synchronously by default, blocking the main thread for ~300-500ms on 56k rows. This prevents any `setInterval`/`requestAnimationFrame` callbacks from firing (JavaScript is single-threaded). The loading animation appears frozen because no frames can paint during synchronous parsing. **Fix:** `worker: true` moves parsing to a Web Worker. Trade-off: `transformHeader` and other function-based config options can't be used with workers (functions aren't serializable) — trim headers manually in post-processing instead.
+
 ### JSX Ternary Fragment Trap
 When adding multiple sibling JSX elements inside a ternary branch (`? ... : ...`), wrap in `<>...</>`. Each ternary branch must return a single JSX expression. This commonly breaks when inserting a second element beneath an existing one inside a conditional.
 
@@ -299,9 +309,20 @@ When adding multiple sibling JSX elements inside a ternary branch (`? ... : ...`
 
 ### Utility Functions
 - `isNsawGeneratedTable()` - Detects NSAW-only tables (DAY_D, FISCALCALPERIOD, etc.)
-- `inferRecordType()` - Extracts NetSuite record from DW table name (DW_NS_CUSTOMER_D -> customer)
+- `inferRecordType()` - Extracts NetSuite record from DW table name using 3-tier logic:
+  1. Mixed-case names preserved as-is (`DW_NS_accountingBook_D` → `accountingBook`)
+  2. ALL_CAPS without underscores checked against `RECORD_TYPE_OVERRIDES` map (`ACCOUNTTYPE` → `accountType`)
+  3. ALL_CAPS with underscores: standard snake_to_camelCase (`SALES_ORDER` → `salesOrder`)
+  - Also strips `_LINES` and `_SNAPSHOT` intermediate suffixes before type suffix
 - `inferFieldName()` - Converts DW column to camelCase field name
 - `parsePhysicalTableType()` - Classifies DW tables by suffix (_F=fact, _D=dimension, _DH=hierarchy, etc.)
+
+### Inference Accuracy (back-tested against Entity Key CSV + NS Records Catalog)
+- **30.6% exact match**, 23% case-only mismatch, 46.4% structural divergence (readable names vs NS abbreviated domain codes)
+- **Zero true misidentifications** — the 46.4% "different" cases produce MORE READABLE names than NS internal IDs (e.g., `salesOrder` vs `SalesOrdTransactions`)
+- NetSuite record IDs have inconsistent casing (`Customer` PascalCase, `employee` lowercase, `accountingBook` camelCase)
+- All transaction DW tables (fact `_F`) map to the single NS `transaction` record — our inference preserves the specific transaction type which is better for lineage
+- Override map in `types.ts` covers 11 compound ALL_CAPS words where word boundaries are lost
 
 ## Physical Table Naming Convention
 DW tables follow suffix patterns that indicate their role:
@@ -403,14 +424,15 @@ Fonts: Inter (UI, via Google Fonts) + JetBrains Mono (technical data). Both load
 CSV file in `/public/` (loaded at runtime):
 - `25R4_NS_Semantic_Model_Lineage - 25R4_NS_Semantic_Model_Lineage.csv` - Main lineage data (~8MB, 56k+ rows)
 
-Supporting files (not currently used in app):
-- `25R4_NS_BI_View_Objects_in_Data_Enrichment - Sheet1.csv` - 378 entity names (reference list)
-- `25R4_NS_Data_Augmentation_Entity_Key_List - Sheet1.csv` - 660 entity-to-table key mappings with domain codes
+Supporting/validation files (in `/public/`, not loaded by app at runtime):
+- `25R4_NS_BI_View_Objects_in_Data_Enrichment - Sheet1.csv` - 378 entity names (single-column reference list)
+- `25R4_NS_Data_Augmentation_Entity_Key_List - Sheet1.csv` - 660 entity-to-table key mappings; columns: `Entity Name`, `Domain Code`, `Entity Keys`, `Table Name`, `Table Column`. Used as ground truth for back-testing `inferRecordType()` (330 unique DW tables). Table names use mixed case (`DW_NS_account_D` vs `DW_NS_ACCOUNTTYPE_D`).
 - `25R4_Fusion_NS_Analytics_Tables.html` - Reference doc showing physical table organization by functional area
 
 ### Data Content Limitations
 - CSV data contains field-level lineage mappings only (source → target paths)
 - No calculation formulas, measure definitions, or expression logic exists in any data file
-- 17 `_CF` tables appear in lineage but their calculation logic is not in the dataset
+- 17 `_CF` tables appear in lineage but their calculation logic is not in the dataset — these are NSAW warehouse constructs not visible in the NS Records Catalog
 - "Derived" and "Calculated" column names are identifiers, not formulas
-- The Data Augmentation Entity Keys CSV provides entity-to-table-to-key mappings that could validate `inferredSource` accuracy (future enhancement)
+- `inferFieldName()` has NOT been back-tested against NS Schema Viewer field IDs (only `inferRecordType()` has been validated)
+- `inferFieldName()` has a known compound-word limitation: `ACCOUNTNUMBER` → `accountnumber` (loses word boundary). No override map exists for fields — would need ground truth data (NS Schema Viewer field IDs) to build one.

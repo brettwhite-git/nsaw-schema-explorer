@@ -34,19 +34,42 @@ export async function loadLineageData(): Promise<DataIndex> {
   }
   const csvText = await response.text();
 
-  // Parse CSV
-  const parseResult = Papa.parse<CsvRow>(csvText, {
-    header: true,
-    skipEmptyLines: true,
-    transformHeader: (header) => header.trim(),
-  });
+  // Parse CSV in a Web Worker so the main thread stays free for animation.
+  // worker:true means transformHeader can't be used (functions aren't serializable),
+  // so we trim header names via the raw field access below instead.
+  const parseResult = await new Promise<Papa.ParseResult<CsvRow>>(
+    (resolve, reject) => {
+      Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true,
+        worker: true,
+        complete: (results: Papa.ParseResult<CsvRow>) => resolve(results),
+        error: (err: Error) => reject(err),
+      });
+    },
+  );
 
   if (parseResult.errors.length > 0) {
     console.warn('CSV parsing warnings:', parseResult.errors);
   }
 
+  // Normalize header keys: trim whitespace that transformHeader used to handle.
+  // Worker mode can't use transformHeader (functions aren't serializable).
+  const data: CsvRow[] = parseResult.meta.fields?.some(f => f !== f.trim())
+    ? parseResult.data.map(row => {
+        const clean = {} as CsvRow;
+        for (const [k, v] of Object.entries(row as Record<string, string>)) {
+          (clean as Record<string, string>)[k.trim()] = v;
+        }
+        return clean;
+      })
+    : parseResult.data;
+
+  // Yield to event loop so animation frames can paint before synchronous indexing
+  await new Promise(resolve => setTimeout(resolve, 0));
+
   // Transform to enriched records
-  const records: EnrichedLineageRecord[] = parseResult.data
+  const records: EnrichedLineageRecord[] = data
     .filter(row => row['Physical Table']?.startsWith('DW_NS_')) // Filter out SQL queries
     .map(row => {
       const physicalTable = row['Physical Table']?.trim() || '';
