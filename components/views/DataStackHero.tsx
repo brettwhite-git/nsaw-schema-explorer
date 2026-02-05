@@ -8,7 +8,7 @@ export const DataStackHero: React.FC = () => {
   return (
     <div
       className="flex-1 w-full h-full relative blueprint-grid overflow-hidden"
-      style={{ background: 'var(--theme-bg-inset)' }}
+      style={{ backgroundColor: 'var(--theme-bg-inset)' }}
     >
       {/* HUD inner border */}
       <div

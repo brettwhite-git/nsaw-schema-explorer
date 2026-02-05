@@ -67,7 +67,7 @@ export function Breadcrumbs() {
           onMouseLeave={() => setSubjectAreaHovered(false)}
           className="transition-colors"
           style={{
-            color: subjectAreaHovered ? 'var(--theme-accent-blue-light)' : 'var(--theme-accent-blue-text)',
+            color: subjectAreaHovered ? 'var(--theme-accent-cyan-light)' : 'var(--theme-accent-cyan-text)',
             textDecoration: subjectAreaHovered ? 'underline' : 'none',
           }}
         >

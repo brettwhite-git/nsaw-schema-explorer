@@ -46,7 +46,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
             onMouseLeave={() => setRetryHovered(false)}
             className="mt-6 px-4 py-2 rounded-md text-sm font-medium transition-colors"
             style={{
-              backgroundColor: retryHovered ? 'var(--theme-accent-blue)' : 'var(--theme-accent-blue-dark)',
+              backgroundColor: retryHovered ? 'var(--theme-accent-cyan)' : 'var(--theme-accent-cyan-dark)',
               color: 'var(--theme-text-primary)',
             }}
           >
@@ -67,11 +67,11 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
           <div
             className="p-4 rounded-xl border"
             style={{
-              backgroundColor: 'var(--theme-accent-blue-bg)',
-              borderColor: 'var(--theme-accent-blue-border)',
+              backgroundColor: 'var(--theme-accent-cyan-bg)',
+              borderColor: 'var(--theme-accent-cyan-border)',
             }}
           >
-            <Hexagon className="w-16 h-16" style={{ color: 'var(--theme-accent-blue-text)' }} />
+            <Hexagon className="w-16 h-16" style={{ color: 'var(--theme-accent-cyan-text)' }} />
           </div>
           <div
             className="absolute -bottom-2 -right-2 p-2 rounded-full border"
@@ -80,7 +80,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
               borderColor: 'var(--theme-border-default)',
             }}
           >
-            <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--theme-accent-blue-text)' }} />
+            <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--theme-accent-cyan-text)' }} />
           </div>
         </div>
 
@@ -103,7 +103,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
         >
           <div
             className="h-full rounded-full animate-pulse w-2/3"
-            style={{ backgroundColor: 'var(--theme-accent-blue)' }}
+            style={{ backgroundColor: 'var(--theme-accent-cyan)' }}
           />
         </div>
 

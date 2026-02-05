@@ -22,7 +22,7 @@ import { drag } from 'd3-drag';
 import { select } from 'd3-selection';
 import { useData } from '../../data/DataContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { parsePhysicalTableType, PhysicalTableType, isNsawGeneratedTable } from '../../types';
+import { parsePhysicalTableType, PhysicalTableType, isNsawGeneratedTable, inferRecordType } from '../../types';
 
 // ======================
 // Types
@@ -264,7 +264,7 @@ export const StarSchemaNetwork: React.FC = () => {
       surfaceLegend: get('--theme-surface-legend'),
       gridDot: get('--theme-grid-dot'),
       accentPurpleText: get('--theme-layer-dw-text'),
-      accentBlueText: get('--theme-accent-blue-text'),
+      accentCyanText: get('--theme-accent-cyan-text'),
       // Outer ring (presentation layer) colors
       outerPresentation: get('--theme-d3-outer-presentation'),
       outerDerived: get('--theme-d3-outer-derived'),
@@ -816,7 +816,7 @@ export const StarSchemaNetwork: React.FC = () => {
                   y1={source.y}
                   x2={target.x}
                   y2={target.y}
-                  stroke={isOuterEdge ? colors.edgeOuter : 'var(--theme-d3-edge)'}
+                  stroke={isOuterEdge ? 'var(--theme-d3-edge-outer)' : 'var(--theme-d3-edge)'}
                   strokeWidth={isOuterEdge ? (isHovered ? 1.5 : 0.8) : (isHovered ? 2 : 1)}
                   opacity={isOuterEdge ? (isHovered ? 0.7 : 0.35) : (isHovered ? 0.8 : 0.5)}
                 />
@@ -931,7 +931,7 @@ export const StarSchemaNetwork: React.FC = () => {
                         y={startY}
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        fill="var(--theme-d3-text-bright)"
+                        fill="var(--theme-d3-text-on-fill)"
                         fontSize={fontSize}
                         fontWeight={600}
                         className="pointer-events-none select-none"
@@ -945,21 +945,19 @@ export const StarSchemaNetwork: React.FC = () => {
                     );
                   })()
                   : isOuter ? (
-                    // Label below outer nodes - only visible on hover to reduce clutter
-                    (isHovered || isDragging) && (
-                      <text
-                        x={node.x}
-                        y={(node.y || 0) + node.radius + 11}
-                        textAnchor="middle"
-                        dominantBaseline="auto"
-                        fill={node.role === 'presentation' ? colors.outerPresentation : colors.outerDerived}
-                        fontSize={7}
-                        fontWeight={600}
-                        className="pointer-events-none select-none"
-                      >
-                        {truncateLabel(node.label, 18)}
-                      </text>
-                    )
+                    // Label above outer nodes - always visible, matching dimension style
+                    <text
+                      x={node.x}
+                      y={(node.y || 0) - node.radius - 4}
+                      textAnchor="middle"
+                      dominantBaseline="auto"
+                      fill="var(--theme-d3-text)"
+                      fontSize={9}
+                      fontWeight={isHovered ? 600 : 400}
+                      className="pointer-events-none select-none"
+                    >
+                      {truncateLabel(node.label, 16)}
+                    </text>
                   ) : (
                     // Label above the node for dimensions
                     <text
@@ -982,22 +980,23 @@ export const StarSchemaNetwork: React.FC = () => {
         </g>
       </svg>
 
-      {/* Star Schema Legend */}
+      {/* Star Schema Legend — uses CSS variables directly (not computed colors)
+           so that theme transitions update instantly without getComputedStyle timing issues */}
       <div
         className="absolute top-4 right-4 z-10 backdrop-blur-sm rounded-lg p-3"
         style={{
-          background: colors.surfaceLegend,
-          border: `1px solid ${colors.borderStrong}`,
+          background: 'var(--theme-surface-legend)',
+          border: '1px solid var(--theme-border-strong)',
         }}
       >
-        <div className="text-[10px] uppercase tracking-wider mb-2 font-medium" style={{ color: colors.textMuted }}>DW Tables</div>
-        <div className="flex flex-col gap-2 text-xs" style={{ color: colors.textSecondary }}>
+        <div className="text-[10px] uppercase tracking-wider mb-2 font-medium" style={{ color: 'var(--theme-text-muted)' }}>DW Tables</div>
+        <div className="flex flex-col gap-2 text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
           <div className="flex items-center gap-2">
-            <span className="w-4 h-4 rounded-full" style={{ background: colors.primaryFact }} />
+            <span className="w-4 h-4 rounded-full" style={{ background: 'var(--theme-layer-dw)' }} />
             <span>Primary Fact Table</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full" style={{ background: colors.secondaryFact }} />
+            <span className="w-3 h-3 rounded-full" style={{ background: 'var(--theme-layer-dw-dark)' }} />
             <span>Secondary Fact Tables</span>
           </div>
           <div className="flex items-center gap-2">
@@ -1006,23 +1005,23 @@ export const StarSchemaNetwork: React.FC = () => {
               className="w-2.5 h-2.5 rounded-full"
               style={{
                 background: 'transparent',
-                border: `2px solid ${colors.dimensionStroke}`,
+                border: '2px solid var(--theme-layer-dw)',
               }}
             />
             <span>Dimension Tables</span>
           </div>
         </div>
         {/* Presentation Layer section */}
-        <div className="text-[10px] uppercase tracking-wider mb-2 mt-3 font-medium" style={{ color: colors.textMuted }}>
+        <div className="text-[10px] uppercase tracking-wider mb-2 mt-3 font-medium" style={{ color: 'var(--theme-text-muted)' }}>
           Presentation Layer
         </div>
-        <div className="flex flex-col gap-2 text-xs" style={{ color: colors.textSecondary }}>
+        <div className="flex flex-col gap-2 text-xs" style={{ color: 'var(--theme-text-secondary)' }}>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ background: colors.outerPresentation }} />
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--theme-d3-outer-presentation)' }} />
             <span>Semantic Tables</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ background: colors.outerDerived }} />
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: 'var(--theme-d3-outer-derived)' }} />
             <span>NSAW Derived</span>
           </div>
         </div>
@@ -1099,14 +1098,14 @@ export const StarSchemaNetwork: React.FC = () => {
         <div
           className="absolute bottom-4 right-4 rounded-lg px-3 py-2 backdrop-blur-sm"
           style={{
-            background: colors.surfaceLegend,
-            border: `1px solid ${colors.borderStrong}`,
+            background: 'var(--theme-surface-legend)',
+            border: '1px solid var(--theme-border-strong)',
           }}
         >
-          <div className="text-sm font-medium" style={{ color: colors.textPrimary }}>
+          <div className="text-sm font-medium" style={{ color: 'var(--theme-text-primary)' }}>
             {hoveredNode.label}
           </div>
-          <div className="text-xs mt-0.5" style={{ color: colors.textMuted }}>
+          <div className="text-xs mt-0.5" style={{ color: 'var(--theme-text-muted)' }}>
             {hoveredNode.role === 'presentation'
               ? 'Semantic Table'
               : hoveredNode.role === 'derived'
@@ -1116,7 +1115,15 @@ export const StarSchemaNetwork: React.FC = () => {
             {hoveredNode.role === 'presentation' || hoveredNode.role === 'derived' ? ' \u2022 ' : ''}
             {hoveredNode.columnCount} columns
           </div>
-          <div className="text-[10px] mt-1.5 pt-1.5" style={{ color: colors.accentBlueText, borderTop: `1px solid ${colors.borderStrong}` }}>
+          {hoveredNode && hoveredNode.role !== 'presentation' && hoveredNode.role !== 'derived' && (() => {
+            const recordType = inferRecordType(hoveredNode.id);
+            return recordType ? (
+              <div className="text-[10px]" style={{ color: 'var(--theme-layer-netsuite-text)' }}>
+                NS: {recordType}
+              </div>
+            ) : null;
+          })()}
+          <div className="text-[10px] mt-1.5 pt-1.5" style={{ color: 'var(--theme-accent-cyan-text)', borderTop: '1px solid var(--theme-border-strong)' }}>
             {hoveredNode.role === 'presentation' || hoveredNode.role === 'derived'
               ? 'Click to view detailed flow'
               : hoveredNode.role === 'primaryFact'

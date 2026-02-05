@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useData } from '../data/DataContext';
-import { FileText, Database, Info, Code, Layers, ChevronRight, Columns, ArrowDown, Table2, Zap } from 'lucide-react';
+import { FileText, Database, Info, Code, Layers, ChevronRight, Columns, Table2, Zap } from 'lucide-react';
 import { parsePhysicalTableType } from '../types';
 
 function getTableTypeBadge(tableName: string): string {
@@ -112,7 +112,7 @@ export const DetailPanel: React.FC = () => {
             Lineage Details
           </h2>
           <span
-            className="px-2 py-0.5 text-[10px] rounded font-bold uppercase"
+            className="px-2 py-0.5 text-[10px] rounded font-semibold uppercase"
             style={{
               border: '1px solid',
               ...badgeStyles[detailType],
@@ -127,7 +127,7 @@ export const DetailPanel: React.FC = () => {
           className="flex items-center gap-1 text-xs mb-3 flex-wrap"
           style={{ color: 'var(--theme-text-muted)' }}
         >
-          <span style={{ color: 'var(--theme-accent-blue-text)' }}>{selection.subjectArea}</span>
+          <span style={{ color: 'var(--theme-accent-cyan-text)' }}>{selection.subjectArea}</span>
           {selection.presentationTable && (
             <>
               <ChevronRight className="w-3 h-3" />
@@ -145,7 +145,7 @@ export const DetailPanel: React.FC = () => {
         </div>
 
         <h1
-          className="text-xl font-bold mb-2"
+          className="text-xl font-semibold mb-2"
           style={{ color: 'var(--theme-text-primary)' }}
         >
           {selectedColumnRecord
@@ -175,14 +175,14 @@ export const DetailPanel: React.FC = () => {
               <h3 className="text-sm font-medium">Data Lineage Path</h3>
             </div>
 
-            {/* 3-Layer Visual Path - flows top to bottom: NS → DW → Semantic */}
-            <div className="space-y-0">
+            {/* 3-Layer Visual Path - connected pipeline: NS → DW → Semantic */}
+            <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--theme-border-default)' }}>
               {/* NetSuite Source Layer (TOP - data origin) */}
               <div
-                className="p-4 rounded-t-lg"
+                className="p-4"
                 style={{
                   backgroundColor: 'var(--theme-layer-netsuite-bg)',
-                  border: '2px solid var(--theme-layer-netsuite-border)',
+                  borderLeft: '3px solid var(--theme-layer-netsuite)',
                 }}
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -225,21 +225,15 @@ export const DetailPanel: React.FC = () => {
                 )}
               </div>
 
-              {/* Arrow Down */}
-              <div
-                className="flex justify-center py-1"
-                style={{ backgroundColor: 'var(--theme-bg-panel)' }}
-              >
-                <ArrowDown className="w-4 h-4" style={{ color: 'var(--theme-text-muted)' }} />
-              </div>
+              {/* Gradient separator: NetSuite → DW */}
+              <div style={{ height: '2px', background: 'linear-gradient(to right, var(--theme-layer-netsuite), var(--theme-layer-dw))' }} />
 
               {/* Data Warehouse Layer (MIDDLE) */}
               <div
                 className="p-4"
                 style={{
                   backgroundColor: 'var(--theme-layer-dw-bg)',
-                  borderLeft: '2px solid var(--theme-layer-dw-border)',
-                  borderRight: '2px solid var(--theme-layer-dw-border)',
+                  borderLeft: '3px solid var(--theme-layer-dw)',
                 }}
               >
                 <div className="flex items-center gap-2 mb-3">
@@ -296,20 +290,15 @@ export const DetailPanel: React.FC = () => {
                 </div>
               </div>
 
-              {/* Arrow Down */}
-              <div
-                className="flex justify-center py-1"
-                style={{ backgroundColor: 'var(--theme-bg-panel)' }}
-              >
-                <ArrowDown className="w-4 h-4" style={{ color: 'var(--theme-text-muted)' }} />
-              </div>
+              {/* Gradient separator: DW → Semantic */}
+              <div style={{ height: '2px', background: 'linear-gradient(to right, var(--theme-layer-dw), var(--theme-layer-semantic))' }} />
 
               {/* Semantic/Presentation Layer (BOTTOM - data destination) */}
               <div
-                className="p-4 rounded-b-lg"
+                className="p-4"
                 style={{
                   backgroundColor: 'var(--theme-layer-semantic-bg)',
-                  border: '2px solid var(--theme-layer-semantic-border)',
+                  borderLeft: '3px solid var(--theme-layer-semantic)',
                 }}
               >
                 <div className="flex items-center gap-2 mb-2">
@@ -367,7 +356,7 @@ export const DetailPanel: React.FC = () => {
                   border: '1px solid var(--theme-border-default)',
                 }}
               >
-                <div className="text-lg font-bold" style={{ color: 'var(--theme-layer-semantic-text)' }}>
+                <div className="text-lg font-semibold" style={{ color: 'var(--theme-layer-semantic-text)' }}>
                   {selection.presentationTable
                     ? selectedRecords.length
                     : subjectAreaInfo?.presentationTables.length || 0}
@@ -386,7 +375,7 @@ export const DetailPanel: React.FC = () => {
                   border: '1px solid var(--theme-border-default)',
                 }}
               >
-                <div className="text-lg font-bold" style={{ color: 'var(--theme-layer-dw-text)' }}>
+                <div className="text-lg font-semibold" style={{ color: 'var(--theme-layer-dw-text)' }}>
                   {selection.presentationTable
                     ? new Set(selectedRecords.map(r => r.physicalTable)).size
                     : subjectAreaInfo?.recordCount || 0}

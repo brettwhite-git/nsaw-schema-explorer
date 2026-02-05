@@ -37,6 +37,8 @@ npm run build    # Production build
 npm run preview  # Preview production build
 ```
 
+**Note:** Source files are at project root (`App.tsx`, `components/`, `data/`, etc.) — there is no `src/` directory.
+
 ## Architecture
 
 ### Component Hierarchy
@@ -107,6 +109,8 @@ data/
 - `selectedRecords` - Records for currently selected presentation table
 - `search()` / `searchResults` - FlexSearch-powered search
 - Navigation helpers: `selectSubjectArea()`, `selectPresentationTable()`, `selectFromSearchResult()`
+  - `selectFromSearchResult()` must set full context (subjectArea + presentationTable) for graph to render. For `physicalTable` results, look up first record via `dataIndex.byPhysicalTable` — setting only physicalTable produces a blank view.
+  - The `record` property on `presentationColumn` and `physicalColumn` search results contains the full `EnrichedLineageRecord` including `inferredSource`
 - `viewMode` / `setViewMode` - Current view mode (overview, detailedFlow, table)
 - `functionalAreaGroups` - Subject areas grouped by business domain
 - `overviewData` - Pre-computed aggregations for Overview map (56k → ~130 nodes)
@@ -232,11 +236,17 @@ return <div ref={containerRef}>...</div>;
 
 **D3+CSS double-opacity trap:** Always use solid hex colors for `--theme-d3-*` variables, never `rgba()`. SVG elements apply their own `opacity` attribute; if the CSS color also has alpha, they multiply (e.g., 0.3 × 0.3 = 0.09 effective visibility). Control transparency exclusively via SVG `opacity`.
 
+**Theme transition timing trap:** HTML overlays (legends, tooltips) in `StarSchemaNetwork.tsx` must use CSS variable strings (`'var(--theme-xxx)'`) directly in inline styles — NOT the computed `colors` object from `getComputedStyle()`. The `colors` useMemo may fire before CSS variables flush on theme toggle, capturing stale values. SVG node fills can use the `colors` object because the D3 simulation re-renders continuously. Reference: the detailed flow legend in `GraphViewer.tsx` uses CSS vars directly and works correctly.
+
+**Text on filled nodes:** Use `--theme-d3-text-on-fill` (always `#ffffff`) for text rendered inside colored/filled circles (fact nodes). Do NOT use `--theme-d3-text-bright` which is dark in light mode.
+
+**DW node hover tooltips:** Show inferred NS record type via `inferRecordType()` from `types.ts` for fact/dimension nodes (not presentation or derived nodes).
+
 ### Isometric Data Stack (DataStackHero / IsometricStack)
 
 **Welcome state visualization** showing 3 architecture layers as an exploded isometric view:
 - NetSuite ERP (bottom) → Autonomous AI Datawarehouse (middle) → Semantic Layer (top)
-- Hover highlights layer with cyan glow and shows System Specification panel
+- Hover highlights layer with blue glow and shows System Specification panel
 
 **Isometric diamond formula** (SVG polygons, no CSS 3D transforms):
 ```
@@ -250,6 +260,18 @@ Plus two side-face polygons offset 10px down for 3D depth effect.
 **Icons inside SVG:** Uses `<foreignObject>` to embed React components (StackIcons) within the SVG coordinate space.
 
 **Dataset metrics** (Subject Areas, Tables, Fields) live in the site footer bar (`App.tsx`), not in the visualization.
+
+**CSS `background` shorthand trap:** When a component uses the `blueprint-grid` CSS class (which sets `background-image`), the inline style must use `backgroundColor` NOT `background`. The shorthand resets all sub-properties including `background-image`, hiding the grid dots.
+
+### DetailPanel Lineage Pipeline
+The 3-layer lineage path (NS → DW → Semantic) uses a connected pipeline pattern:
+- Outer wrapper: `rounded-lg overflow-hidden` with `1px solid var(--theme-border-default)`
+- Each section: `3px solid` left accent border in layer color (blue/purple/green rail)
+- Between sections: `2px` gradient separator using `linear-gradient(to right, colorA, colorB)`
+- No arrow icons — the colored left rail implies top-to-bottom directionality
+
+### JSX Ternary Fragment Trap
+When adding multiple sibling JSX elements inside a ternary branch (`? ... : ...`), wrap in `<>...</>`. Each ternary branch must return a single JSX expression. This commonly breaks when inserting a second element beneath an existing one inside a conditional.
 
 ## Type System (types.ts)
 
@@ -324,6 +346,13 @@ Four layer color sets in `styles/theme.css` (each with `-light`, `-dark`, `-bg`,
 - `--theme-layer-semantic-*` — Green
 - `--theme-layer-derived-*` — Orange (NSAW-derived/calculated)
 
+### CSS Accent Variables (UI Chrome)
+Primary UI interaction accent is **blue** (`--theme-accent-cyan-*` variables, now set to blue-500/blue-600 values aligned with NetSuite brand). This includes: selection highlights, active buttons, breadcrumb links, footer stats, loading screen, search result icons, and the isometric welcome design.
+
+**Unified color approach:** `--theme-accent-cyan-*` and `--theme-layer-netsuite-*` now share the same blue palette for visual consistency. The variable names remain separate so they CAN diverge in the future if needed — `accent-cyan` is consumed in UI chrome contexts, `layer-netsuite` in data layer visualization contexts.
+
+Accent variants: `-light`, `-dark`, `-bg`, `-faint`, `-text`, `-border`, `-border-half`, `-glow`, `-ring`
+
 ## Dependencies
 
 ### Runtime
@@ -348,15 +377,40 @@ Four layer color sets in `styles/theme.css` (each with `-light`, `-dark`, `-bg`,
 
 ## Styling
 - Tailwind CSS loaded via CDN in index.html
-- Dark theme with slate-950 base
-- Custom CSS for blueprint grid background (in index.html)
+- Full dark/light theme system via `data-theme` attribute on `<html>` (see `styles/theme.css`, `contexts/ThemeContext.tsx`)
+- Dark theme: slate-950 base. Light theme: white base with darker grid dots (`#94a3b8`)
+- Primary UI accent: **Blue** (`--theme-accent-cyan-*` variables, aligned with NetSuite brand) — used for all interactive highlights
+- Custom CSS for blueprint grid background (in index.html, uses `--theme-grid-dot`)
 - Icons from lucide-react
+- Theme flash prevention: `index.html` sets `data-theme` from localStorage before first paint
+
+### Typography Patterns
+Fonts: Inter (UI, via Google Fonts) + JetBrains Mono (technical data). Both loaded in `index.html`.
+
+**Unified weight range (400–600):**
+- `font-normal` (400) — body text, descriptions
+- `font-medium` (500) — hero/isometric titles, emphasized labels
+- `font-semibold` (600) — app titles, badges, section headers, interactive elements
+
+**Standardized `text-[10px] uppercase` headers:**
+- Layer headers (DetailPanel, LineageNode): `text-[10px] uppercase tracking-wider font-semibold`
+- Legend/section headers: `text-[10px] uppercase tracking-wider font-medium`
+- Badges: `text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wider`
+
+**Isometric-only sizes:** `text-[8px]` and `text-[9px]` are reserved for SVG `<foreignObject>` labels inside the isometric welcome visualization. Do not use in standard UI components.
 
 ## Data Files
 CSV file in `/public/` (loaded at runtime):
 - `25R4_NS_Semantic_Model_Lineage - 25R4_NS_Semantic_Model_Lineage.csv` - Main lineage data (~8MB, 56k+ rows)
 
 Supporting files (not currently used in app):
-- `25R4_NS_BI_View_Objects_in_Data_Enrichment - Sheet1.csv`
-- `25R4_NS_Data_Augmentation_Entity_Key_List - Sheet1.csv`
+- `25R4_NS_BI_View_Objects_in_Data_Enrichment - Sheet1.csv` - 378 entity names (reference list)
+- `25R4_NS_Data_Augmentation_Entity_Key_List - Sheet1.csv` - 660 entity-to-table key mappings with domain codes
 - `25R4_Fusion_NS_Analytics_Tables.html` - Reference doc showing physical table organization by functional area
+
+### Data Content Limitations
+- CSV data contains field-level lineage mappings only (source → target paths)
+- No calculation formulas, measure definitions, or expression logic exists in any data file
+- 17 `_CF` tables appear in lineage but their calculation logic is not in the dataset
+- "Derived" and "Calculated" column names are identifiers, not formulas
+- The Data Augmentation Entity Keys CSV provides entity-to-table-to-key mappings that could validate `inferredSource` accuracy (future enhancement)

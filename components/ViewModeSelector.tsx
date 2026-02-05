@@ -71,7 +71,7 @@ const ViewModeButton: React.FC<ViewModeButtonProps> = ({
     }
     if (isActive) {
       return {
-        backgroundColor: 'var(--theme-accent-blue-dark)',
+        backgroundColor: 'var(--theme-accent-cyan-dark)',
         color: '#ffffff', // White text for strong contrast on saturated blue background
       };
     }

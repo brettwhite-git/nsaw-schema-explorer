@@ -114,7 +114,7 @@ export const SubjectAreaBrowser: React.FC = () => {
                   }`}
                   style={{ color: 'var(--theme-text-muted)' }}
                 />
-                <FolderOpen className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--theme-accent-amber-text)' }} />
+                <FolderOpen className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--theme-accent-cyan-text)' }} />
                 <span className="flex-1 text-left text-sm font-semibold truncate">
                   {group.name}
                 </span>
@@ -149,9 +149,9 @@ export const SubjectAreaBrowser: React.FC = () => {
                           style={
                             isSelected
                               ? {
-                                  backgroundColor: 'var(--theme-accent-blue-bg)',
-                                  color: 'var(--theme-accent-blue-text)',
-                                  borderColor: 'var(--theme-accent-blue-border)',
+                                  backgroundColor: 'var(--theme-accent-cyan-bg)',
+                                  color: 'var(--theme-accent-cyan-text)',
+                                  borderColor: 'var(--theme-accent-cyan-border)',
                                 }
                               : {
                                   color: 'var(--theme-text-tertiary)',
@@ -198,8 +198,8 @@ export const SubjectAreaBrowser: React.FC = () => {
                                   style={
                                     isTableSelected
                                       ? {
-                                          color: 'var(--theme-accent-blue-text)',
-                                          backgroundColor: 'var(--theme-accent-blue-bg)',
+                                          color: 'var(--theme-accent-cyan-text)',
+                                          backgroundColor: 'var(--theme-accent-cyan-bg)',
                                         }
                                       : {
                                           color: 'var(--theme-text-muted)',

@@ -116,13 +116,18 @@
   --theme-accent-amber-border: rgba(245, 158, 11, 0.3);
   --theme-accent-amber-text:   #fbbf24;                        /* amber-400 */
 
-  /* --- Accent: Cyan (Welcome / Highlights) -------------------------------- */
-  /* Shifted from vivid cyan-400 (#22d3ee) to softer sky-300 (#7dd3fc) */
-  --theme-accent-cyan:        #7dd3fc;
-  --theme-accent-cyan-dark:   #38bdf8;
-  --theme-accent-cyan-faint:  rgba(125, 211, 252, 0.1);
-  --theme-accent-cyan-text:   #7dd3fc;
-  --theme-accent-cyan-border: rgba(125, 211, 252, 0.4);
+  /* --- Accent: Primary Blue (aligned with NetSuite brand) ------------------- */
+  /* Unified with NetSuite layer blue for visual consistency */
+  --theme-accent-cyan:             #3b82f6;                        /* blue-500 */
+  --theme-accent-cyan-light:       #60a5fa;                        /* blue-400 */
+  --theme-accent-cyan-dark:        #2563eb;                        /* blue-600 */
+  --theme-accent-cyan-bg:          rgba(59, 130, 246, 0.05);
+  --theme-accent-cyan-faint:       rgba(59, 130, 246, 0.1);
+  --theme-accent-cyan-text:        #60a5fa;                        /* blue-400 */
+  --theme-accent-cyan-border:      rgba(59, 130, 246, 0.4);
+  --theme-accent-cyan-border-half: rgba(59, 130, 246, 0.5);
+  --theme-accent-cyan-glow:        rgba(59, 130, 246, 0.5);
+  --theme-accent-cyan-ring:        rgba(59, 130, 246, 0.3);
 
   /* --- Layer Colors (Semantic data lineage layers) ------------------------
      NetSuite Source (left)  → DW Physical (center) → Semantic/Presentation (right)
@@ -185,10 +190,10 @@
 
   /* --- SVG (IsometricStack) ----------------------------------------------- */
   --theme-svg-slab-inactive: rgba(30, 41, 59, 0.4);
-  --theme-svg-slab-active:   rgba(125, 211, 252, 0.08);        /* softer sky-300 tint */
+  --theme-svg-slab-active:   rgba(59, 130, 246, 0.08);         /* blue-500 tint */
   --theme-svg-slab-side:     rgba(30, 41, 59, 0.6);
   --theme-svg-line:          rgba(186, 230, 253, 0.4);
-  --theme-svg-line-highlight: #7dd3fc;
+  --theme-svg-line-highlight: #3b82f6;
 
   /* --- D3 (StarSchemaNetwork) --------------------------------------------- */
   --theme-d3-edge:             #475569;
@@ -205,6 +210,7 @@
   --theme-d3-outer-hover-pres:       #34d399;                       /* emerald-400 */
   --theme-d3-outer-hover-derived:    #fb923c;                       /* orange-400 */
   --theme-d3-edge-outer:             #475569;                       /* solid color, opacity controlled by SVG */
+  --theme-d3-text-on-fill:           #ffffff;                       /* white text on filled nodes (both themes) */
 
   /* --- React Flow --------------------------------------------------------- */
   --theme-rf-edge:         #475569;
@@ -213,8 +219,8 @@
   --theme-rf-minimap-mask: rgba(15, 23, 42, 0.8);
 
   /* --- Node active state -------------------------------------------------- */
-  --theme-node-active-border: #38bdf8;
-  --theme-node-active-glow:   rgba(56, 189, 248, 0.2);
+  --theme-node-active-border: #2563eb;
+  --theme-node-active-glow:   rgba(37, 99, 235, 0.2);
   --theme-node-active-bg:     rgba(15, 23, 42, 0.9);
 
   /* --- Error / Red (LoadingScreen) ---------------------------------------- */
@@ -309,13 +315,17 @@
   --theme-accent-amber-border: rgba(217, 119, 6, 0.25);
   --theme-accent-amber-text:   #b45309;
 
-  /* --- Accent: Cyan ------------------------------------------------------- */
-  /* Shifted to sky-600/700 for better contrast on light backgrounds */
-  --theme-accent-cyan:        #0284c7;
-  --theme-accent-cyan-dark:   #0369a1;
-  --theme-accent-cyan-faint:  rgba(2, 132, 199, 0.08);
-  --theme-accent-cyan-text:   #0284c7;
-  --theme-accent-cyan-border: rgba(2, 132, 199, 0.35);
+  /* --- Accent: Primary Blue (aligned with NetSuite brand) ------------------- */
+  --theme-accent-cyan:             #2563eb;                        /* blue-600 */
+  --theme-accent-cyan-light:       #3b82f6;                        /* blue-500 */
+  --theme-accent-cyan-dark:        #1d4ed8;                        /* blue-700 */
+  --theme-accent-cyan-bg:          rgba(37, 99, 235, 0.06);
+  --theme-accent-cyan-faint:       rgba(37, 99, 235, 0.08);
+  --theme-accent-cyan-text:        #2563eb;                        /* blue-600 */
+  --theme-accent-cyan-border:      rgba(37, 99, 235, 0.35);
+  --theme-accent-cyan-border-half: rgba(37, 99, 235, 0.4);
+  --theme-accent-cyan-glow:        rgba(37, 99, 235, 0.3);
+  --theme-accent-cyan-ring:        rgba(37, 99, 235, 0.25);
 
   /* --- Additional accent text --------------------------------------------- */
   --theme-accent-green-text:  #16a34a;              /* green-600 */
@@ -368,7 +378,7 @@
   --theme-layer-derived-text:        #ea580c;
 
   /* --- Grid --------------------------------------------------------------- */
-  --theme-grid-dot: #cbd5e1;                        /* slate-300 (was slate-200, more visible) */
+  --theme-grid-dot: #94a3b8;                        /* slate-400 — darker grid dots for light mode readability */
 
   /* --- Scrollbar ---------------------------------------------------------- */
   --theme-scrollbar-thumb:       #cbd5e1;
@@ -376,10 +386,10 @@
 
   /* --- SVG (IsometricStack) ----------------------------------------------- */
   --theme-svg-slab-inactive: rgba(241, 245, 249, 0.6);
-  --theme-svg-slab-active:   rgba(2, 132, 199, 0.08);  /* softer sky-600 tint */
+  --theme-svg-slab-active:   rgba(37, 99, 235, 0.08);  /* blue-600 tint */
   --theme-svg-slab-side:     rgba(226, 232, 240, 0.7);
   --theme-svg-line:          rgba(71, 85, 105, 0.5);   /* slate-600 base, higher opacity */
-  --theme-svg-line-highlight: #0284c7;
+  --theme-svg-line-highlight: #2563eb;
 
   /* --- D3 (StarSchemaNetwork) --------------------------------------------- */
   --theme-d3-edge:             #cbd5e1;
@@ -396,16 +406,17 @@
   --theme-d3-outer-hover-pres:       #10b981;                       /* emerald-500 */
   --theme-d3-outer-hover-derived:    #f97316;                       /* orange-500 */
   --theme-d3-edge-outer:             #94a3b8;                       /* solid color, opacity controlled by SVG */
+  --theme-d3-text-on-fill:           #ffffff;                       /* white text on filled nodes (both themes) */
 
   /* --- React Flow --------------------------------------------------------- */
   --theme-rf-edge:         #cbd5e1;
   --theme-rf-edge-primary: #94a3b8;
-  --theme-rf-bg:           #cbd5e1;                  /* aligned with --theme-grid-dot */
+  --theme-rf-bg:           #94a3b8;                  /* aligned with --theme-grid-dot */
   --theme-rf-minimap-mask: rgba(255, 255, 255, 0.8);
 
   /* --- Node active state -------------------------------------------------- */
-  --theme-node-active-border: #0284c7;
-  --theme-node-active-glow:   rgba(2, 132, 199, 0.2);
+  --theme-node-active-border: #2563eb;
+  --theme-node-active-glow:   rgba(37, 99, 235, 0.2);
   --theme-node-active-bg:     rgba(255, 255, 255, 0.95);
 
   /* --- Error / Red -------------------------------------------------------- */
@@ -442,7 +453,7 @@
 }
 
 .theme-toggle:focus-visible {
-  outline: 2px solid var(--theme-accent-blue);
+  outline: 2px solid var(--theme-accent-cyan);
   outline-offset: 2px;
 }
 

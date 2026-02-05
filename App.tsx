@@ -54,12 +54,12 @@ const AppContent: React.FC = () => {
           <span>Status: {isLoading ? 'Loading' : 'Ready'}</span>
         </div>
         <div className="flex gap-4 uppercase">
-          <span><span style={{ color: 'var(--theme-accent-blue-text)' }}>{dataIndex?.subjectAreas.length || '-'}</span> Subject Areas</span>
-          <span><span style={{ color: 'var(--theme-accent-purple-text)' }}>{dataIndex?.presentationTables.length || '-'}</span> Tables</span>
-          <span><span style={{ color: 'var(--theme-accent-emerald-text)' }}>{dataIndex?.totalRecords.toLocaleString() || '-'}</span> Fields</span>
+          <span><span style={{ color: 'var(--theme-accent-cyan-text)' }}>{dataIndex?.subjectAreas.length || '-'}</span> Subject Areas</span>
+          <span><span style={{ color: 'var(--theme-accent-cyan-text)' }}>{dataIndex?.presentationTables.length || '-'}</span> Tables</span>
+          <span><span style={{ color: 'var(--theme-accent-cyan-text)' }}>{dataIndex?.totalRecords.toLocaleString() || '-'}</span> Fields</span>
         </div>
         <div className="flex gap-4">
-          <span style={{ color: 'var(--theme-accent-blue)', opacity: 0.8 }}>
+          <span style={{ color: 'var(--theme-accent-cyan)', opacity: 0.8 }}>
             Load Time: {dataIndex?.loadTimeMs ? `${dataIndex.loadTimeMs.toFixed(0)}ms` : '-'}
           </span>
         </div>

@@ -49,7 +49,7 @@ export const StackInfoPanel: React.FC<StackInfoPanelProps> = ({ layerId }) => {
         <span className="text-[10px] font-mono tracking-widest uppercase"
           style={{ color: 'var(--theme-accent-cyan-text)' }}>System Specification</span>
       </div>
-      <h2 className="text-3xl font-light tracking-tight leading-none mb-1"
+      <h2 className="text-3xl font-medium tracking-tight leading-none mb-1"
         style={{ color: 'var(--theme-text-primary)' }}>
         {layer.title}
       </h2>
@@ -62,7 +62,7 @@ export const StackInfoPanel: React.FC<StackInfoPanelProps> = ({ layerId }) => {
         <div>
           <h4 className="text-[9px] font-mono uppercase tracking-widest mb-1"
             style={{ color: 'var(--theme-text-muted)' }}>Functional Overview</h4>
-          <p className="text-sm leading-relaxed font-light"
+          <p className="text-sm leading-relaxed"
             style={{ color: 'var(--theme-text-tertiary)' }}>
             {layer.description}
           </p>

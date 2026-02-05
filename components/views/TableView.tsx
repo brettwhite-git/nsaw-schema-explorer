@@ -137,7 +137,7 @@ export const TableView: React.FC<TableViewProps> = ({ records }) => {
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--theme-bg-inset)'; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = ''; }}
             >
-              <td className="px-4 py-2.5 font-medium" style={{ color: 'var(--theme-accent-blue-text)' }}>
+              <td className="px-4 py-2.5 font-medium" style={{ color: 'var(--theme-accent-cyan-text)' }}>
                 {record.presentationColumn}
               </td>
               <td className="px-4 py-2.5 font-mono text-xs" style={{ color: 'var(--theme-accent-purple-text)' }}>
@@ -158,9 +158,16 @@ export const TableView: React.FC<TableViewProps> = ({ records }) => {
                     NSAW Generated
                   </span>
                 ) : (
-                  <span style={{ color: 'var(--theme-accent-emerald-text)' }}>
-                    {record.inferredSource.recordType || '-'}
-                  </span>
+                  <>
+                    <span style={{ color: 'var(--theme-accent-emerald-text)' }}>
+                      {record.inferredSource.recordType || '-'}
+                    </span>
+                    {record.inferredSource.fieldName && (
+                      <div className="text-[10px] mt-0.5" style={{ color: 'var(--theme-layer-netsuite-text)', opacity: 0.8 }}>
+                        .{record.inferredSource.fieldName}
+                      </div>
+                    )}
+                  </>
                 )}
               </td>
             </tr>

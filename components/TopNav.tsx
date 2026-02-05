@@ -7,7 +7,7 @@ import { ThemeToggle } from './ThemeToggle';
 
 const resultTypeIcons: Record<SearchResultType, React.ReactNode> = {
   subjectArea: <Layers className="w-4 h-4" style={{ color: 'var(--theme-accent-purple-text)' }} />,
-  presentationTable: <Table2 className="w-4 h-4" style={{ color: 'var(--theme-accent-blue-text)' }} />,
+  presentationTable: <Table2 className="w-4 h-4" style={{ color: 'var(--theme-accent-cyan-text)' }} />,
   presentationColumn: <FileText className="w-4 h-4" style={{ color: 'var(--theme-accent-green-text)' }} />,
   physicalTable: <Database className="w-4 h-4" style={{ color: 'var(--theme-accent-orange-text)' }} />,
   physicalColumn: <Code className="w-4 h-4" style={{ color: 'var(--theme-accent-yellow-text)' }} />,
@@ -99,6 +99,16 @@ export const TopNav: React.FC = () => {
                           <div className="text-sm truncate" style={{ color: 'var(--theme-text-default)' }}>{result.value}</div>
                           {result.context && (
                             <div className="text-xs truncate" style={{ color: 'var(--theme-text-muted)' }}>{result.context}</div>
+                          )}
+                          {result.type === 'presentationColumn' && result.record?.inferredSource && !result.record.inferredSource.isNsawGenerated && result.record.inferredSource.recordType && (
+                            <div className="text-xs truncate" style={{ color: 'var(--theme-layer-netsuite-text)' }}>
+                              NS: {result.record.inferredSource.recordType}{result.record.inferredSource.fieldName ? `.${result.record.inferredSource.fieldName}` : ''}
+                            </div>
+                          )}
+                          {result.type === 'presentationColumn' && result.record?.inferredSource?.isNsawGenerated && (
+                            <div className="text-xs truncate" style={{ color: 'var(--theme-accent-amber-text)' }}>
+                              NSAW Generated
+                            </div>
                           )}
                         </div>
                       </button>

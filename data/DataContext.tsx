@@ -206,10 +206,19 @@ export function DataProvider({ children }: DataProviderProps): React.ReactElemen
         break;
 
       case 'physicalTable':
-        setSelectionState(prev => ({
-          ...prev,
-          physicalTable: result.value,
-        }));
+        if (dataIndex) {
+          const ptRecords = dataIndex.byPhysicalTable.get(result.value);
+          if (ptRecords && ptRecords.length > 0) {
+            const firstRecord = ptRecords[0];
+            setSelectionState({
+              subjectArea: firstRecord.subjectArea,
+              presentationTable: firstRecord.presentationTable,
+              presentationColumn: null,
+              physicalTable: result.value,
+              physicalColumn: null,
+            });
+          }
+        }
         break;
 
       case 'physicalColumn':
