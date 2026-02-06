@@ -275,10 +275,20 @@ export function transformRecordsToGraph(
       },
     });
 
-    // Create edges from physical tables to presentation columns
-    // (Reversed direction: DW → Semantic)
+    // Create edges from physical tables/columns to presentation columns
+    // Dimension tables route through physical columns; fact tables connect directly
     for (const record of presRecords) {
-      const sourceId = getPhysicalTableId(record.physicalTable);
+      let sourceId: string;
+      if (includePhysicalColumns) {
+        const tableType = parsePhysicalTableType(record.physicalTable);
+        if (tableType === 'fact' || tableType === 'enhanced') {
+          sourceId = getPhysicalTableId(record.physicalTable);
+        } else {
+          sourceId = getPhysicalColumnId(record.physicalTable, record.physicalColumn);
+        }
+      } else {
+        sourceId = getPhysicalTableId(record.physicalTable);
+      }
       const edgeKey = `${sourceId}-${nodeId}`;
 
       if (!edgeSet.has(edgeKey)) {

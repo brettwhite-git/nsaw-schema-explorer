@@ -145,7 +145,6 @@ export const TableView: React.FC<TableViewProps> = ({ records }) => {
                       className="flex items-center gap-1.5 w-full px-4 py-3 text-xs font-semibold uppercase tracking-wider transition-colors"
                       style={{
                         color: `var(${col.layerPrefix}-text)`,
-                        backgroundColor: `var(${col.layerPrefix}-bg)`,
                         borderLeft: `3px solid var(${col.layerPrefix})`,
                       }}
                       onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--theme-text-primary)'; }}
