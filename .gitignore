@@ -26,6 +26,10 @@ npm-debug.log*
 # Vercel
 .vercel/
 
+# Internal dev notes
+CLAUDE.md
+CHANGELOG.md
+
 # TypeScript
 *.tsbuildinfo
 .vercel
