@@ -34,13 +34,24 @@ export function FanWires({ scope, pairs, groups, hotCols, hotSas, at, sa }: Prop
 
   useLayoutEffect(() => {
     const g = gut.current;
-    // On first commit the parent's ref may not be attached yet: the gutter's parent holds every row too.
-    const root = (scope.current ?? g?.parentElement) as HTMLElement | null;
-    if (!g || !root) return;
-    const find = (id: string) => root.querySelector<HTMLElement>(`[data-wire="${id}"]`);
+    if (!g) return;
+    // On first commit the parent's ref may not be attached yet: the scope is read on every measure, the gutter's
+    // parent standing in until it appears (and it is observed once it does).
+    const ro = new ResizeObserver(() => later());
+    const watched = new Set<Element>();
+    let tries = 0;
+    const rootOf = (): HTMLElement | null => {
+      const r = (scope.current ?? g.parentElement) as HTMLElement | null;
+      if (r && !watched.has(r)) { watched.add(r); ro.observe(r); }
+      return r;
+    };
     const any = at !== undefined || sa !== undefined;
 
     const measure = () => {
+      const root = rootOf();
+      if (!root) return;
+      if (!scope.current && tries++ < 30) later();
+      const find = (id: string) => root.querySelector<HTMLElement>(`[data-wire="${CSS.escape(id)}"]`);
       const gr = g.getBoundingClientRect();
       if (!gr.width) { setDrawn(EMPTY); return; }
       const w = gr.width, sx = w - 18;
@@ -86,12 +97,10 @@ export function FanWires({ scope, pairs, groups, hotCols, hotSas, at, sa }: Prop
       setDrawn(out);
     };
 
-    measure();
     let raf = 0;
-    const later = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(measure); };
-    const ro = new ResizeObserver(later);
-    ro.observe(root);
+    function later() { cancelAnimationFrame(raf); raf = requestAnimationFrame(measure); }
     ro.observe(g);
+    measure();
     let live = true;
     document.fonts?.ready.then(() => { if (live) later(); });
     return () => { live = false; ro.disconnect(); cancelAnimationFrame(raf); };

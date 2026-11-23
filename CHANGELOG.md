@@ -1,5 +1,19 @@
 # Changelog
 
+## Pivot to the Paper ledger explorer, stated-only (2026-11-22)
+
+### What changed
+- Retired the illustrated "Warehouse, Drawn" course site and the legacy React Flow explorer. One React app now serves six routes: bus matrix `/`, `/compare/:a/:b`, `/area/:slug`, `/table/:name`, `/field/:record/:field`, `/search`, plus a not-found page and a Cmd/Ctrl-K palette.
+- Ontology is built stated-only (`STATED_ONLY = true`): no name-guessed NetSuite sources, no `_SEC` pairing, no inferred concepts. `_SEC` tables get their own pages tagged "secured".
+- New pure data module `explorer/data/*` with tests on real counts; copy builders return `null` when data is absent.
+- Paper ledger tokens (light only), self-hosted Source Serif 4 / Source Sans 3 / JetBrains Mono.
+- Final pass: `factsWithGrain` is the one definition of "facts with a grain" (102 of the 282 fact tables in the lineage, `_SEC` counted as their own tables), used by the matrix stats and the search side column; `prettyTable` splits camelCase and compound names and adds a suffix word (Enhanced, Hierarchy) only when two tables share a base name; `Wires`/`FanWires` re-read an ancestor `scope` ref on every measure; phone header shows "Search" instead of the long placeholder; footer rephrased; `scripts/shoot.mjs` (`npm run shoot`) checks every route at 1440x900 and 390x844.
+
+### Lessons
+- Never narrate gaps: an empty section is left out, a missing value is a blank cell. A grep test keeps gap phrases out of `site/` and `explorer/`.
+- A number shown on two pages needs one function, or the pages drift (the matrix said 102 of 107, search said 164 of 170).
+- A child's layout effect runs before an ancestor's ref attaches; measure code must read the ref lazily.
+
 ## Star Schema Node Styling & Layout Polish (2026-02-05)
 
 ### What Changed

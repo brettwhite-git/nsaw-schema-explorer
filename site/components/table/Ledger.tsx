@@ -92,8 +92,7 @@ function SideCard({ m, cm, r, hasSrc }: { m: CoreModel; cm: ColumnModel; r: Ledg
 }
 
 export function Ledger({ m, cm, ledger, col }: { m: CoreModel; cm: ColumnModel; ledger: LedgerData; col: string | undefined }) {
-  // The scope is the rows list, a sibling committed before the Wires: an ancestor ref is not attached yet when
-  // Wires measures in its layout effect.
+  // The scope is the rows list, where every data-wire id lives (the wire gutters sit beside it).
   const scope = useRef<HTMLDivElement>(null);
   const rows = ledger.rows;
   const sel = col ? rows.find((r) => r.name.toLowerCase() === col.toLowerCase()) : undefined;

@@ -11,8 +11,7 @@
 import { useEffect, useState } from 'react';
 import { loadOntology, type FetchJson } from '../ontology/load';
 import type { DetailJson } from '../ontology/types';
-import { buildColumns, buildCore } from '../explorer/data/model';
-import type { ColumnModel, CoreModel } from '../explorer/data/types';
+import { buildColumns, buildCore, type ColumnModel, type CoreModel } from '../explorer/data';
 
 const BASE = '/ontology/';
 

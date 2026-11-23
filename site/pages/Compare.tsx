@@ -4,10 +4,7 @@ import { Link } from '../router';
 import { areaPath, matrixPath, tablePath } from '../routes';
 import { usePage } from '../usePage';
 import { useExplorer } from '../useExplorer';
-import { compareSentence } from '../../explorer/data/copy';
-import { compare, reach } from '../../explorer/data/matrix';
-import { plural, prettyTable, shortTable, unslug } from '../../explorer/data/names';
-import type { CoreModel } from '../../explorer/data/types';
+import { compare, compareSentence, plural, prettyTable, reach, shortTable, unslug, type CoreModel } from '../../explorer/data';
 
 export function Compare({ a, b }: { a: string; b: string }) {
   const { core: m, error } = useExplorer();

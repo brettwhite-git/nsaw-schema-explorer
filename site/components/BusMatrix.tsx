@@ -4,9 +4,7 @@
 // Hover: the row drives the side panel (onHoverRow); the column tint is a one-line <style>, so hovering never
 // re-renders the table.
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
-import { matrixRows, reach } from '../../explorer/data/matrix';
-import { prettyTable } from '../../explorer/data/names';
-import type { CoreModel } from '../../explorer/data/types';
+import { matrixRows, prettyTable, reach, type CoreModel } from '../../explorer/data';
 import { matrixLayout, type Sel } from './matrix/shared';
 
 const LABEL_W = 204, BAND_W = 52, GAP = 6, MIN_W = 18, MAX_W = 26;

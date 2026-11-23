@@ -10,7 +10,8 @@
     "ontology": "node scripts/build-ontology.mjs",
     "test": "vitest run",
     "tokens": "node scripts/build-tokens.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "shoot": "node scripts/shoot.mjs"
   },
   "dependencies": {
     "@fontsource-variable/jetbrains-mono": "^5.3.0",

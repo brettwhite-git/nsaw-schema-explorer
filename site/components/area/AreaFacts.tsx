@@ -2,9 +2,7 @@
 // (a visual grouping only). Entries with a grain stated in the key list come first.
 import { Link } from '../../router';
 import { tablePath } from '../../routes';
-import { prettyTable, unsecuredName } from '../../../explorer/data/names';
-import type { AreaFact } from '../../../explorer/data/area';
-import type { CoreModel } from '../../../explorer/data/types';
+import { prettyTable, unsecuredName, type AreaFact, type CoreModel } from '../../../explorer/data';
 
 interface Group { key: string; members: AreaFact[]; lead: AreaFact }
 

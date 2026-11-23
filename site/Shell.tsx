@@ -44,7 +44,8 @@ export function Shell({ children }: { children: ReactNode }) {
           </Link>
           <button type="button" className="search-btn" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-keyshortcuts="Meta+K Control+K /">
             <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.4" /><path d="M10.5 10.5 14 14" stroke="currentColor" strokeWidth="1.4" /></svg>
-            <span>Search tables, fields, subject areas</span>
+            <span className="sb-long">Search tables, fields, subject areas</span>
+            <span className="sb-short">Search</span>
             <kbd>{isMac ? '⌘' : 'Ctrl'}</kbd><kbd>K</kbd>
           </button>
         </div>
@@ -52,8 +53,8 @@ export function Shell({ children }: { children: ReactNode }) {
       <main id="main" className="page">{children}</main>
       <footer className="site-foot">
         <p>
-          Built from Oracle's NetSuite Analytics Warehouse 25R4 semantic model lineage, entity key list and table index,
-          and the NetSuite data lineage 4.0 workbook. An independent reference, not an Oracle product.
+          An independent reference built from Oracle's published NetSuite Analytics Warehouse 25R4 semantic model
+          lineage, entity key list and table index, and the NetSuite data lineage 4.0 workbook.
         </p>
       </footer>
       <Palette open={open} onClose={close} />

@@ -2,9 +2,7 @@
 // select to compare with any area. Each choice opens /compare/:a/:b.
 import { Link, navigate } from '../../router';
 import { comparePath } from '../../routes';
-import { compare, rowOf } from '../../../explorer/data/matrix';
-import { fmt } from '../../../explorer/data/names';
-import type { CoreModel } from '../../../explorer/data/types';
+import { compare, fmt, rowOf, type CoreModel } from '../../../explorer/data';
 
 export interface Similar { sa: number; shared: number; apart: number }
 

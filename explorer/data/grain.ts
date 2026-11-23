@@ -82,3 +82,18 @@ export function grainLabel(m: CoreModel, t: number, g: Grain): string {
   const role = m.tables[t].role;
   return g === 'document' && role !== 'fact' && role !== 'enhanced' ? 'record' : GRAIN_LABEL[g];
 }
+
+/**
+ * Facts with a grain: the one count every page uses. Over fact and enhanced-fact tables the lineage lists directly
+ * under a subject area, each _SEC table counted as its own table (never paired by name), how many have an entry in
+ * Oracle's Entity Key List.
+ */
+export function factsWithGrain(m: CoreModel): { has: number; total: number } {
+  let has = 0, total = 0;
+  for (const t of m.tables) {
+    if ((t.role !== 'fact' && t.role !== 'enhanced') || !t.saCount) continue;
+    total++;
+    if (m.grain.entries.get(t.i)?.length) has++;
+  }
+  return { has, total };
+}

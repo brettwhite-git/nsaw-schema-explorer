@@ -1,10 +1,7 @@
 // Matrix page state and small helpers shared by the bus matrix, its side panel, the phone lists and Compare.
 // Selection lives in the query: ?a=slug&b=slug (one or two rows), ?dim=TABLE (one column), ?open=0,2 (bands).
 import { useEffect, useState } from 'react';
-import { matrixColumns } from '../../../explorer/data/matrix';
-import { grainOf } from '../../../explorer/data/grain';
-import { unslug } from '../../../explorer/data/names';
-import type { Band, CoreModel } from '../../../explorer/data/types';
+import { matrixColumns, unslug, type Band, type CoreModel } from '../../../explorer/data';
 
 export interface Sel {
   /** bus-matrix rows picked (a first) */
@@ -85,21 +82,6 @@ export function pickRow(s: Sel, r: number): Sel {
   else if (r === b) b = null;
   else b = r;
   return { ...s, a, b, dim: null };
-}
-
-/**
- * Facts with a grain in Oracle's Entity Key List. Counted over fact tables (secured tables apart) that the lineage
- * lists under a subject area, directly or through the _SEC table of the same name, as the approved mock-up counts.
- */
-export function factGrainCount(m: CoreModel): { has: number; total: number } {
-  let has = 0, total = 0;
-  for (const t of m.tables) {
-    if ((t.role !== 'fact' && t.role !== 'enhanced') || t.isSecured) continue;
-    if (!t.saCount && !t.lineageRows) continue;
-    total++;
-    if (grainOf(m, t.i).length) has++;
-  }
-  return { has, total };
 }
 
 export const ordinal = (n: number): string => {

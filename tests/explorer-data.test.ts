@@ -4,7 +4,7 @@ import path from 'node:path';
 import type { CoreJson, DetailJson } from '../ontology/types';
 import {
   buildCore, buildColumns, findTable, findField, compare, reach, colOf, grainOf, headerOf, linesOf, grainSentence,
-  slug, unslug, prettyTable, matrixColumns, matrixRows, dimensionReach, factsInSameAreas, fmt, plural,
+  slug, unslug, prettyTable, factsWithGrain, matrixColumns, matrixRows, dimensionReach, factsInSameAreas, fmt, plural,
   type CoreModel, type ColumnModel,
 } from '../explorer/data';
 
@@ -116,6 +116,14 @@ describe('field traces', () => {
   it('field keys are case-insensitive', () => expect(findField(cm, 'CUSTOMER.CompanyName')).toBe(findField(cm, 'customer.companyname')));
 });
 
+describe('facts with a grain', () => {
+  it('102 of the 282 fact tables in the lineage, _SEC tables counted as their own tables', () => {
+    expect(factsWithGrain(m)).toEqual({ has: 102, total: 282 });
+    const sec = m.tables.filter((t) => (t.role === 'fact' || t.role === 'enhanced') && t.saCount && t.isSecured);
+    expect(sec.length).toBeGreaterThan(0);
+  });
+});
+
 describe('names', () => {
   it('subject-area slugs are unique and round-trip for all 110', () => {
     const slugs = m.subjectAreas.map((s) => slug(m, s.i));
@@ -127,6 +135,18 @@ describe('names', () => {
   it('pretty table names', () => {
     expect(prettyTable(m, 'DW_NS_EMPLOYEE_D')).toMatch(/^Employee/);
     expect(prettyTable(m, 'DW_NS_CUSTOMER_D_SEC')).toBe(prettyTable(m, 'DW_NS_CUSTOMER_D'));
+    expect(prettyTable(m, 'DW_NS_LOCATION_CF_DH')).toBe('Location Hierarchy');
+    expect(prettyTable(m, 'DW_NS_SalesOrdNextTransactionLineLink_F')).toBe('Sales Ord Next Transaction Line Link');
+    expect(prettyTable(m, 'DW_NS_CUSTOMER_INVOICE_LINES_EF')).toBe('Customer Invoice Lines Enhanced');
+    expect(prettyTable(m, 'DW_NS_SUBSCRIPTIONCHANGEORDERMODIFICATIONTYPE_D')).toBe('Subscription Change Order Modification Type');
+  });
+  it('no two different tables share a readable name (a _SEC table shares its pair\'s)', () => {
+    const seen = new Map<string, string>();
+    for (const t of m.tables) {
+      const p = prettyTable(m, t.name), base = t.name.replace(/_SEC$/i, '');
+      expect(seen.get(p) ?? base, p).toBe(base);
+      seen.set(p, base);
+    }
   });
   it('fmt and plural', () => {
     expect(fmt(12345)).toBe('12,345');

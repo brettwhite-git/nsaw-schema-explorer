@@ -2,12 +2,7 @@
 // row, one picked dimension column, the hovered row, or a short guide. Sections render only when they have data.
 import { Link } from '../../router';
 import { areaPath, comparePath, matrixPath, tablePath } from '../../routes';
-import { areaSummary, type AreaFact } from '../../../explorer/data/area';
-import { areaGrainSentence, compareSentence } from '../../../explorer/data/copy';
-import { reportFoldersReading } from '../../../explorer/data/folders';
-import { compare, dimensionReach, factsInSameAreas, reach } from '../../../explorer/data/matrix';
-import { fmt, plural, prettyTable, shortTable, unsecuredName, unslug } from '../../../explorer/data/names';
-import type { ColumnModel, CoreModel } from '../../../explorer/data/types';
+import { areaGrainSentence, areaSummary, compare, compareSentence, dimensionReach, factsInSameAreas, fmt, plural, prettyTable, reach, reportFoldersReading, shortTable, unsecuredName, unslug, type AreaFact, type ColumnModel, type CoreModel } from '../../../explorer/data';
 import { matrixLayout, ordinal, type Sel } from './shared';
 
 export interface SidePanelProps {

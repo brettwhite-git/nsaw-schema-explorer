@@ -36,11 +36,27 @@ export const unsecuredName = (name: string): string => name.replace(/_SEC$/i, ''
 // a table whose name matches a folder takes the folder's spelling; otherwise its words are split with the
 // folders' vocabulary (UNITSTYPEUOM -> Units Type UOM).
 
-const EXTRA_WORDS = ['uom', 'units', 'costing', 'method', 'subtype', 'payment', 'instrument', 'merchandise', 'hierarchy', 'node', 'version', 'ship', 'revrec', 'rev', 'rec', 'planned', 'ratable', 'forecast', 'recurrence', 'revenue', 'event', 'type'];
-const ACRONYM = new Set(['uom']);
-const vocabCache = new WeakMap<CoreModel, { vocab: Set<string>; folders: Map<string, string> }>();
+const EXTRA_WORDS = [
+  'uom', 'units', 'costing', 'method', 'subtype', 'payment', 'instrument', 'merchandise', 'hierarchy', 'node', 'version',
+  'ship', 'revrec', 'rev', 'rec', 'planned', 'ratable', 'forecast', 'recurrence', 'revenue', 'event', 'type',
+  'amortization', 'billing', 'schedule', 'pattern', 'bom', 'revision', 'component', 'classification', 'consolidated',
+  'exchange', 'rate', 'effectivity', 'based', 'on', 'fiscal', 'cal', 'period', 'inventory', 'item', 'locations', 'job',
+  'resource', 'role', 'manufacturing', 'cost', 'template', 'operation', 'task', 'project', 'constraint', 'reforecast',
+  'amount', 'source', 'change', 'impact', 'date', 'scheduling', 'subscription', 'order', 'action', 'modification',
+  'option', 'vsoe', 'sop', 'group', 'workplace', 'main', 'address', 'email', 'preference', 'policy', 'categories',
+  'reporting', 'section', 'support', 'case', 'origin', 'work', 'calendar', 'holiday', 'plan', 'subsidiary', 'map',
+  'relationship', 'company', 'feature', 'setup', 'accounting', 'book', 'subsidiaries', 'assembly', 'assignment',
+  'expense', 'report', 'next', 'transaction', 'line', 'link', 'status', 'vendor',
+];
+const ACRONYM = new Set(['uom', 'bom', 'vsoe', 'sop']);
+/** Role suffixes a table name ends with, longest first. They are dropped from the readable name. */
+const ROLE_SUFFIX = /_(CF_DH|DH|EF|CF|SEC|D|F|G)$/i;
+/** When two tables read the same once suffixes are dropped, the less common one gets a word for its suffix. */
+const QUALIFIER: Record<string, string> = { EF: 'Enhanced', DH: 'Hierarchy', CF_DH: 'Hierarchy', CF: 'Calculated', G: 'Global' };
+interface Vocab { vocab: Set<string>; folders: Map<string, string>; bases: Map<string, Set<string>> }
+const vocabCache = new WeakMap<CoreModel, Vocab>();
 
-function vocabOf(m: CoreModel) {
+function vocabOf(m: CoreModel): Vocab {
   let v = vocabCache.get(m);
   if (!v) {
     const vocab = new Set<string>(EXTRA_WORDS);
@@ -50,10 +66,23 @@ function vocabOf(m: CoreModel) {
       if (!folders.has(k)) folders.set(k, n);
       for (const w of n.toLowerCase().split(/[^a-z]+/)) if (w.length > 1) vocab.add(w);
     }
-    v = { vocab, folders };
+    const bases = new Map<string, Set<string>>();
+    for (const t of m.tables) {
+      const { base, suffix } = parts(t.name);
+      const k = base.replace(/_/g, '').toLowerCase();
+      (bases.get(k) ?? bases.set(k, new Set()).get(k)!).add(suffix);
+    }
+    v = { vocab, folders, bases };
     vocabCache.set(m, v);
   }
   return v;
+}
+
+/** "DW_NS_LOCATION_CF_DH_SEC" -> base "LOCATION", suffix "CF_DH". */
+function parts(name: string): { base: string; suffix: string } {
+  const c = name.replace(/^DW_NS_/i, '').replace(/_SEC$/i, '');
+  const m = ROLE_SUFFIX.exec(c);
+  return m ? { base: c.slice(0, m.index), suffix: m[1].toUpperCase() } : { base: c, suffix: '' };
 }
 
 function segment(w: string, vocab: Set<string>): string[] {
@@ -71,12 +100,17 @@ function segment(w: string, vocab: Set<string>): string[] {
 
 /** "DW_NS_CUSTOMER_D" -> "Customer". The _SEC suffix and the role suffix are dropped. */
 export function prettyTable(m: CoreModel, name: string): string {
-  const { vocab, folders } = vocabOf(m);
-  const c = name.replace(/^DW_NS_/i, '').replace(/_SEC$/i, '').replace(/_(D|F|DH|EF|CF|G)$/i, '');
-  const hit = folders.get(c.replace(/_/g, '').toLowerCase());
-  if (hit) return hit;
-  return c.toLowerCase().split('_').filter(Boolean).flatMap((w) => segment(w, vocab))
+  const { vocab, folders, bases } = vocabOf(m);
+  const { base, suffix } = parts(name);
+  const flat = base.replace(/_/g, '').toLowerCase();
+  // A suffix word only when another table shares the base and this one is not the plain _D / _F table.
+  const q = (bases.get(flat)?.size ?? 0) > 1 ? QUALIFIER[suffix] : undefined;
+  const hit = folders.get(flat);
+  const text = hit ?? base
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')        // camelCase names keep their word breaks
+    .toLowerCase().split('_').filter(Boolean).flatMap((w) => segment(w, vocab))
     .map((w) => (ACRONYM.has(w) ? w.toUpperCase() : w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
+  return q ? `${text} ${q}` : text;
 }
 
 /** Table name without the DW_NS_ prefix, for tight lists. */

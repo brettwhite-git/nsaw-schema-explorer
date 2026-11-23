@@ -9,9 +9,8 @@ import { useExplorer } from '../useExplorer';
 import { BusMatrix } from '../components/BusMatrix';
 import { SidePanel } from '../components/matrix/SidePanel';
 import { PhoneMatrix } from '../components/matrix/PhoneMatrix';
-import { factGrainCount, matrixLayout, PHONE, pickRow, readSel, selQuery, useMedia, type Sel } from '../components/matrix/shared';
-import { fmt } from '../../explorer/data/names';
-import type { CoreModel } from '../../explorer/data/types';
+import { matrixLayout, PHONE, pickRow, readSel, selQuery, useMedia, type Sel } from '../components/matrix/shared';
+import { factsWithGrain, fmt, type CoreModel } from '../../explorer/data';
 
 function Mark() {
   return <svg className="mx-mark" width="22" height="8" aria-hidden="true"><line x1="1" y1="4" x2="21" y2="4" /></svg>;
@@ -66,13 +65,13 @@ function MatrixBody({ m, cm, loc }: { m: CoreModel; cm: ReturnType<typeof useExp
   }, [sel, write]);
 
   const stats = useMemo(() => {
-    const g = factGrainCount(m);
+    const g = factsWithGrain(m);
     const counts = m.core.meta.counts;
     return [
       { n: m.subjectAreas.length, t: `subject areas in ${m.functionalAreas.length} functional areas` },
       { n: counts.physicalTablesInLineage, t: 'warehouse tables in the lineage' },
       { n: m.bus.columns.length, t: 'dimensions shared by two or more areas' },
-      { n: g.has, t: `of ${fmt(g.total)} facts with a grain in Oracle’s key list` },
+      { n: g.has, t: 'fact tables with a grain in Oracle’s key list' },
       { n: counts.netsuiteRecords, t: 'NetSuite records named in the lineage' },
     ];
   }, [m]);

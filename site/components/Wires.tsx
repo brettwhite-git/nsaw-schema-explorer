@@ -83,12 +83,23 @@ export function Wires({ wires, source, scope, className }: WiresProps) {
   useLayoutEffect(() => {
     const g = gut.current;
     if (!g) return;
-    const root = (scope?.current ?? g.parentElement) as HTMLElement | null;
-    if (!root) return;
-    const find = (id: string) => root.querySelector<HTMLElement>(`[data-wire="${CSS.escape(id)}"]`);
+    // An ancestor's ref is not attached yet when this layout effect first runs, so the scope is read on every
+    // measure: until it appears the gutter's parent stands in, and a frame later it is observed too.
+    const ro = new ResizeObserver(() => later());
+    const watched = new Set<Element>();
+    let tries = 0;
+    const rootOf = (): HTMLElement | null => {
+      const r = (scope?.current ?? g.parentElement) as HTMLElement | null;
+      if (r && !watched.has(r)) { watched.add(r); ro.observe(r); }
+      return r;
+    };
     const mid = (el: HTMLElement, top: number) => { const r = el.getBoundingClientRect(); return r.top + r.height / 2 - top; };
 
     const measure = () => {
+      const root = rootOf();
+      if (!root) return;
+      if (scope && !scope.current && tries++ < 30) later();
+      const find = (id: string) => root.querySelector<HTMLElement>(`[data-wire="${CSS.escape(id)}"]`);
       const gr = g.getBoundingClientRect();
       if (source !== undefined) {
         const src = find(source);
@@ -106,12 +117,10 @@ export function Wires({ wires, source, scope, className }: WiresProps) {
       }
     };
 
-    measure();
     let raf = 0;
-    const later = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(measure); };
-    const ro = new ResizeObserver(later);
-    ro.observe(root);
+    function later() { cancelAnimationFrame(raf); raf = requestAnimationFrame(measure); }
     ro.observe(g);
+    measure();
     let live = true;
     document.fonts?.ready.then(() => { if (live) later(); });
     return () => { live = false; ro.disconnect(); cancelAnimationFrame(raf); };

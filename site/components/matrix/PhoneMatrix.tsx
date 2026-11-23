@@ -3,9 +3,7 @@
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { Link } from '../../router';
 import { areaPath } from '../../routes';
-import { matrixRows, reach } from '../../../explorer/data/matrix';
-import { prettyTable } from '../../../explorer/data/names';
-import type { CoreModel } from '../../../explorer/data/types';
+import { matrixRows, prettyTable, reach, type CoreModel } from '../../../explorer/data';
 
 type Tab = 'areas' | 'dims';
 

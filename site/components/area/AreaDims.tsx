@@ -2,9 +2,7 @@
 // (how many subject areas list it). The name opens the table; the bar opens the column in the bus matrix.
 import { Link } from '../../router';
 import { matrixPath, tablePath } from '../../routes';
-import { reach } from '../../../explorer/data/matrix';
-import { fmt, prettyTable } from '../../../explorer/data/names';
-import type { CoreModel } from '../../../explorer/data/types';
+import { fmt, prettyTable, reach, type CoreModel } from '../../../explorer/data';
 
 export function AreaDims({ m, dims }: { m: CoreModel; dims: number[] }) {
   const total = m.subjectAreas.length;

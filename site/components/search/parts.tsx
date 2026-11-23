@@ -124,7 +124,7 @@ export function SideColumn({ m, cm }: { m: CoreModel; cm: ColumnModel | null }) 
         <div className="facts">
           {f.stated && <Fact n={pct(f.stated)}>of warehouse columns have a NetSuite source stated in Oracle’s lineage ({fmt(f.stated[0])} of {fmt(f.stated[1])})</Fact>}
           {f.reaching && <Fact n={pct(f.reaching)}>of report columns reach a stated NetSuite field ({fmt(f.reaching[0])} of {fmt(f.reaching[1])})</Fact>}
-          <Fact n={fmt(f.grained[0])}>of the {fmt(f.grained[1])} fact tables have a stated grain in the Entity Key List (_SEC copies counted apart)</Fact>
+          <Fact n={fmt(f.grained[0])}>fact tables with a grain in Oracle’s key list</Fact>
         </div>
       </section>
       <section>

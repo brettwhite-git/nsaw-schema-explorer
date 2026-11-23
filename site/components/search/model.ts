@@ -2,7 +2,7 @@
 // columns.json is in), where each kind of item leads, the words shown beside it, and the side-column figures.
 import { useEffect } from 'react';
 import {
-  buildSearchIndex, extendSearchIndex, fieldKey, fmt, grainSentence, plural, primaryGrain,
+  buildSearchIndex, extendSearchIndex, factsWithGrain, fieldKey, fmt, grainSentence, plural,
   type ColumnModel, type CoreModel, type ItemKind, type SearchIndex, type SearchItem,
 } from '../../../explorer/data';
 import { areaPath, fieldPath, searchPath, tablePath } from '../../routes';
@@ -142,7 +142,7 @@ export interface Figures {
   stated: [number, number] | null;
   /** report columns reaching a stated NetSuite field / all report columns */
   reaching: [number, number] | null;
-  /** fact tables (_SEC copies aside) with a grain in the Entity Key List / those fact tables */
+  /** factsWithGrain: facts in the lineage with a grain in the Entity Key List / those facts */
   grained: [number, number];
   /** most shared dimensions: physicalTable and subject areas */
   shared: { t: number; n: number }[];
@@ -153,12 +153,12 @@ const cache = new WeakMap<CoreModel, { cm: ColumnModel | null; f: Figures }>();
 export function figures(m: CoreModel, cm: ColumnModel | null): Figures {
   const hit = cache.get(m);
   if (hit && hit.cm === cm) return hit.f;
-  const facts = m.tables.filter((t) => t.columns > 0 && t.role === 'fact' && !t.isSecured);
+  const g = factsWithGrain(m);
   const order = m.bus.columns.map((t, i) => ({ t, n: m.bus.columnSaCount[i] })).sort((a, b) => b.n - a.n || m.tables[a.t].name.localeCompare(m.tables[b.t].name));
   const f: Figures = {
     tables: m.tables.filter((t) => t.columns > 0).length,
     columns: null, reportNames: null, fields: null, stated: null, reaching: null,
-    grained: [facts.filter((t) => primaryGrain(m, t.i)).length, facts.length],
+    grained: [g.has, g.total],
     shared: order.slice(0, 7),
     areas: m.subjectAreas.length,
   };

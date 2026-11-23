@@ -1,82 +1,42 @@
-# NSAW Schema Explorer (rebuild "The Warehouse, Drawn") - Behaviour Spec
+# NSAW Schema Explorer: behaviour spec
 
-A public web site that teaches data warehousing and NetSuite Analytics Warehouse (NSAW) from the ground up as a hand-inked, explorable field manual, and lets the reader pull any thread into the real semantic-model lineage. Readers are NetSuite and analytics practitioners and learners. One principle shapes every choice: ink on paper, where line style tells the reader what is known (solid = explicit in the data, stitched thread = inferred, pencil = illustrative).
+A public reference site for Oracle NetSuite Analytics Warehouse (NSAW) 25R4. It shows how subject areas share dimensions, what grain each fact table has, and how a NetSuite field flows through warehouse columns into report columns. Readers are NetSuite and analytics practitioners. Everything shown is stated in Oracle's published files; the site never narrates what the files leave out.
 
-**Status (2026-11-21):** branch `drawn`, nothing deployed from the rebuild. The entry piece is being built one scene at a time in the lab (`lab/scenes/`): scenes 0 (three questions) and 1 (NetSuite) are built; scenes 2 to 6 are sheets only (`docs/entry-story.md`). The live home page still shows the earlier climbing section. The pre-rebuild app (lineage browser: sidebar tree, star-schema network, detailed flow, table view) still runs and is described in `CLAUDE.md`. Rebuild is in Phase 0 (ontology build, rulebook and identity lab, housekeeping); no surface below is built yet. Audit findings are in `docs/testing/2026-11-20/findings.md`.
+**Status (2026-11-22):** branch `drawn`, all routes built, route check clean at 1440x900 and 390x844. Not deployed yet; deploys go to a Vercel preview, then production, each on the owner's explicit yes.
 
 **How to keep this current:** update this file in the same commit as any behaviour change. When this file and the code disagree, the code is the truth; fix this file.
 
-Paths: `F/` = repo root (`/Users/brettwhite/Projects/nsaw-schema-explorer`). Plan: `/Users/brettwhite/.claude/plans/async-painting-taco.md`.
+## Data
 
----
+- Inputs (`data-src/`): 25R4 semantic model lineage CSV, Entity Key List CSV, BI view objects CSV, analytics tables HTML index, and two CSVs extracted from the NetSuite data lineage 4.0 workbook.
+- `npm run ontology` writes `public/ontology/core.json` (loaded first, about 330 KB) and `columns.json` (column-level lineage, loaded on idle or when a page needs it). `STATED_ONLY = true`: only relationships the files state are emitted.
+- `explorer/data` builds indexes from those files in the browser. Counts used on more than one page come from one function (for example `factsWithGrain`: 102 of the 282 fact tables in the lineage have a grain in the key list; `_SEC` tables count as their own tables).
 
-## 1. The three surfaces (one ontology)
+## Routes
 
-**Purpose.** Teach and explore from one shared model, so a lesson can open the real tables it discusses and a table page can open the lesson that explains it.
+### `/` Bus matrix
+Rows are the 110 subject areas grouped by 9 functional areas; columns are the 104 dimension tables listed under two or more areas, ordered by reach. The 29 most shared columns are readable; the long tail sits in three bands (24 to 72, 6 to 20, 5 or fewer areas) that open on click. Stats: subject areas, warehouse tables in the lineage, shared dimensions, facts with a grain, NetSuite records. Side panel: hover or pick a row for its facts and their grain; pick two rows to compare; pick a column (`?dim=`) for its reach by functional area, the report folders that read from it, and the facts in the same areas. Phones get grouped lists with Subject areas / Dimensions tabs.
 
-**Intended behaviour.**
-- The Course: chapters whose figures draw themselves with scroll; each figure is a working machine driven by real lineage or by a small computed example (a TS relational engine: scan, join, group, filter).
-- The Atlas: every concept, table, field and NetSuite record has a page and a URL; home is a bus matrix (subject areas by shared dimensions).
-- The Index: search as a back-of-book index, ranked concepts first, relationship questions answered, keyboard navigable.
-- Real URLs, history and deep links for every page and selection.
-- One order line (customer 88, SO1041, 1,240.00, labelled illustrative) is followed through every chapter.
-- Provenance is a drawing rule: solid = explicit, stitched = inferred, pencil = illustrative.
+### `/compare/:a/:b`
+Two subject areas by slug. A sentence and three stats (only in A, only in B, listed under both), the two "only in" lists with reach, then both matrix rows side by side with differences in the accent, and links back to the matrix and to each area.
 
-**Rules & limits.** Dark night-ocean theme is the default, light is the alternate (DESIGN.md decisions log). One accent colour. No 3D library or WebGL; all figures are code-drawn SVG/canvas, and isometric drawing built from code (`ink/iso.ts`) is allowed. Figure contract: `mount(el, {step, reducedMotion}) -> {setStep, replay, destroy}` plus a React wrapper. Version constant: `package.json` `"version"` (0.0.0).
+### `/area/:slug`
+One subject area: lead sentence and stats (fact tables, shared dimensions, report folders, report columns); fact tables with their grain sentence and key columns (a `_SEC` table listed beside its namesake, tagged "secured"); shared dimensions ranked by reach; report folders with column counts; "Compare with..." the closest areas by shared dimensions, plus a picker for any area.
 
-**Key files.** `F/DESIGN.md`, `F/tokens.json` (rulebook), `F/scripts/build-ontology.mjs` (planned), `F/public/ontology/` (planned output).
+### `/table/:name` (`?col=`)
+One warehouse table, `_SEC` tables included as their own pages. Title is the grain sentence when the Entity Key List has an entry, the readable name otherwise. Sections render only with data: key and key-list entries, header partner (line table to header on a stated key), loaded from NetSuite, column ledger (NetSuite field, warehouse column, report columns; picking a row sets `?col=` and shows the selected column card), dimension or fact tables in the same subject areas, report folders that read from it, and subject areas grouped by functional area.
 
-**Open gaps.** Nothing here is built. Phase 1 is the gate.
+### `/field/:record/:field` (`?at=`, `?sa=`)
+Fan-out impact trace of one NetSuite field (record and field as two path segments, no dot). Headline sentence with warehouse columns, report columns and subject areas; the field, its warehouse columns grouped by table role, report names, then subject areas bundled per functional area. Picking a column (`?at=`) or a subject area (`?sa=`) lights its path. "Trace another" offers sample fields; "Copy link" copies the URL.
 
----
+### `/search?q=`
+Ranked search over warehouse tables, columns, report columns, report tables, NetSuite records and fields, and subject areas. Typed filters: `is:`, `type:`, `grain:`, `area:`, `shared:`. Tabs per kind with counts. Side column: share of warehouse columns with a stated NetSuite source, share of report columns that reach a stated field, facts with a grain, most shared dimensions. No match reads "Nothing here matches `q`." with suggested queries. The palette (Cmd/Ctrl-K, or `/` outside a text field; the header button on touch) uses the same index.
 
-## 1a. Entry piece
+### Not found
+Any other path: "Nothing here is called `X`." with a search box prefilled from the path.
 
-**Purpose.** "How NetSuite Data Intelligence is put together", presented live by the owner to finance leadership: three pinned questions, one order line followed up through the product, a ledger that grows one line per scene. Full story, decisions and scene sheets: `docs/entry-story.md`. Design rules and the control scheme: DESIGN.md section 6b.
+## Behaviour common to every page
+Deep links hard-load (Vercel rewrites everything except `/ontology/` and `/assets/` to `index.html`); old `/atlas/*`, `/course/*`, `/index` and `/legacy.html` redirect. Each page sets its title, focuses its `h1` on route change and sets `body[data-ready="1"]` once rendered. Selections live in the query string so a link reopens the same view.
 
-**Current behaviour.** Lab only (`lab/scenes/index.html`; the live home page is unchanged). Scene 0 writes the three questions and draws the order form; scene 1 pulls the form into records, asks each pinned question of that shape and writes the first ledger line. Click, Space or Right: next finished frame; Left: back; scroll: within a beat; 0 to 6: a scene; End or S: skip to the scene's end; F: full screen. Reduced motion: every beat shows its finished frame at once.
-
-**Rules & limits.** Three line styles: ink (in the lineage data), ink with a source mark (in Oracle's documentation), pencil (invented). Shared furniture owns a reserved zone; scenes never enter it. NetSuite is never shown failing; people appear only at the doors. Counts come from the ontology at run time.
-
-**Key files.** `F/figures/scenes/` (`player.ts`, `sequence.ts`, `shared/`, `order/`, `scene0/`, `netsuite/`), `F/lab/scenes/`, `F/tests/scene-netsuite.test.ts`.
-
-**Open gaps.** Scenes 2 to 6; the home page does not use the sequence yet.
-
----
-
-## 2. The nine chapters
-
-1. Follow one order line (first slice). 2. Why a warehouse exists. 3. Facts, dimensions, grain. 4. Shared dimensions. 5. Star and cube. 6. The model is the product. 7. Bronze, silver, gold, two doors. 8. Getting data in and extending. 9. Who sees what.
-
-**Current behaviour.** Chapter 1 steps: order as a NetSuite form; three records; rows land; fact row plus dimension rows joined by thread; grain; the model names it; a number on a report. Each step ends with "pull this thread" into the Atlas.
-
-**Rules & limits.** Chapters 2-9 are built only after Phase 1 is judged clearly better than the deck slides it replaces (slides 5-6 of the NSAW master deck).
-
-**Open gaps.** All chapters unbuilt.
-
----
-
-## 3. Data and ontology
-
-**Purpose.** One static, typed graph the whole site reads.
-
-**Intended behaviour.**
-- `npm run ontology` builds JSON from the lineage CSV (about 56,000 rows, 110 subject areas, 447 warehouse tables), workbook source edges (2,774), the Entity Key List and the Oracle table-group index. Each node and edge is tagged explicit, inferred or curated.
-- `parsePhysicalTableType` checks `_SEC` before `_F` today (`F/types.ts`); the build fixes this, uses one definition of "derived" (workbook `NSAW_DERIVED`), and keeps the 5,804 rows dropped by `F/data/dataLoader.ts` as SQL sources.
-
-**Rules & limits.** No data types, descriptions, keys or formulas exist in any source. Teaching copy and example numbers are authored and labelled illustrative. Fact-to-dimension links are co-occurrence and drawn as inferred. True source lineage covers about 32% of warehouse columns; the rest uses the name guess (`inferFieldName`, `inferRecordType` for dimensions only) and is drawn as a guess. The site is public (Vercel, MIT repo): confirm workbook-derived data and deck wording may be published before Phase 0 ships any of it.
-
-**Key files.** `F/data/dataLoader.ts`, `F/types.ts`, `F/config/functionalAreas.ts` (9 functional areas).
-
-**Open gaps.** Build script and tests not written.
-
----
-
-## 4. Testing and quality
-
-**Rules & limits.** `npx tsc --noEmit` clean (2 pre-existing errors in `data/dataLoader.ts` lines 61-62 as of 2026-11-20), `npm run build`, `npm test` (Vitest: ontology counts, mini engine sums customer 88 to 1,550.50). Every figure is checked in a real browser at each step, light and dark, reduced motion, phone width, with a clean console.
-
----
-
-## N. Change log
-- 2026-11-20 - Spec filled from the approved rebuild plan; no behaviour change. Version 0.0.0.
+## Checks
+`npx tsc --noEmit`, `npm test` (data counts, copy rule, router, tokens, ontology), `npm run build`, and `npm run shoot` against `vite preview --port 3002` (every route at both sizes, zero console errors, no horizontal overflow).
