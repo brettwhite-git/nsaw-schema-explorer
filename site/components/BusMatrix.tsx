@@ -7,9 +7,11 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { matrixRows, prettyTable, reach, type CoreModel } from '../../explorer/data';
 import { matrixLayout, type Sel } from './matrix/shared';
 
-const LABEL_W = 204, BAND_W = 52, GAP = 6, HEAD_MIN = 20, MAX_W = 34, OPEN_MIN = 12, OPEN_MAX = 22;
-/** Names run at 45° only when every named column is at least this wide; narrower, they all run upright. */
-const ANGLE_AT = 24;
+// Every column name is slanted at SLANT degrees from horizontal. Neighbouring names sit w·sin(SLANT) apart, so a
+// column must be at least lineHeight / sin(SLANT) wide: about 14px for 12px names and 12px for 10.5px ones.
+// The minimums below leave a little air on top of that.
+const LABEL_W = 204, BAND_W = 52, GAP = 6, HEAD_MIN = 20, MAX_W = 34, OPEN_MIN = 15, OPEN_MAX = 22;
+const SLANT = 60, SIN = Math.sin((SLANT * Math.PI) / 180), COS = Math.cos((SLANT * Math.PI) / 180);
 /** Longer names are cut with an ellipsis; the full name stays in the title and the aria-label. */
 const NAME_MAX = 22;
 const HEAD_MIN_H = 120, HEAD_MAX_H = 220, BAR_ROOM = 34;
@@ -19,9 +21,7 @@ type Slot =
   | { kind: 'band'; b: number; w: number; k: number }
   | { kind: 'gap'; w: number };
 
-type Mode = 'angled' | 'upright';
-
-function buildSlots(m: CoreModel, open: Set<number>, avail: number): { slots: Slot[]; width: number; mode: Mode } {
+function buildSlots(m: CoreModel, open: Set<number>, avail: number): { slots: Slot[]; width: number } {
   const { head, bands } = matrixLayout(m);
   const openCols = [...open].reduce((n, b) => n + bands[b].cols.length, 0);
   const closed = bands.length - open.size;
@@ -38,8 +38,7 @@ function buildSlots(m: CoreModel, open: Set<number>, avail: number): { slots: Sl
     if (open.has(b)) for (const c of bd.cols) { slots.push({ kind: 'col', c, w: ecw, tail: true, k: k++ }); width += ecw; }
     else { slots.push({ kind: 'band', b, w: BAND_W, k: k++ }); width += BAND_W; }
   });
-  const mode: Mode = cw >= ANGLE_AT && (!openCols || ecw >= ANGLE_AT) ? 'angled' : 'upright';
-  return { slots, width, mode };
+  return { slots, width };
 }
 
 const shortName = (s: string) => (s.length > NAME_MAX ? `${s.slice(0, NAME_MAX - 1).trimEnd()}…` : s);
@@ -55,14 +54,14 @@ function textWidth(text: string, size: number, weight: number): number {
   return measureCtx.measureText(text).width;
 }
 
-/** Header height that holds the longest visible name in the chosen orientation. */
-function headHeight(slots: Slot[], names: string[], mode: Mode, dim: number | null): number {
+/** Header height that holds the longest visible name at the slant. */
+function headHeight(slots: Slot[], names: string[], dim: number | null): number {
   let L = 0;
   for (const s of slots) {
     if (s.kind !== 'col') continue;
     L = Math.max(L, textWidth(shortName(names[s.c]), s.tail ? 10.5 : 12, s.c === dim ? 600 : 400));
   }
-  const rise = mode === 'angled' ? (L + 12) * Math.SQRT1_2 : L;
+  const rise = L * SIN + 12 * COS;
   return Math.round(Math.max(HEAD_MIN_H, Math.min(HEAD_MAX_H, rise + BAR_ROOM + 12)));
 }
 
@@ -84,6 +83,7 @@ export interface BusMatrixProps {
 export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol, onToggleBand, onHoverRow }: BusMatrixProps) {
   const wrap = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  const tip = useRef<HTMLDivElement>(null);
   const hoverStyle = useRef<HTMLStyleElement>(null);
   const hoverRow = useRef<number | null>(null);
   const [avail, setAvail] = useState(1000);
@@ -104,18 +104,18 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
   useLayoutEffect(() => {
     const el = scroller.current;
     if (!el) return;
-    const measure = () => setAvail(Math.round(el.clientWidth));
+    const measure = () => setAvail(Math.round(el.clientWidth) - 12); // less the box's right padding (room for the last slanted name)
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  const { slots, width, mode } = useMemo(() => buildSlots(m, sel.open, avail), [m, sel.open, avail]);
+  const { slots, width } = useMemo(() => buildSlots(m, sel.open, avail), [m, sel.open, avail]);
   const groups = useMemo(() => matrixRows(m), [m]);
   const names = useMemo(() => m.bus.columns.map((t) => prettyTable(m, m.tables[t].name)), [m]);
   // fontTick only invalidates the memo: the canvas measures again once the fonts have loaded.
-  const headH = useMemo(() => headHeight(slots, names, mode, sel.dim), [slots, names, mode, sel.dim, fontTick]);
+  const headH = useMemo(() => headHeight(slots, names, sel.dim), [slots, names, sel.dim, fontTick]);
   const view = useMemo<View>(() => {
     const { a, b } = sel;
     if (a === null || b === null) return { cmp: false, shared: new Set(), diff: new Set() };
@@ -168,7 +168,24 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
     }
   };
 
+  // One positioned element outside the scroll box (so it is never clipped), filled and placed through its ref.
+  const showTip = (c: number | null) => {
+    const t = tip.current, w = wrap.current, sc = scroller.current;
+    const th = c === null ? null : w?.querySelector<HTMLElement>(`th[data-c="${c}"]`);
+    if (!t || !w || !sc || !th || c === null) { if (t) t.hidden = true; return; }
+    const wr = w.getBoundingClientRect(), sr = sc.getBoundingClientRect(), hr = th.getBoundingClientRect();
+    const mid = hr.left + hr.width / 2;
+    if (mid < sr.left + LABEL_W || mid > sr.right) { t.hidden = true; return; }
+    t.textContent = `${names[c]} · ${reach(m, c)} of ${N} subject areas`;
+    t.hidden = false;
+    const tw = t.offsetWidth, th2 = t.offsetHeight;
+    const x = Math.max(sr.left - wr.left, Math.min(sr.right - wr.left - tw, mid - wr.left - tw / 2));
+    t.style.left = `${Math.round(x)}px`;
+    t.style.top = `${Math.round(hr.bottom - wr.top - BAR_ROOM + 2 - th2)}px`;
+  };
+
   const setHover = (r: number | null, c: number | null) => {
+    showTip(c);
     if (hoverStyle.current) hoverStyle.current.textContent = c === null ? '' : `.bm [data-c="${c}"]{background-color:var(--tint)}.bm th[data-c="${c}"] .bm-cl{text-decoration:underline}`;
     if (r !== hoverRow.current) { hoverRow.current = r; onHoverRow(r); }
   };
@@ -200,9 +217,11 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
           );
         })}
       </div>
-      <div className="bm-scroll" ref={scroller} style={{ scrollPaddingTop: headH, scrollPaddingLeft: LABEL_W }}>
+      <div className="bm-tip" ref={tip} hidden aria-hidden="true" />
+      <div className="bm-scroll" ref={scroller} style={{ scrollPaddingTop: headH, scrollPaddingLeft: LABEL_W }}
+        onScroll={(e) => { showTip(null); e.currentTarget.classList.toggle('is-x', e.currentTarget.scrollLeft > 0); }}>
       <table
-        className={`bm ${mode}${view.cmp ? ' is-cmp' : ''}${dim !== null ? ' is-dim' : ''}`}
+        className={`bm${view.cmp ? ' is-cmp' : ''}${dim !== null ? ' is-dim' : ''}`}
         style={{ width, ['--bm-head' as string]: `${headH}px` }}
         role="grid"
         aria-label="Bus matrix: subject areas by shared dimension tables"
@@ -210,6 +229,8 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
         onKeyDown={onKeyDown}
         onMouseOver={onMouseOver}
         onMouseLeave={() => setHover(null, null)}
+        onFocus={(e) => { const el = (e.target as HTMLElement).closest<HTMLElement>('[data-k]'); showTip(el?.dataset.c !== undefined ? Number(el.dataset.c) : null); }}
+        onBlur={() => showTip(null)}
       >
         <colgroup>
           <col style={{ width: LABEL_W }} />

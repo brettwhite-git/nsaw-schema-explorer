@@ -23,11 +23,18 @@
 .mx-foot { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--rule); color: var(--ink-3); font: italic 400 13px var(--serif); max-width: 100ch; }
 
 /* long-tail toggles */
-.bm-wrap { min-width: 0; }
+.bm-wrap { min-width: 0; position: relative; }
+/* the column tooltip: one element outside the scroll box, placed over the reach bars from script */
+.bm-tip {
+  position: absolute; z-index: 6; pointer-events: none; white-space: nowrap;
+  padding: 3px 8px; background-color: var(--paper); border: 1px solid var(--line);
+  font: 400 12.5px/1.3 var(--ui); color: var(--ink);
+}
+.bm-tip[hidden] { display: none; }
 /* The matrix scrolls inside its own box, both ways: the header pins to its top and the subject-area column to
    its left. (Any overflow ancestor would become the sticky container anyway, so the box is made the one.) */
 .bm-scroll {
-  overflow: auto; max-height: calc(100vh - 88px); overscroll-behavior-x: contain;
+  overflow: auto; max-height: calc(100vh - 88px); overscroll-behavior-x: contain; padding-right: 12px;
   scrollbar-width: thin; scrollbar-color: var(--edge) transparent;
 }
 .bm-bands { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; margin: 0 0 4px; }
@@ -45,30 +52,30 @@
 .bm thead { position: sticky; top: 0; z-index: 3; }
 .bm thead tr { background-color: var(--paper); }
 .bm thead th { height: var(--bm-head, 172px); vertical-align: bottom; position: relative; border-bottom: 1px solid var(--line); }
-.bm thead th.bm-corner { border-bottom: 0; position: sticky; left: 0; z-index: 1; background-color: var(--paper); }
-/* angled names lean left over the corner; angled only happens when nothing overflows, so it needs no cover */
-.bm.angled thead th.bm-corner { background-color: transparent; }
+.bm thead th.bm-corner { border-bottom: 0; position: sticky; left: 0; z-index: 1; }
+/* The first names lean left over the corner's empty top-right; once the matrix scrolls sideways the corner turns
+   solid so the names sliding under it are cut cleanly. */
+.bm-scroll.is-x .bm thead th.bm-corner { background-color: var(--paper); }
 .bm thead th.bm-gap { border-bottom: 0; }
 
 /* corner: axis labels */
 .bm-corner > span { position: absolute; white-space: nowrap; }
 .bm-axis-t { left: 0; bottom: 64px; font: italic 400 13px var(--serif); color: var(--ink-2); }
 .bm-axis-s { left: 0; bottom: 46px; font-size: 12px; color: var(--ink-3); }
-.bm-axis-dl { right: 10px; bottom: 46px; font-size: 12px; color: var(--ink-3); }
+.bm-axis-dl { right: 34px; bottom: 46px; font-size: 12px; color: var(--ink-3); }
 .bm-axis-r { left: 0; bottom: 4px; font: italic 400 13px var(--serif); color: var(--ink-2); }
 .bm-axis-hi, .bm-axis-lo { right: 10px; font: 400 10.5px var(--mono); color: var(--ink-3); }
 .bm-axis-hi { bottom: 18px; }
 .bm-axis-lo { bottom: -5px; }
 
-/* column heads: a name above a reach bar. Wide columns angle it at 45°; otherwise every name runs upright,
-   reading bottom to top inside its own column, so neighbours never touch. */
+/* column heads: a name above a reach bar. Every name is slanted at 60° (SLANT in BusMatrix.tsx),
+   and columns are kept wide enough that neighbouring names never touch. */
 .bm-ch, .bm-bh { cursor: pointer; }
 .bm-ch .bm-cl, .bm-bh .bm-cl {
   position: absolute; bottom: 34px; white-space: nowrap;
   font: 400 12px var(--ui); color: var(--ink); line-height: 1;
 }
-.bm.angled .bm-cl { right: 50%; transform-origin: 100% 100%; transform: translateX(4px) rotate(45deg); }
-.bm.upright .bm-cl { left: 50%; writing-mode: vertical-rl; transform: translateX(-50%) rotate(180deg); }
+.bm-ch .bm-cl, .bm-bh .bm-cl { right: 50%; transform-origin: 100% 100%; transform: translateX(4px) rotate(60deg); }
 .bm-ch.tail .bm-cl { font-size: 10.5px; color: var(--ink-2); }
 .bm-ch .bm-bar { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); background-color: var(--ink-3); }
 .bm-ch.hot .bm-cl { color: var(--accent); font-weight: 600; }
