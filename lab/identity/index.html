@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Warehouse, Drawn: identity lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Gelasio:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@500&display=swap" rel="stylesheet">
+<style>
+  /* ---- the desk (page chrome, not part of any identity) ---- */
+  :root { --d-bg: #D6D3CC; --d-ink: #1E1D1A; --d-edge: #8D897F; --mono: "JetBrains Mono", ui-monospace, Menlo, monospace; }
+  html[data-theme="dark"] { --d-bg: #070707; --d-ink: #D9D6CF; --d-edge: #55534D; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--d-bg); color: var(--d-ink); font-family: var(--mono); }
+  .bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; padding: 12px 20px; background: var(--d-bg); border-bottom: 1px solid var(--d-edge); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+  .bar h1 { margin: 0 auto 0 0; font: 600 12px var(--mono); letter-spacing: .14em; }
+  .bar button, .bar label { font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--d-ink); background: none; border: 1px solid var(--d-edge); padding: 7px 11px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; min-height: 32px; }
+  .bar button[aria-pressed="true"] { border-color: var(--d-ink); box-shadow: inset 0 -2px 0 var(--d-ink); }
+  .bar button:focus-visible, .bar input:focus-visible { outline: 2px solid var(--d-ink); outline-offset: 2px; }
+  .intro { max-width: 1500px; margin: 0 auto; padding: 18px 20px 14px; font-size: 11px; line-height: 1.7; letter-spacing: .04em; opacity: .85; }
+  #variants { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr)); gap: 22px; max-width: 1500px; margin: 0 auto; padding: 0 20px 60px; align-items: start; }
+
+  /* ---- identity tokens: A Manual / B Ledger / C Proof ---- */
+  .v[data-v="a"] { --paper:#EEE5D0; --paper-2:#F5EEDD; --ink:#1A1612; --ink-2:#5A5040; --pencil:#8C8372; --accent:#B93216; --hair:rgba(26,22,18,.18); --edge:rgba(26,22,18,.35);
+    --serif:"Source Serif 4", Georgia, serif; --t-size:32px; --t-weight:600; --t-ls:-.012em; --tex:url(/paper/paper-a-light.webp); --blend:multiply; }
+  .v[data-v="b"] { --paper:#F2F1E9; --paper-2:#F9F8F2; --ink:#121C2B; --ink-2:#4F5B6B; --pencil:#8793A2; --accent:#8F6400; --hair:rgba(18,28,43,.16); --edge:rgba(18,28,43,.32);
+    --serif:"Newsreader", Georgia, serif; --t-size:36px; --t-weight:500; --t-ls:-.018em; --tex:url(/paper/paper-b-light.webp); --blend:multiply; }
+  .v[data-v="c"] { --paper:#F6F5F0; --paper-2:#FCFBF8; --ink:#12303D; --ink-2:#4D6671; --pencil:#8AA0A9; --accent:#A85A00; --hair:rgba(18,48,61,.16); --edge:rgba(18,48,61,.32);
+    --serif:Georgia, Gelasio, "Times New Roman", serif; --t-size:32px; --t-weight:700; --t-ls:-.01em; --tex:url(/paper/paper-c-light.webp); --blend:multiply; }
+  html[data-theme="dark"] .v[data-v="a"] { --paper:#1A1612; --paper-2:#231E18; --ink:#ECE3CF; --ink-2:#A99F8B; --pencil:#7F7766; --accent:#FF6B47; --hair:rgba(236,227,207,.16); --edge:rgba(236,227,207,.3); --tex:url(/paper/paper-a-dark.webp); --blend:screen; }
+  html[data-theme="dark"] .v[data-v="b"] { --paper:#0E1620; --paper-2:#152030; --ink:#DDE4EC; --ink-2:#93A1B1; --pencil:#6A7888; --accent:#E9A53B; --hair:rgba(221,228,236,.15); --edge:rgba(221,228,236,.3); --tex:url(/paper/paper-b-dark.webp); --blend:screen; }
+  html[data-theme="dark"] .v[data-v="c"] { --paper:#101F26; --paper-2:#172B34; --ink:#D8E6EB; --ink-2:#8FB5C3; --pencil:#6C8791; --accent:#F6AE4E; --hair:rgba(216,230,235,.15); --edge:rgba(216,230,235,.3); --tex:url(/paper/paper-c-dark.webp); --blend:screen; }
+
+  /* ---- the sheet ---- */
+  .v { position: relative; isolation: isolate; container-type: inline-size; background-color: var(--paper); color: var(--ink); border: 1px solid var(--edge); padding: 22px 22px 16px; font-family: var(--serif); transition: background-color 200ms ease, color 200ms ease; }
+  .v::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: var(--tex); background-size: 512px 512px; mix-blend-mode: var(--blend); }
+  .mono { font-family: var(--mono); }
+  .vhead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding-bottom: 12px; border-bottom: 1px solid var(--hair); margin-bottom: 18px; }
+  .vhead .lab { font: 600 10.5px var(--mono); letter-spacing: .16em; color: var(--ink-2); }
+  .vname { margin: 0; font: var(--t-weight) 18px var(--serif); font-style: italic; }
+  .vhead .sub { width: 100%; font: 400 10.5px var(--mono); letter-spacing: .06em; color: var(--ink-2); }
+
+  /* ---- specimen text ---- */
+  .labelrow { display: flex; flex-wrap: wrap; gap: 4px 9px; align-items: center; font: 500 11px var(--mono); letter-spacing: .12em; color: var(--ink-2); text-transform: uppercase; }
+  .labelrow i { width: 1px; height: 10px; background: var(--ink-2); opacity: .5; }
+  .title { margin: 10px 0 12px; font: var(--t-weight) var(--t-size)/1.08 var(--serif); letter-spacing: var(--t-ls); }
+  .body { margin: 0 0 10px; font: 400 16px/1.62 var(--serif); }
+  .body em { font-style: italic; }
+  .callout { font-style: italic; color: var(--ink-2); border-bottom: 1px dotted var(--ink-2); }
+  .call { margin: 0; font: italic 400 14px/1.5 var(--serif); color: var(--ink-2); }
+  .note { margin: 8px 0 0 14px; min-height: 60px; font-size: 22px; color: var(--ink-2); }
+  .note.plain { font: 500 22px "Caveat", cursive; }
+  .note-line { line-height: 1.2; white-space: nowrap; transform: rotate(var(--line-tilt, 0deg)); transform-origin: left center; }
+  .written-line { display: block; }
+  .blk { margin-top: 22px; }
+  .blk .h { margin: 0 0 8px; font: 500 10.5px var(--mono); letter-spacing: .14em; color: var(--ink-2); text-transform: uppercase; }
+  .blk .ill { margin-left: 8px; font-style: italic; font-family: var(--serif); text-transform: none; letter-spacing: 0; font-size: 12.5px; }
+  .cap-row { margin: 6px 0 0; font: 400 10.5px var(--mono); letter-spacing: .06em; color: var(--ink-2); }
+  .figbox { width: 100%; }
+  .pair { display: grid; grid-template-columns: 200px 1fr; gap: 6px 22px; align-items: start; }
+  @container (max-width: 470px) { .pair { grid-template-columns: 1fr; } }
+  .mats { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 22px; padding-top: 12px; border-top: 1px solid var(--hair); font: 400 10px var(--mono); letter-spacing: .08em; color: var(--ink-2); }
+  .sw { display: inline-flex; align-items: center; gap: 6px; }
+  .sw i { width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--c); box-shadow: 0 0 0 1px var(--edge); }
+
+  /* ---- drawing materials ---- */
+  svg.fig { display: block; overflow: visible; max-width: 100%; }
+  .ink { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 2; stroke-dashoffset: 0; }
+  .undrawn .ink, .undrawn .reveal { stroke-dashoffset: 1; }
+  .reveal { fill: none; stroke: #fff; stroke-width: 8; stroke-dasharray: 1 2; stroke-dashoffset: 0; stroke-linecap: butt; }
+  .fig { color: var(--ink); }
+  .paper { fill: var(--paper-2); stroke: none; }
+  .hole { fill: var(--paper); stroke: var(--ink); stroke-width: .8; stroke-opacity: .6; }
+  .tag .h { stroke-opacity: .7; }
+  .dot { fill: currentColor; fill-opacity: .75; }
+  .undrawn .paper, .undrawn .hole, .undrawn .knot, .undrawn .dot { opacity: 0; }
+  .thread { fill: none; stroke: var(--ink); stroke-opacity: .5; stroke-width: 1.2; stroke-linecap: round; stroke-dasharray: 4.5 5; transition: stroke 160ms ease, stroke-opacity 160ms ease; }
+  .knot { fill: var(--ink); fill-opacity: .5; transition: fill 160ms ease; }
+  .pencil { stroke: var(--pencil); filter: url(#pencil-f); }
+  .lbl { text-transform: none; clip-path: inset(-6px -6px -6px -6px); pointer-events: none; transition: fill 160ms ease; }
+  .lbl.mono { font: 500 11px var(--mono); letter-spacing: .12em; fill: var(--ink-2); }
+  .layers .lbl.mono { font-size: 10px; letter-spacing: .06em; }
+  .lbl.serif { font: 400 13px var(--serif); fill: var(--ink); }
+  .lbl.serifi { font: italic 400 13px var(--serif); fill: var(--ink); }
+  .undrawn .lbl, .undrawn .note-t { clip-path: inset(-6px 100% -6px -6px); }
+  .cap { font: 500 10px var(--mono); letter-spacing: .12em; fill: var(--ink); }
+  .cap2 { font: 400 10px var(--mono); letter-spacing: .12em; fill: var(--ink-2); }
+  .undrawn text { clip-path: inset(-6px 100% -6px -6px); }
+  .callout .ink, .note-t { color: var(--ink-2); }
+  .note-t { font: italic 400 13px var(--serif); fill: var(--ink-2); }
+  .callout .leader { stroke: var(--ink-2); }
+
+  /* the star schema: tags light up one at a time; the lit one (and its thread) is the single accent */
+  .schema .tag { cursor: pointer; outline: none; transition: opacity 160ms ease, color 160ms ease; -webkit-tap-highlight-color: transparent; }
+  .schema .tag.fact .lbl.mono { fill: var(--ink); }
+  .schema .tag.is-on { color: var(--accent); }
+  .schema .tag.is-on .lbl { fill: var(--accent) !important; }
+  .schema .tag.is-on .hole { stroke: var(--accent); }
+  .schema .tag.is-dim { opacity: .3; }
+  .schema .thread-g { transition: opacity 160ms ease; }
+  .schema .thread-g.is-dim { opacity: .25; }
+  .schema .thread-g.is-on .thread { stroke: var(--accent); stroke-opacity: .95; }
+  .schema .thread-g.is-on .knot { fill: var(--accent); fill-opacity: .9; }
+  .schema .tag:focus-visible .outline { stroke-width: 2.2; }
+
+  /* provenance legend + layer rows */
+  .lg-row { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--hair); }
+  .lg-row:last-child { border-bottom: 0; }
+  .lg-txt { display: flex; flex-direction: column; gap: 2px; }
+  .lg-txt .lab { font: 600 10.5px var(--mono); letter-spacing: .14em; color: var(--ink); }
+  .lg-txt .serif { font: 400 14px/1.3 var(--serif); color: var(--ink-2); }
+  .undrawn .lg-txt, .undrawn .rank, .undrawn .ly-txt { opacity: 0; }
+  .ly-row { display: grid; grid-template-columns: 22px 146px 1fr; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--hair); }
+  .ly-row:last-child { border-bottom: 0; }
+  .rank { width: 20px; height: 20px; display: grid; place-items: center; border: 1px solid var(--ink-2); border-radius: 50%; font: 500 10px var(--mono); color: var(--ink-2); }
+  .ly-txt { display: flex; flex-direction: column; gap: 3px; }
+  .ly-txt .lab { font: 600 10.5px var(--mono); letter-spacing: .14em; color: var(--ink); text-transform: uppercase; }
+  .ly-txt .spec { font: 400 10px var(--mono); letter-spacing: .05em; color: var(--ink-2); }
+  @container (max-width: 380px) { .ly-row { grid-template-columns: 22px 146px 1fr; } .ly-txt .spec { font-size: 10px; } }
+
+  @media (max-width: 560px) {
+    .bar { position: static; }
+    .bar { padding: 10px 14px; gap: 8px 10px; } .intro, #variants { padding-left: 14px; padding-right: 14px; }
+    .v { padding: 18px 16px 14px; } .title { font-size: calc(var(--t-size) - 4px); }
+  }
+  @media (prefers-reduced-motion: reduce) { .v, .schema .tag, .thread { transition: none; } }
+  .is-reduced * { transition: none !important; }
+</style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <!-- pencil: the ink thinned by a fixed grain (seeded), so illustrative lines read lighter and greyer -->
+    <filter id="pencil-f" filterUnits="userSpaceOnUse" x="-200" y="-200" width="4000" height="4000">
+      <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" seed="4" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.2 1.95" result="m"/>
+      <feComposite in="SourceGraphic" in2="m" operator="in"/>
+    </filter>
+  </svg>
+
+  <div class="bar">
+    <h1>The Warehouse, Drawn / identity lab</h1>
+    <span>theme</span>
+    <button type="button" data-theme-btn="light" aria-pressed="true">light</button>
+    <button type="button" data-theme-btn="dark" aria-pressed="false">dark</button>
+    <button type="button" id="replay">replay all</button>
+    <label><input type="checkbox" id="reduce"> reduced motion (simulate)</label>
+  </div>
+  <p class="intro">Same specimen, three identities. Rule of the page: ink on paper, hairlines, no solid fills, fixed seeds, one accent focus per figure (hover a tag in Fig. 1). Provenance: solid line = explicit in the data, stitched thread = inferred, pencil = illustrative.</p>
+  <main id="variants"></main>
+
+  <script src="../vendor/rough.js"></script>
+  <script src="written.js"></script>
+  <script src="identity.js"></script>
+</body>
+</html>

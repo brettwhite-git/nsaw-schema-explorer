@@ -1,0 +1,159 @@
+/* Mock C, Warehouse atlas. Colours come from styles/tokens.generated.css (dark night-ocean default). */
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); }
+body { font: 400 13px/1.45 Inter, system-ui, sans-serif; overflow: hidden; -webkit-font-smoothing: antialiased; }
+.mono, code { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+button { font: inherit; color: inherit; }
+
+#top { height: 56px; display: flex; align-items: center; gap: 28px; padding: 0 20px; border-bottom: 1px solid var(--hair); background: var(--paper); position: relative; z-index: 3; }
+.brand { display: flex; align-items: baseline; gap: 10px; white-space: nowrap; }
+.brand b { font-weight: 600; font-size: 15px; letter-spacing: .01em; }
+.brand .sub { color: var(--pencil); font-size: 12px; }
+.brand .mark { width: 14px; height: 14px; border: 1.4px solid var(--ink-2); border-radius: 3px; display: inline-block; position: relative; top: 2px;
+  background: linear-gradient(var(--ink-2), var(--ink-2)) 50% 50% / 1.2px 100% no-repeat, linear-gradient(var(--ink-2), var(--ink-2)) 50% 50% / 100% 1.2px no-repeat; opacity: .8; }
+
+#levels { display: flex; align-items: center; gap: 4px; margin-left: 12px; }
+#levels .lv { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 16px; border: 1px solid transparent; color: var(--pencil); background: none; cursor: pointer; font-size: 12.5px; }
+#levels .lv .n { font: 500 11px 'JetBrains Mono', monospace; width: 18px; height: 18px; border-radius: 9px; display: grid; place-items: center; border: 1px solid var(--edge); }
+#levels .lv.on { color: var(--ink); border-color: var(--edge); background: var(--paper-2); }
+#levels .lv.on .n { border-color: var(--ink-2); color: var(--ink); }
+#levels .lv[disabled] { cursor: default; opacity: .55; }
+#levels .lv:not([disabled]):not(.on):hover { color: var(--ink); }
+#levels .sep { color: var(--pencil); opacity: .6; font-size: 12px; }
+
+.legend { margin-left: auto; display: flex; gap: 18px; color: var(--ink-2); font-size: 12px; }
+.legend span { display: flex; align-items: center; gap: 8px; }
+.lg-solid { stroke: var(--ink-2); stroke-width: 1.4; }
+.lg-dash { stroke: var(--ink-2); stroke-width: 1.2; stroke-dasharray: 4 4; }
+
+#main { display: grid; grid-template-columns: 1fr 340px; height: calc(100% - 56px); }
+#stage { position: relative; overflow: hidden; background: var(--paper); }
+#map { width: 100%; height: 100%; display: block; cursor: grab; user-select: none; }
+#map.dragging { cursor: grabbing; }
+
+#crumb { position: absolute; left: 20px; top: 14px; display: flex; gap: 8px; align-items: center; color: var(--ink-2); font-size: 12px; pointer-events: none; }
+#crumb button { pointer-events: auto; background: var(--paper-2); border: 1px solid var(--edge); border-radius: 6px; padding: 5px 10px; cursor: pointer; color: var(--ink); font-size: 12px; }
+#crumb button:hover { border-color: var(--ink-2); }
+
+#side { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--hair); background: var(--paper-2); }
+#dock { flex: none; display: flex; gap: 12px; align-items: flex-end; padding: 12px 22px 16px; border-top: 1px solid var(--hair); }
+#mini { flex: 1; max-width: 230px; border: 1px solid var(--edge); border-radius: 6px; background: var(--paper); padding: 6px 8px 8px; }
+#mini svg { display: block; width: 100%; cursor: pointer; }
+#mini .cap { font-size: 10.5px; color: var(--pencil); margin: 0 0 4px 2px; letter-spacing: .04em; text-transform: uppercase; }
+#zoom { display: flex; flex-direction: column; border: 1px solid var(--edge); border-radius: 6px; overflow: hidden; background: var(--paper); position: relative; }
+#zpct { display: block; text-align: center; font: 500 10.5px 'JetBrains Mono', monospace; color: var(--pencil); padding: 5px 0 6px; border-top: 1px solid var(--hair); }
+#zoom button { width: 36px; height: 34px; border: 0; background: none; cursor: pointer; font-size: 16px; color: var(--ink); border-bottom: 1px solid var(--hair); }
+#zoom button.fit { font-size: 11px; border-bottom: 0; }
+#zoom button:hover { background: var(--paper-2); }
+#zoom button.fit { border-bottom: 0; }
+
+/* ---------- map ink */
+.grid-minor { stroke: var(--ink); stroke-opacity: .035; }
+.grid-major { stroke: var(--ink); stroke-opacity: .06; }
+.region rect.box { fill: color-mix(in srgb, var(--paper-2) 55%, transparent); stroke: var(--edge); stroke-width: 1; }
+.region .rname { fill: var(--ink); font: 600 12.5px Inter, sans-serif; letter-spacing: .01em; }
+.region .rcount { fill: var(--pencil); font: 400 11.5px Inter, sans-serif; }
+.region .rcount.hit { fill: var(--accent); font-weight: 600; }
+.sa rect { fill: var(--paper); stroke: var(--hair); stroke-width: 1; transition: fill var(--dur-hover), stroke var(--dur-hover), opacity var(--dur-hover); }
+.sa text { fill: var(--ink-2); font: 400 11.5px Inter, sans-serif; pointer-events: none; transition: opacity var(--dur-hover); }
+.sa text.tag { fill: var(--pencil); font: 500 10px 'JetBrains Mono', monospace; }
+.sa { cursor: pointer; }
+.sa:hover rect { stroke: var(--ink-2); }
+.sa:hover text { fill: var(--ink); }
+.lit .sa rect { opacity: .28; }
+.lit .sa text { opacity: .32; }
+.lit .sa.on rect { opacity: 1; fill: color-mix(in srgb, var(--accent) 16%, var(--paper)); stroke: color-mix(in srgb, var(--accent) 70%, transparent); }
+.lit .sa.on text { opacity: 1; fill: var(--ink); }
+.lit .sa.on text.tag { fill: var(--ink-2); }
+.sa.sel rect { fill: color-mix(in srgb, var(--accent) 28%, var(--paper)) !important; stroke: var(--accent) !important; stroke-width: 1.6; opacity: 1 !important; }
+.sa.sel text { fill: var(--ink) !important; opacity: 1 !important; }
+.lod-far .sa text { display: none; }
+.lod-far .region .rname { font-size: 15px; }
+
+.band rect.bandbox { fill: none; stroke: var(--hair); stroke-dasharray: 2 4; }
+.band .bcap { fill: var(--pencil); font: 500 10.5px Inter, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.band .bsub { fill: var(--pencil); font: 400 11px Inter, sans-serif; }
+.hub { cursor: pointer; }
+.hub circle.ring { fill: var(--paper-2); stroke: var(--ink-2); stroke-width: 1.2; transition: stroke var(--dur-hover), fill var(--dur-hover); }
+.hub circle.halo { fill: none; stroke: var(--accent); stroke-width: 1; opacity: 0; }
+.hub .num { fill: var(--ink); font: 600 13px Inter, sans-serif; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+.hub .hname { fill: var(--ink-2); font: 500 11px Inter, sans-serif; text-anchor: middle; pointer-events: none; }
+.hub:hover circle.ring { stroke: var(--ink); }
+.hub:hover .hname { fill: var(--ink); }
+.hub .gen { fill: var(--pencil); font: 400 10px Inter, sans-serif; text-anchor: middle; }
+.lit .hub { opacity: .45; }
+.lit .hub.on { opacity: 1; }
+.hub.on circle.ring { stroke: var(--ink); fill: color-mix(in srgb, var(--ink) 10%, var(--paper-2)); }
+.hub.sel { opacity: 1 !important; }
+.hub.sel circle.ring { stroke: var(--accent); stroke-width: 1.8; fill: color-mix(in srgb, var(--accent) 22%, var(--paper-2)); }
+.hub.sel circle.halo { opacity: .5; }
+.hub.sel .hname { fill: var(--ink); font-weight: 600; }
+.more { cursor: pointer; }
+.more rect { fill: none; stroke: var(--edge); stroke-dasharray: 3 3; }
+.more text { fill: var(--ink-2); font: 500 11.5px Inter, sans-serif; text-anchor: middle; }
+.more:hover rect { stroke: var(--ink-2); }
+
+/* ---------- star */
+.card-n rect.bg { fill: var(--paper-2); stroke: var(--edge); stroke-width: 1; }
+.card-n .t1 { fill: var(--ink); font: 600 13px Inter, sans-serif; }
+.card-n .t2 { fill: var(--ink-2); font: 400 10.5px 'JetBrains Mono', monospace; }
+.card-n .t3 { fill: var(--pencil); font: 400 11px Inter, sans-serif; }
+.card-n .role { fill: var(--ink-2); font: 400 11px Inter, sans-serif; }
+.card-n .rolebox { fill: none; stroke: var(--edge); stroke-dasharray: 2.5 2.5; }
+.card-n.dim { cursor: pointer; }
+.card-n.dim:hover rect.bg { stroke: var(--ink-2); }
+.card-n.sel rect.bg { stroke: var(--accent); stroke-width: 1.6; }
+.fact rect.bg { fill: color-mix(in srgb, var(--accent) 12%, var(--paper-2)); stroke: var(--accent); stroke-width: 1.6; }
+.fact.quiet rect.bg { fill: var(--paper-2); stroke: var(--ink-2); stroke-width: 1.4; }
+.fact .kicker, .card-n .kicker { fill: var(--pencil); font: 500 10px Inter, sans-serif; letter-spacing: .09em; text-transform: uppercase; }
+.fact .t0 { fill: var(--ink); font: 500 13.5px 'JetBrains Mono', monospace; }
+.fact .grain { fill: var(--ink); font: 500 13px Inter, sans-serif; }
+.fact .keys { fill: var(--ink-2); font: 400 11.5px 'JetBrains Mono', monospace; }
+.fact .src { fill: var(--pencil); font: 400 10.5px Inter, sans-serif; }
+.link-solid { stroke: var(--ink-2); stroke-width: 1.6; fill: none; }
+.link-dash { stroke: var(--ink-2); stroke-width: 1.2; stroke-dasharray: 4.5 5; fill: none; opacity: .7; }
+.link-dash.sel { stroke: var(--accent); opacity: 1; }
+.linklbl { fill: var(--ink-2); font: 400 11px 'JetBrains Mono', monospace; }
+.linklbl2 { fill: var(--pencil); font: 400 10.5px Inter, sans-serif; }
+.bundle rect { fill: none; stroke: var(--edge); stroke-dasharray: 4 4; }
+.bundle .b1 { fill: var(--ink); font: 500 12.5px Inter, sans-serif; }
+.bundle .b2 { fill: var(--pencil); font: 400 11px Inter, sans-serif; }
+.bundle { cursor: pointer; }
+.bundle:hover rect { stroke: var(--ink-2); }
+
+/* ---------- side card */
+#card { flex: 1; min-height: 0; overflow-y: auto; padding: 22px 22px 22px; }
+#card h2 { margin: 0 0 4px; font: 600 19px/1.25 Inter, sans-serif; }
+#card h3 { margin: 22px 0 8px; font: 500 10.5px Inter, sans-serif; letter-spacing: .09em; text-transform: uppercase; color: var(--pencil); }
+#card p { margin: 6px 0; color: var(--ink-2); }
+#card .kick { font: 500 10.5px Inter, sans-serif; letter-spacing: .09em; text-transform: uppercase; color: var(--pencil); margin-bottom: 8px; }
+#card .tname { font: 400 12px 'JetBrains Mono', monospace; color: var(--ink-2); word-break: break-all; }
+#card .big { display: flex; align-items: baseline; gap: 8px; margin: 16px 0 2px; }
+#card .big b { font: 600 34px/1 Inter, sans-serif; color: var(--accent); }
+#card .big span { color: var(--ink-2); }
+#card .stat { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+#card .stat div { border: 1px solid var(--hair); border-radius: 6px; padding: 9px 10px; }
+#card .stat b { display: block; font: 600 18px Inter, sans-serif; color: var(--ink); }
+#card .stat span { font-size: 11.5px; color: var(--pencil); }
+#card .bars { display: grid; gap: 7px; }
+#card .bar { display: grid; grid-template-columns: 1fr 52px; gap: 2px 10px; align-items: center; font-size: 12px; color: var(--ink-2); }
+#card .bar i { grid-column: 1 / span 2; height: 4px; border-radius: 2px; background: var(--hair); position: relative; overflow: hidden; }
+#card .bar i u { position: absolute; inset: 0 auto 0 0; background: color-mix(in srgb, var(--accent) 75%, transparent); }
+#card .bar em { font-style: normal; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); }
+#card .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+#card .chip { border: 1px dashed var(--edge); border-radius: 12px; padding: 2px 9px; font-size: 12px; color: var(--ink-2); }
+#card .list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+#card .list li { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid var(--hair); color: var(--ink-2); }
+#card .list li .mono { font-size: 11.5px; color: var(--ink); }
+#card .list li em { font-style: normal; color: var(--pencil); font-size: 11px; white-space: nowrap; }
+#card .list.cols li { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--ink); }
+#card .go { display: block; width: 100%; text-align: left; margin-top: 8px; background: var(--paper); border: 1px solid var(--edge); border-radius: 8px; padding: 10px 12px; cursor: pointer; color: var(--ink); }
+#card .go:hover { border-color: var(--ink-2); }
+#card .go small { display: block; color: var(--pencil); font-size: 11.5px; margin-top: 2px; }
+#card .go .mono { font-size: 12px; }
+#card .note { font-size: 11.5px; color: var(--pencil); border-left: 2px dashed var(--edge); padding-left: 10px; margin-top: 16px; }
+#card select { width: 100%; margin-top: 6px; background: var(--paper); color: var(--ink); border: 1px solid var(--edge); border-radius: 6px; padding: 7px 8px; font: 400 12px 'JetBrains Mono', monospace; }
+#card .link { background: none; border: 0; padding: 0; color: var(--ink); text-decoration: underline; text-decoration-color: var(--edge); text-underline-offset: 3px; cursor: pointer; text-align: left; }
+#card .link:hover { text-decoration-color: var(--ink-2); }
+#card .back { margin-bottom: 14px; }
+#card .scroll { max-height: 260px; overflow-y: auto; padding-right: 4px; }

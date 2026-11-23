@@ -58,8 +58,8 @@ export async function loadLineageData(): Promise<DataIndex> {
   const data: CsvRow[] = parseResult.meta.fields?.some(f => f !== f.trim())
     ? parseResult.data.map(row => {
         const clean = {} as CsvRow;
-        for (const [k, v] of Object.entries(row as Record<string, string>)) {
-          (clean as Record<string, string>)[k.trim()] = v;
+        for (const [k, v] of Object.entries(row as unknown as Record<string, string>)) {
+          (clean as unknown as Record<string, string>)[k.trim()] = v;
         }
         return clean;
       })

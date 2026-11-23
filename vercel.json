@@ -2,5 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/atlas/:path+", "destination": "/index.html" },
+    { "source": "/((?!legacy\\.html$|ontology/|paper/|fonts/|assets/)[^.]*)", "destination": "/index.html" }
+  ]
 }

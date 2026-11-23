@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The entry piece: scenes 0 and 1 (lab)</title>
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search).get('theme');
+      var t = q;
+      try { if (!t) t = localStorage.getItem('drawn-theme'); } catch (e) {}
+      document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@500&display=swap" rel="stylesheet">
+  <style>
+    .lab { max-width: 1280px; margin: 0 auto; padding: 14px 24px 60px; position: relative; z-index: 1; }
+    .lab-top { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 14px; }
+    .lab-top h1 { font: 700 18px/1.2 var(--serif); margin-right: auto; }
+    .lab-ctl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; }
+    .lab-ctl .btn[aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--ink); }
+    .lab-ctl input[type=range] { flex: 1 1 280px; min-width: 200px; accent-color: var(--ink); }
+    .lab-ctl .readout { font: 400 11px var(--mono); color: var(--ink-2); min-width: 150px; }
+    .lab-steps { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+    .lab-wrap { position: relative; }
+    .lab-frame { margin: 0 auto; cursor: pointer; }
+    .lab-hint { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); font: 400 11px var(--mono); color: var(--ink-2); background: var(--paper); border: 1px solid var(--edge); padding: 5px 10px; opacity: 0.9; transition: opacity 600ms ease; pointer-events: none; z-index: 5; white-space: nowrap; }
+    .lab-hint.gone { opacity: 0; }
+    .lab-full .lab-chrome, .lab-full .lab-hint { display: none; }
+    .lab-full .lab { padding: 8px 0; max-width: none; }
+    .lab-frame.phone { width: 375px; max-width: 100%; border: 1px solid var(--edge); padding: 0; }
+    .lab-note { font: 400 11px/1.5 var(--mono); color: var(--ink-2); margin-top: 14px; max-width: 110ch; }
+  </style>
+</head>
+<body>
+  <div id="root"><div class="lab" id="lab"></div></div>
+  <script type="module" src="/lab/scenes/main.ts"></script>
+</body>
+</html>

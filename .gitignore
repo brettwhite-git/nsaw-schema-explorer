@@ -26,10 +26,18 @@ npm-debug.log*
 # Vercel
 .vercel/
 
-# Internal dev notes
-CLAUDE.md
-CHANGELOG.md
-
 # TypeScript
 *.tsbuildinfo
 .vercel
+
+# Claude
+Claude
+CHANGELOG
+
+
+
+# Lab screenshots (re-creatable with each lab's shoot script)
+lab/**/shots/
+
+# Personal Claude settings
+.claude/settings.local.json

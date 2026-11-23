@@ -1,0 +1,39 @@
+/* Scene 1 (netsuite). Every colour is a token variable (styles/tokens.generated.css); no hex here. */
+.scn { position: relative; width: 100%; color: var(--ink); }
+.scn-stage { position: relative; margin: 0 auto; }
+.scn-svg { position: absolute; left: 0; top: 0; overflow: visible; }
+.scn-html { position: absolute; inset: 0; pointer-events: none; }
+.scn-alt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.scn .ink.ink2 { stroke: var(--ink-2); }
+.scn .ink.pencil { stroke: var(--pencil); }
+.scn .ink.amber { stroke: var(--accent); }
+.scn .knot { fill: var(--ink-2); fill-opacity: 1; }
+.scn .balloon { fill: var(--paper); stroke: var(--ink-2); }
+.scn-t { font-family: var(--mono); fill: var(--ink); stroke: none; }
+.scn-t.t2 { fill: var(--ink-2); }
+.scn-t.balloon-l { fill: var(--ink-2); font-weight: 500; }
+
+.scn-h { position: absolute; margin: 0; font-family: var(--serif); font-weight: 700; letter-spacing: -0.01em; color: var(--ink); white-space: nowrap; }
+.scn-h span { display: block; }
+.scn-co { text-wrap: balance; position: absolute; font-family: var(--serif); font-style: italic; font-weight: 400; line-height: 1.35; color: var(--ink-2); }
+.scn-co.right { text-align: right; }
+.scn-cap { position: absolute; margin: 0; font-family: var(--serif); font-style: italic; color: var(--ink-2); line-height: 1.3; }
+.scn-note { position: absolute; color: var(--ink-2); line-height: 1.2; white-space: nowrap; }
+
+/* ---- shared furniture (figures/scenes/shared) ---- */
+.scn-furn { z-index: 3; }
+.scn-q { position: absolute; color: var(--ink); line-height: 1.2; white-space: nowrap; cursor: default; outline: none; }
+.scn-q.is-pinned { color: var(--ink-2); cursor: pointer; }
+.scn-q.is-pinned:hover, .scn-q.is-pinned:focus-visible { color: var(--ink); }
+.scn-q.is-pinned:focus-visible { outline: 1px solid var(--ink-2); outline-offset: 4px; }
+.scn-qin { display: block; }
+.scn-badge { position: absolute; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.scn-lhead { position: absolute; font-family: var(--mono); letter-spacing: 0.14em; color: var(--ink-2); text-transform: uppercase; white-space: nowrap; }
+.scn-lline { position: absolute; color: var(--ink-2); line-height: 1.2; white-space: nowrap; }
+.scn-lsub { position: absolute; font-family: var(--mono); letter-spacing: 0.08em; color: var(--ink-2); white-space: nowrap; }
+.scn-llabel { position: absolute; font-family: var(--mono); font-weight: 500; color: var(--ink); white-space: nowrap; }
+.scn-leg { position: absolute; font-family: var(--mono); letter-spacing: 0.02em; color: var(--ink-2); white-space: nowrap; }
+.scn .scn-cap { position: absolute; margin: 0; }
+.scn-title { position: absolute; margin: 0; font-family: var(--serif); font-weight: 700; letter-spacing: -0.01em; color: var(--ink); line-height: 1.15; }
+.scn-closing { position: absolute; margin: 0; font-family: var(--serif); font-style: italic; color: var(--ink); line-height: 1.3; white-space: nowrap; }

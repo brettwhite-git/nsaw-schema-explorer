@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Style comparison: diagrams versus illustrations (lab)</title>
+  <script>
+    (function () {
+      var q = new URLSearchParams(location.search).get('theme');
+      var t = q;
+      try { if (!t) t = localStorage.getItem('drawn-theme'); } catch (e) {}
+      document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@500&display=swap" rel="stylesheet">
+  <style>
+    .sty { max-width: 1264px; margin: 0 auto; padding: 14px 32px 70px; position: relative; z-index: 1; }
+    .sty-top { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-bottom: 12px; }
+    .sty-top h1 { font: 700 18px/1.2 var(--serif); margin-right: auto; }
+    .sty-ctl { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; margin: 0 0 12px; }
+    .seg { display: inline-flex; }
+    .seg .btn + .btn { margin-left: -1px; }
+    .seg .btn[aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--ink); }
+    .sty-lbl { font: 500 10.5px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2); margin-right: 8px; }
+    .stage { position: relative; width: 100%; max-width: 1200px; margin: 0 auto; aspect-ratio: 1200 / 750; background: var(--paper); border: 1px solid var(--edge); overflow: hidden; }
+    .stage > svg { display: block; width: 100%; height: 100%; }
+    .stage .a-inner { position: absolute; left: 0; top: 0; width: 1200px; height: 780px; transform-origin: 0 0; pointer-events: none; }
+    .sty-cap { max-width: 1200px; margin: 10px auto 0; font: 400 12px/1.5 var(--mono); color: var(--ink-2); }
+    .sty-cap b { color: var(--ink); font-weight: 600; }
+    .sty-all { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .sty-all .cell .stage { cursor: pointer; }
+    .sty-all .cell .sty-cap { font-size: 11px; margin-top: 8px; }
+    .sty-sheet { margin: 54px auto 0; max-width: 1200px; }
+    .sty-sheet h2 { font: 700 20px/1.2 var(--serif); margin-bottom: 4px; }
+    .sty-sheet p { font: 400 12px/1.5 var(--mono); color: var(--ink-2); margin: 0 0 18px; max-width: 90ch; }
+    .obj-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 18px; }
+    .obj { border-top: 1px solid var(--hair); padding-top: 12px; }
+    .obj .row { display: flex; align-items: flex-end; gap: 16px; min-height: 130px; }
+    .obj svg { display: block; overflow: visible; }
+    .obj .nm { font: 600 18px/1.2 var(--serif); margin-top: 10px; }
+    .obj .sy { font: 400 12px var(--mono); color: var(--ink-2); }
+    .sty-note { font: 400 11px/1.5 var(--mono); color: var(--ink-2); margin-top: 28px; max-width: 110ch; }
+  </style>
+</head>
+<body>
+  <div id="root"><div class="sty" id="sty"></div></div>
+  <script type="module" src="/lab/style/main.ts"></script>
+</body>
+</html>

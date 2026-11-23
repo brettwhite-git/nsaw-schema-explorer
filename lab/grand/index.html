@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aldous &amp; Fig: grand patisserie sketches (lab)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;background:#2A1E22;color:#F6EBDD;font-family:'Jost',sans-serif}
+  #bar{display:flex;gap:6px;justify-content:center;padding:10px 0 8px}
+  #bar button{font:500 14px 'Jost',sans-serif;letter-spacing:.08em;text-transform:uppercase;background:transparent;color:#F6EBDD;border:1.5px solid #8a7578;padding:6px 12px;border-radius:2px;cursor:pointer}
+  #bar button b{color:#D9A441;margin-right:4px}
+  #bar button.on{background:#F2C4CE;color:#3B2A2A;border-color:#F2C4CE}#bar button.on b{color:#3B2A2A}
+  #app{display:flex;justify-content:center}
+  svg.stage{display:block;width:min(1200px,calc(100vw - 24px),calc((100vh - 64px) * 1.6));height:auto}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:min(1380px,calc(100vw - 24px))}
+  .grid figure{margin:0;cursor:pointer}.grid svg{width:100%;height:auto;display:block}.grid figcaption{font-size:13px;letter-spacing:.1em;text-transform:uppercase;padding:2px 0}
+</style>
+</head>
+<body><div id="bar"></div><div id="app"></div><script type="module" src="./main.ts"></script></body>
+</html>

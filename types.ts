@@ -289,18 +289,33 @@ export function createInferredSource(physicalTable: string, physicalColumn: stri
 }
 
 /**
+ * True when the table is a row-level-security variant (name ends in _SEC).
+ * Security is an orthogonal flag, NOT a role: DW_NS_X_F_SEC is still a fact table.
+ */
+export function isSecuredTable(tableName: string): boolean {
+  return tableName.endsWith('_SEC');
+}
+
+/**
  * Parse physical table suffix to determine table type
  * Uses DW naming convention: DW_NS_[NAME]_[SUFFIX]
+ *
+ * A trailing _SEC is stripped first so it no longer masks the real type
+ * (DW_NS_X_F_SEC -> 'fact'; use isSecuredTable() for the flag). 'security'
+ * is returned only when nothing else is recognisable after stripping.
+ * _CF_DH is a hierarchy (checked before the generic _CF rule).
  */
 export function parsePhysicalTableType(tableName: string): PhysicalTableType {
+  const secured = isSecuredTable(tableName);
+  const base = secured ? tableName.slice(0, -4) : tableName;
+
   // Check suffixes in order of specificity
-  if (tableName.endsWith('_EF')) return 'enhanced';
-  if (tableName.endsWith('_CF') || tableName.includes('_CF_')) return 'calculated';
-  if (tableName.endsWith('_DH')) return 'hierarchy';
-  if (tableName.endsWith('_SEC')) return 'security';
-  if (tableName.endsWith('_G')) return 'global';
-  if (tableName.endsWith('_P')) return 'prediction';
-  if (tableName.endsWith('_F')) return 'fact';
-  if (tableName.endsWith('_D')) return 'dimension';
-  return 'unknown';
+  if (base.endsWith('_EF')) return 'enhanced';
+  if (base.endsWith('_DH')) return 'hierarchy';
+  if (base.endsWith('_CF') || base.includes('_CF_')) return 'calculated';
+  if (base.endsWith('_G')) return 'global';
+  if (base.endsWith('_P')) return 'prediction';
+  if (base.endsWith('_F')) return 'fact';
+  if (base.endsWith('_D')) return 'dimension';
+  return secured ? 'security' : 'unknown';
 }

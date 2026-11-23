@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entry piece: three concept sketches (lab)</title>
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('drawn-theme'); } catch (e) {}
+      document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+    })();
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    .lab { max-width: 1000px; margin: 0 auto; padding: 14px 22px 60px; position: relative; z-index: 1; }
+    .lab-top { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: baseline; }
+    .lab-top h1 { font: 700 22px/1.2 var(--serif); margin-right: auto; }
+    .lab-note { max-width: 70ch; color: var(--ink-2); margin: 6px 0 18px; font-size: 15px; }
+    .sheet-s { border: 1px solid var(--edge); padding: 18px 20px 16px; margin: 0 0 34px; }
+    .sheet-s .tag { font: 500 11px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+    .sheet-s h2 { font: 700 26px/1.15 var(--serif); letter-spacing: -.01em; margin: 6px 0 4px; text-wrap: balance; }
+    .sheet-s .sub { color: var(--ink-2); font-size: 16px; }
+    .sheet-s .ctl { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0 4px; }
+    .sheet-s .ctl .btn[aria-pressed="true"] { box-shadow: inset 0 -2px 0 var(--ink); }
+    .legend-s { display: flex; flex-wrap: wrap; gap: 6px 24px; margin: 6px 0 0; font: 500 10.5px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+    .legend-s i { display: inline-block; width: 34px; height: 0; border-top: 2px solid var(--accent); vertical-align: middle; margin-right: 8px; }
+    .legend-s i.pc { border-top: 1.5px dashed var(--pencil); }
+    .sk-wrap svg { width: 100%; height: auto; display: block; max-width: 900px; margin: 0 auto; overflow: visible; }
+    .cap-s { margin-top: 10px; display: grid; gap: 6px; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); max-width: 92ch; }
+    .cap-s b { font: 500 10.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ink); margin-right: 8px; }
+    .parts { display: none; margin-top: 8px; }
+    .parts li { display: flex; gap: 10px; padding: 4px 0; border-top: 1px solid var(--hair); font-size: 14px; }
+    .parts .pn { font: 500 12px var(--mono); min-width: 26px; color: var(--ink); }
+    .parts .ps { font: 400 10.5px var(--mono); color: var(--ink-2); display: block; }
+    .parts .pa { color: var(--accent); }
+    .narrow-on .parts { display: block; }
+    /* drawing materials for the sketches */
+    .sk .pf { fill: var(--paper); stroke: none; }
+    .sk .ink.amber, .callouts .ink.amber { stroke: var(--accent); }
+    .sk .ink.pencil.amber, .callouts .ink.pencil.amber { stroke: var(--accent); stroke-opacity: .8; }
+    .sk .knot.amber-k, .callouts .knot.amber-k { fill: var(--accent); fill-opacity: 1; }
+    .sk .axis { fill: none; stroke: var(--ink-2); stroke-width: .8; stroke-dasharray: 6 5; stroke-opacity: .7; }
+    .tx { font: 500 10px var(--mono); fill: var(--ink); text-anchor: middle; paint-order: stroke; stroke: var(--paper); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+    .tx.mono2 { fill: var(--ink-2); font-weight: 400; }
+    .tx.ser { font: 400 12.5px var(--serif); }
+    .bl-c { fill: var(--paper); stroke: var(--ink); stroke-width: 1; }
+    .bl-n { font: 500 11px var(--mono); fill: var(--ink); }
+    .bl-l { font: 400 13px var(--serif); fill: var(--ink); }
+    .bl-s { font: 400 10.5px var(--mono); fill: var(--ink-2); }
+    .amber-t .bl-l { fill: var(--accent); font-style: italic; }
+    .callouts .leader { stroke: var(--ink-2); stroke-opacity: .7; }
+    .callouts .ink.leader.amber { stroke-opacity: 1; }
+    svg.narrow .bl-text { display: none; }
+    @media (max-width: 560px) { .sheet-s { padding: 14px 12px; } .sheet-s h2 { font-size: 22px; } }
+  </style>
+</head>
+<body>
+  <div id="root"><div class="lab" id="lab"></div></div>
+  <script type="module" src="/lab/entry/main.ts"></script>
+</body>
+</html>

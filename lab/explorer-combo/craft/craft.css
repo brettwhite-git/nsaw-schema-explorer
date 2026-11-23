@@ -1,0 +1,50 @@
+/* Craft accents for the explorer: stitched thread, a hand-ruled divider, glyph sizing.
+   Everything takes its colour from currentColor, so it follows the theme's ink. Nothing animates. */
+
+/* Thread: put on an SVG path / line / polyline. Uneven dash lengths read as hand sewing. */
+.stitch {
+  fill: none;
+  stroke: currentColor;
+  stroke-opacity: 0.45;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 5.5 4.5 6 4 5 5 5.8 4.2;
+  vector-effect: non-scaling-stroke;
+}
+.stitch--fine { stroke-width: 1; stroke-dasharray: 4 3.5 4.6 3.2 4.2 3.8; }
+/* the one thread in focus: accent, stronger */
+.stitch--focus { stroke: var(--accent, #F6AE4E); stroke-opacity: 0.7; }
+
+/* A hand-ruled horizontal divider. Use on <hr class="ink-rule"> or any empty block.
+   The line is a seeded rough.js path (fixed, never redrawn) used as a mask, so it is ink-coloured
+   in either theme; a second faint pass and soft ends make it read as pen on paper. */
+.ink-rule {
+  display: block;
+  border: 0;
+  margin: 12px 0;
+  height: 8px;
+  width: 100%;
+  color: inherit;
+  background-color: currentColor;
+  opacity: 0.55;
+  --ink-rule-path: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='8' viewBox='0 0 1600 8'%3E%3Cpath d='M-0.7 3.4 C13.5 4.3 25.6 4.2 63.3 3.7 M63.5 4.1 C85.6 4.4 109.2 4.5 127.9 3.9 M127.5 4.4 C148.5 4.8 169.4 4.7 192.6 5.1 M192.0 4.7 C209.5 4.3 228.3 4.4 256.6 4.5 M255.7 3.6 C275.5 3.2 295.7 3.1 320.3 4.2 M319.5 4.5 C334.3 3.3 349.2 3.3 384.4 3.8 M383.5 2.8 C397.6 4.2 410.8 4.2 448.0 3.3 M447.6 4.2 C470.6 3.3 492.4 3.6 511.2 4.4 M512.2 4.4 C533.6 3.3 554.9 4.6 576.6 4.7 M576.7 4.3 C593.9 5.0 611.1 4.7 640.2 4.3 M640.7 3.6 C662.8 4.7 684.6 4.6 704.5 5.0 M703.7 3.9 C723.4 5.0 742.9 5.2 768.4 3.6 M767.4 4.6 C789.8 4.7 811.0 4.5 831.7 4.3 M832.1 3.5 C853.8 3.0 874.6 3.4 895.9 3.8 M895.5 3.1 C914.4 3.5 933.7 4.1 960.0 2.9 M960.0 2.8 C974.7 3.4 988.2 4.0 1024.5 3.5 M1024.0 3.6 C1040.6 3.5 1057.6 2.9 1087.4 3.4 M1087.2 4.4 C1111.6 4.0 1137.4 4.2 1152.5 3.9 M1151.4 4.3 C1175.6 4.0 1200.1 4.6 1215.9 3.6 M1216.3 4.7 C1233.3 4.6 1250.1 4.8 1279.7 4.6 M1280.7 4.6 C1303.1 3.6 1326.4 3.3 1343.5 4.1 M1344.6 4.3 C1359.6 4.5 1374.7 3.5 1408.7 3.5 M1407.2 4.2 C1422.8 3.1 1437.1 4.4 1471.5 3.3 M1472.0 3.3 C1496.5 4.0 1522.0 2.7 1535.6 3.8 M1535.2 3.9 C1560.2 3.0 1584.2 3.3 1599.3 3.5' fill='none' stroke='black' stroke-width='1.1' stroke-linecap='round'/%3E%3Cpath d='M3.0 4.6 C126.7 4.7 250.1 4.8 620.1 4.5 M699.8 4.3 C883.1 4.0 1066.0 4.4 1590.3 4.5' fill='none' stroke='black' stroke-opacity='0.35' stroke-width='0.6' stroke-linecap='round'/%3E%3C/svg%3E");
+  -webkit-mask-image: var(--ink-rule-path), linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 28px), transparent 100%);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 1600px 8px, 100% 100%;
+  -webkit-mask-composite: source-in;
+  mask-image: var(--ink-rule-path), linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 28px), transparent 100%);
+  mask-repeat: no-repeat;
+  mask-size: 1600px 8px, 100% 100%;
+  mask-composite: intersect;
+}
+.ink-rule--faint { opacity: 0.32; }
+
+/* Glyphs: glyph() sets width/height already; these helpers size a glyph from CSS instead. */
+.glyph { display: inline-block; flex: none; vertical-align: -0.2em; overflow: visible; }
+.glyph--16 { width: 16px; height: 16px; }
+.glyph--20 { width: 20px; height: 20px; }
+.glyph--24 { width: 24px; height: 24px; }
+.glyph--32 { width: 32px; height: 32px; }
+.glyph--em { width: 1.25em; height: 1.25em; }
+.glyph--muted { opacity: 0.72; }
