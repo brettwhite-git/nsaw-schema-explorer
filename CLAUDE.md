@@ -22,7 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-NSAW Schema Explorer: a lineage and catalog explorer for Oracle NetSuite Analytics Warehouse 25R4, in the **Paper ledger** look (light only). Shared (conformed) dimensions, fact grain and relationships are first-class. Plan of record: `/Users/brettwhite/.claude/plans/async-painting-taco.md`. The old illustrated "drawn" site and the legacy React Flow explorer are retired; `lab/` keeps the mock-ups as history (excluded from `tsconfig`).
+NetSuite Data Intelligence Schema Explorer: a lineage and catalog explorer for Oracle NetSuite Analytics Warehouse 25R4, in the **Paper ledger** look (light only). Shared (conformed) dimensions, fact grain and relationships are first-class. Plan of record: `/Users/brettwhite/.claude/plans/async-painting-taco.md`. The old illustrated "drawn" site and the legacy React Flow explorer are retired; `lab/` keeps the mock-ups as history (excluded from `tsconfig`).
 
 ## Rules that override everything
 
@@ -33,10 +33,10 @@ NSAW Schema Explorer: a lineage and catalog explorer for Oracle NetSuite Analyti
 
 ## Folders
 
-- `data-src/` Oracle's source files (lineage CSV, entity key list, BI view objects, table index HTML) and the two CSVs extracted once from the NetSuite data lineage 4.0 workbook (`scripts/extract-workbook.py`).
+- `data-src/` Oracle's source files (lineage CSV, entity key list, BI view objects, table index HTML) and the two CSVs extracted once from the NetSuite data lineage 4.0 workbook (`scripts/extract-workbook.py`), and `nsaw_data_model_edges.csv` extracted from Oracle's NSAW 26R4 data model diagrams (`scripts/extract-diagrams.mjs <diagram folder>`), which becomes the stated `relatesTo` edge group (fact relates to table; no join columns or direction).
 - `scripts/build-ontology.mjs` builds `public/ontology/{core,columns,usedwith}.json` from `data-src/` (`npm run ontology`). `scripts/build-tokens.mjs` generates `styles/tokens.generated.css` from `tokens.json`. `scripts/shoot.mjs` is the route check.
 - `ontology/` typed loader (`load.ts`, `columnar()`), types, naming conventions (`parsePhysicalTableType`, `isSecuredTable`), functional areas.
-- `explorer/data/` pure data module (no React, no DOM; tested in Node). `model.ts` (`buildCore`, `buildColumns`), `grain.ts` (Entity Key List grain, header/line links, `factsWithGrain`), `names.ts` (slugs, `prettyTable`), `matrix.ts`, `folders.ts`, `ledger.ts`, `trace.ts`, `search.ts` (filters `is: type: grain: area: shared:`), `area.ts`, `table.ts`, `copy.ts`. Import from `explorer/data` (the index), not from its files.
+- `explorer/data/` pure data module (no React, no DOM; tested in Node). `model.ts` (`buildCore`, `buildColumns`), `grain.ts` (Entity Key List grain, header/line links, `factsWithGrain`), `names.ts` (slugs, `prettyTable`), `matrix.ts`, `folders.ts`, `ledger.ts`, `trace.ts`, `search.ts` (filters `is: type: grain: area: shared:`), `area.ts`, `table.ts`, `relations.ts` (data model: `modelRelations`, `modelFactsOf`, `modelArea`), `copy.ts`. Import from `explorer/data` (the index), not from its files.
 - `site/` React 19 app: `main.tsx`, `App.tsx`, `Shell.tsx` (header, search button, footer, palette), `router.tsx` + `routes.ts` (history-API router, pure route table), `useExplorer.ts` (core.json first, columns.json on idle or on need), `usePage.ts` (title, focus, `body[data-ready="1"]`), `pages/`, `components/` (`Wires.tsx` measured SVG lines, `Palette.tsx`, `BusMatrix.tsx`, and per-page folders).
 - `styles/explorer.css` imports `styles/explorer/{base,matrix,table,trace,search,area}.css`; colours and sizes only from `styles/tokens.generated.css`. No hex values in those files.
 - `tests/` vitest: data counts, columns, copy rule, router, tokens, ontology.

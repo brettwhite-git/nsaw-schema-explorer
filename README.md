@@ -1,4 +1,4 @@
-# NSAW Schema Explorer
+# NetSuite Data Intelligence Schema Explorer
 
 A reference explorer for Oracle NetSuite Analytics Warehouse (NSAW) 25R4. See which subject areas share which dimensions, what grain each fact table has, and how a NetSuite field flows through warehouse columns into report columns.
 
@@ -10,7 +10,7 @@ A reference explorer for Oracle NetSuite Analytics Warehouse (NSAW) 25R4. See wh
 
 ## Data sources
 
-Built from Oracle's published NSAW 25R4 files (semantic model lineage, Entity Key List, BI view objects, analytics tables index) and the NetSuite data lineage 4.0 workbook. The site shows only relationships these files state.
+Built from Oracle's published NSAW 25R4 files (semantic model lineage, Entity Key List, BI view objects, analytics tables index), the NSAW 26R4 data model diagrams, and the NetSuite data lineage 4.0 workbook. The site shows only relationships these files state.
 
 This is an independent project. Oracle and NetSuite are trademarks of Oracle Corporation.
 

@@ -54,7 +54,8 @@ export function Shell({ children }: { children: ReactNode }) {
       <footer className="site-foot">
         <p>
           An independent reference built from Oracle's published NetSuite Analytics Warehouse 25R4 semantic model
-          lineage, entity key list and table index, and the NetSuite data lineage 4.0 workbook.
+          lineage, entity key list and table index, the NSAW 26R4 data model diagrams, and the NetSuite data lineage
+          4.0 workbook.
         </p>
       </footer>
       <Palette open={open} onClose={close} />
