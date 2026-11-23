@@ -28,7 +28,8 @@ export function loadCore(): Promise<CoreModel> {
   if (!coreP) {
     let columnsJson: Promise<unknown> | null = null;
     const fetchJson: FetchJson = async (url) => {
-      const res = await fetch(url);
+      // the data version busts the long cache on /ontology/* whenever the data changes (vite.config.ts)
+      const res = await fetch(`${url}?v=${__DATA_VERSION__}`);
       if (!res.ok) throw new Error(`explorer: ${url} -> HTTP ${res.status}`);
       return res.json();
     };
