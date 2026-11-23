@@ -23,7 +23,13 @@
 .mx-foot { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--rule); color: var(--ink-3); font: italic 400 13px var(--serif); max-width: 100ch; }
 
 /* long-tail toggles */
-.bm-wrap { min-width: 0; overflow-x: clip; }
+.bm-wrap { min-width: 0; }
+/* The matrix scrolls inside its own box, both ways: the header pins to its top and the subject-area column to
+   its left. (Any overflow ancestor would become the sticky container anyway, so the box is made the one.) */
+.bm-scroll {
+  overflow: auto; max-height: calc(100vh - 88px); overscroll-behavior-x: contain;
+  scrollbar-width: thin; scrollbar-color: var(--edge) transparent;
+}
 .bm-bands { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; margin: 0 0 4px; }
 .bm-bands-k { font: italic 400 14px var(--serif); color: var(--ink); margin-right: 2px; }
 .bm-band-t { padding: 2px 0; color: var(--ink-2); font-size: 13px; border-bottom: 1px solid var(--rule); }
@@ -36,10 +42,12 @@
 /* ------------------------------------------------------------------ the matrix table */
 .bm { table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 13px; }
 .bm th, .bm td { padding: 0; font-weight: 400; text-align: left; }
-.bm thead { position: sticky; top: 56px; z-index: 3; }
+.bm thead { position: sticky; top: 0; z-index: 3; }
 .bm thead tr { background-color: var(--paper); }
-.bm thead th { height: 172px; vertical-align: bottom; position: relative; border-bottom: 1px solid var(--line); }
-.bm thead th.bm-corner { border-bottom: 0; }
+.bm thead th { height: var(--bm-head, 172px); vertical-align: bottom; position: relative; border-bottom: 1px solid var(--line); }
+.bm thead th.bm-corner { border-bottom: 0; position: sticky; left: 0; z-index: 1; background-color: var(--paper); }
+/* angled names lean left over the corner; angled only happens when nothing overflows, so it needs no cover */
+.bm.angled thead th.bm-corner { background-color: transparent; }
 .bm thead th.bm-gap { border-bottom: 0; }
 
 /* corner: axis labels */
@@ -52,15 +60,16 @@
 .bm-axis-hi { bottom: 18px; }
 .bm-axis-lo { bottom: -5px; }
 
-/* column heads: a 45° name above a reach bar */
+/* column heads: a name above a reach bar. Wide columns angle it at 45°; otherwise every name runs upright,
+   reading bottom to top inside its own column, so neighbours never touch. */
 .bm-ch, .bm-bh { cursor: pointer; }
 .bm-ch .bm-cl, .bm-bh .bm-cl {
-  position: absolute; right: 50%; bottom: 34px; white-space: nowrap;
-  transform-origin: 100% 100%; transform: translateX(4px) rotate(45deg);
+  position: absolute; bottom: 34px; white-space: nowrap;
   font: 400 12px var(--ui); color: var(--ink); line-height: 1;
 }
-/* narrow columns (a long-tail band is open): a steeper angle keeps neighbouring names apart */
-.bm-ch .bm-cl.steep { transform: translateX(4px) rotate(68deg); font-size: 11.5px; }
+.bm.angled .bm-cl { right: 50%; transform-origin: 100% 100%; transform: translateX(4px) rotate(45deg); }
+.bm.upright .bm-cl { left: 50%; writing-mode: vertical-rl; transform: translateX(-50%) rotate(180deg); }
+.bm-ch.tail .bm-cl { font-size: 10.5px; color: var(--ink-2); }
 .bm-ch .bm-bar { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); background-color: var(--ink-3); }
 .bm-ch.hot .bm-cl { color: var(--accent); font-weight: 600; }
 .bm-ch.hot .bm-bar { background-color: var(--accent); }
@@ -72,6 +81,7 @@
 .bm-bh.fade { opacity: 0.45; }
 
 /* functional-area group heads */
+.bm-fat { position: sticky; left: 0; display: inline-block; white-space: nowrap; }
 .bm-fa th { height: 38px; vertical-align: bottom; padding-bottom: 6px; border-top: 1px solid var(--line); font: italic 400 15px var(--serif); color: var(--ink); }
 .bm tbody:first-of-type .bm-fa th { border-top: 0; }
 .bm-fan { margin-left: 10px; font: italic 400 13px var(--serif); color: var(--ink-3); }
@@ -80,7 +90,10 @@
 .bm-row > th, .bm-row > td { height: 19px; }
 .bm-row:hover > th, .bm-row:hover > td { background-color: var(--tint); }
 .bm-row.sel > th, .bm-row.sel > td { background-color: var(--accent-soft); }
-.bm-row > th { cursor: pointer; }
+/* the subject-area column stays pinned while the matrix scrolls sideways; its tints sit on solid paper */
+.bm-row > th { cursor: pointer; position: sticky; left: 0; z-index: 2; background-color: var(--paper); }
+.bm-row:hover > th { background-color: var(--paper); background-image: linear-gradient(var(--tint), var(--tint)); }
+.bm-row.sel > th { background-color: var(--paper); background-image: linear-gradient(var(--accent-soft), var(--accent-soft)); }
 .bm-rh { display: flex; align-items: baseline; gap: 6px; padding-right: 10px; min-width: 0; }
 .bm-rl { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
 .bm-rn { font: 400 10.5px var(--mono); color: var(--ink-3); }
@@ -264,10 +277,6 @@
 @media (max-width: 1199px) {
   .mx-board { grid-template-columns: minmax(0, 1fr); row-gap: 28px; }
   .mx-side { position: static; max-height: none; border-left: 0; border-top: 1px solid var(--rule); padding: 22px 0 0; }
-}
-@media (max-width: 959px) {
-  .bm-wrap { overflow-x: auto; }
-  .bm thead { position: static; }
 }
 
 /* ------------------------------------------------------------------ phone */

@@ -3,35 +3,67 @@
 // Keyboard: one cell is in the tab order (roving tabindex); arrows, Home and End move; Enter or Space picks.
 // Hover: the row drives the side panel (onHoverRow); the column tint is a one-line <style>, so hovering never
 // re-renders the table.
-import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { matrixRows, prettyTable, reach, type CoreModel } from '../../explorer/data';
 import { matrixLayout, type Sel } from './matrix/shared';
 
-const LABEL_W = 204, BAND_W = 52, GAP = 6, MIN_W = 14, MAX_W = 34, OPEN_MIN = 7, OPEN_MAX = 22;
+const LABEL_W = 204, BAND_W = 52, GAP = 6, HEAD_MIN = 20, MAX_W = 34, OPEN_MIN = 12, OPEN_MAX = 22;
+/** Names run at 45° only when every named column is at least this wide; narrower, they all run upright. */
+const ANGLE_AT = 24;
+/** Longer names are cut with an ellipsis; the full name stays in the title and the aria-label. */
+const NAME_MAX = 22;
+const HEAD_MIN_H = 120, HEAD_MAX_H = 220, BAR_ROOM = 34;
 
 type Slot =
-  | { kind: 'col'; c: number; w: number; label: boolean; k: number }
+  | { kind: 'col'; c: number; w: number; tail: boolean; k: number }
   | { kind: 'band'; b: number; w: number; k: number }
   | { kind: 'gap'; w: number };
 
-function buildSlots(m: CoreModel, open: Set<number>, avail: number, dim: number | null): { slots: Slot[]; width: number } {
+type Mode = 'angled' | 'upright';
+
+function buildSlots(m: CoreModel, open: Set<number>, avail: number): { slots: Slot[]; width: number; mode: Mode } {
   const { head, bands } = matrixLayout(m);
   const openCols = [...open].reduce((n, b) => n + bands[b].cols.length, 0);
   const closed = bands.length - open.size;
   const room = avail - LABEL_W - closed * BAND_W - bands.length * GAP - 8;
-  // Opened long-tail columns get a narrow minimum first; the named head columns share what is left, so the
-  // whole table fits the measured width instead of running under the side panel.
-  const cw = Math.max(MIN_W, Math.min(MAX_W, Math.floor((room - openCols * OPEN_MIN) / head.length)));
+  // Opened long-tail columns reserve their minimum first; the head columns share what is left. Neither drops
+  // below a readable width: when they do not fit, the matrix scrolls sideways under a pinned label column.
+  const cw = Math.max(HEAD_MIN, Math.min(MAX_W, Math.floor((room - openCols * OPEN_MIN) / head.length)));
   const ecw = openCols ? Math.max(OPEN_MIN, Math.min(OPEN_MAX, cw, Math.floor((room - head.length * cw) / openCols))) : cw;
   const slots: Slot[] = [];
   let k = 1, width = LABEL_W;
-  for (const c of head) { slots.push({ kind: 'col', c, w: cw, label: true, k: k++ }); width += cw; }
+  for (const c of head) { slots.push({ kind: 'col', c, w: cw, tail: false, k: k++ }); width += cw; }
   bands.forEach((bd, b) => {
     slots.push({ kind: 'gap', w: GAP }); width += GAP;
-    if (open.has(b)) for (const c of bd.cols) { slots.push({ kind: 'col', c, w: ecw, label: ecw >= 15 || c === dim, k: k++ }); width += ecw; }
+    if (open.has(b)) for (const c of bd.cols) { slots.push({ kind: 'col', c, w: ecw, tail: true, k: k++ }); width += ecw; }
     else { slots.push({ kind: 'band', b, w: BAND_W, k: k++ }); width += BAND_W; }
   });
-  return { slots, width };
+  const mode: Mode = cw >= ANGLE_AT && (!openCols || ecw >= ANGLE_AT) ? 'angled' : 'upright';
+  return { slots, width, mode };
+}
+
+const shortName = (s: string) => (s.length > NAME_MAX ? `${s.slice(0, NAME_MAX - 1).trimEnd()}…` : s);
+
+let measureCtx: CanvasRenderingContext2D | null = null;
+/** Width in px of a column name in the font it is drawn in (the --ui family). */
+function textWidth(text: string, size: number, weight: number): number {
+  if (typeof document === 'undefined') return text.length * size * 0.55;
+  measureCtx ??= document.createElement('canvas').getContext('2d');
+  if (!measureCtx) return text.length * size * 0.55;
+  const family = getComputedStyle(document.documentElement).getPropertyValue('--ui').trim() || 'sans-serif';
+  measureCtx.font = `${weight} ${size}px ${family}`;
+  return measureCtx.measureText(text).width;
+}
+
+/** Header height that holds the longest visible name in the chosen orientation. */
+function headHeight(slots: Slot[], names: string[], mode: Mode, dim: number | null): number {
+  let L = 0;
+  for (const s of slots) {
+    if (s.kind !== 'col') continue;
+    L = Math.max(L, textWidth(shortName(names[s.c]), s.tail ? 10.5 : 12, s.c === dim ? 600 : 400));
+  }
+  const rise = mode === 'angled' ? (L + 12) * Math.SQRT1_2 : L;
+  return Math.round(Math.max(HEAD_MIN_H, Math.min(HEAD_MAX_H, rise + BAR_ROOM + 12)));
 }
 
 interface View {
@@ -51,13 +83,26 @@ export interface BusMatrixProps {
 
 export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol, onToggleBand, onHoverRow }: BusMatrixProps) {
   const wrap = useRef<HTMLDivElement>(null);
+  const scroller = useRef<HTMLDivElement>(null);
   const hoverStyle = useRef<HTMLStyleElement>(null);
   const hoverRow = useRef<number | null>(null);
   const [avail, setAvail] = useState(1000);
   const [focus, setFocus] = useState<{ r: number; k: number }>({ r: 0, k: 0 });
+  const [fontTick, setFontTick] = useState(0);
+
+  useEffect(() => {
+    // Re-measure the column names once the web fonts are in (canvas measures with whatever is loaded).
+    const fonts = document.fonts;
+    if (!fonts) return;
+    let live = true;
+    const bump = () => { if (live) setFontTick((t) => t + 1); };
+    fonts.ready.then(bump);
+    fonts.addEventListener('loadingdone', bump);
+    return () => { live = false; fonts.removeEventListener('loadingdone', bump); };
+  }, []);
 
   useLayoutEffect(() => {
-    const el = wrap.current;
+    const el = scroller.current;
     if (!el) return;
     const measure = () => setAvail(Math.round(el.clientWidth));
     measure();
@@ -66,9 +111,11 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
     return () => ro.disconnect();
   }, []);
 
-  const { slots, width } = useMemo(() => buildSlots(m, sel.open, avail, sel.dim), [m, sel.open, avail, sel.dim]);
+  const { slots, width, mode } = useMemo(() => buildSlots(m, sel.open, avail), [m, sel.open, avail]);
   const groups = useMemo(() => matrixRows(m), [m]);
   const names = useMemo(() => m.bus.columns.map((t) => prettyTable(m, m.tables[t].name)), [m]);
+  // fontTick only invalidates the memo: the canvas measures again once the fonts have loaded.
+  const headH = useMemo(() => headHeight(slots, names, mode, sel.dim), [slots, names, mode, sel.dim, fontTick]);
   const view = useMemo<View>(() => {
     const { a, b } = sel;
     if (a === null || b === null) return { cmp: false, shared: new Set(), diff: new Set() };
@@ -113,7 +160,12 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
     }
     e.preventDefault();
     const next = cellAt(r, k);
-    if (next) { setFocus({ r, k }); next.focus(); }
+    if (next) {
+      setFocus({ r, k });
+      // scroll-padding on the scroller keeps the cell clear of the pinned header and label column
+      next.focus({ preventScroll: true });
+      next.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
   };
 
   const setHover = (r: number | null, c: number | null) => {
@@ -148,9 +200,10 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
           );
         })}
       </div>
+      <div className="bm-scroll" ref={scroller} style={{ scrollPaddingTop: headH, scrollPaddingLeft: LABEL_W }}>
       <table
-        className={`bm${view.cmp ? ' is-cmp' : ''}${dim !== null ? ' is-dim' : ''}`}
-        style={{ width }}
+        className={`bm ${mode}${view.cmp ? ' is-cmp' : ''}${dim !== null ? ' is-dim' : ''}`}
+        style={{ width, ['--bm-head' as string]: `${headH}px` }}
         role="grid"
         aria-label="Bus matrix: subject areas by shared dimension tables"
         onClick={onClick}
@@ -188,11 +241,12 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
                 );
               }
               const c = s.c, n = reach(m, c), cls = colCls(c);
+              const short = shortName(names[c]), table = m.tables[m.bus.columns[c]].name;
               return (
-                <th key={i} scope="col" className={`bm-ch ${cls}`} data-r={-1} data-k={s.k} data-c={c} tabIndex={focusable}
-                  aria-selected={dim === c} title={m.tables[m.bus.columns[c]].name}
+                <th key={i} scope="col" className={`bm-ch${s.tail ? ' tail' : ''} ${cls}`} data-r={-1} data-k={s.k} data-c={c} tabIndex={focusable}
+                  aria-selected={dim === c} title={short === names[c] ? table : `${names[c]} (${table})`}
                   aria-label={`${names[c]}, listed under ${n} of ${N} subject areas`}>
-                  {s.label && <span className={s.w < 20 ? 'bm-cl steep' : 'bm-cl'}>{names[c]}</span>}
+                  <span className="bm-cl" aria-hidden="true">{short}</span>
                   <i className="bm-bar" style={{ height: Math.max(1, (n / N) * 24), width: Math.max(2, Math.min(6, s.w - 4)) }} />
                 </th>
               );
@@ -203,7 +257,7 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
           <tbody key={`${g.fa}-${g.rows[0].row}`}>
             <tr className="bm-fa">
               <th scope="rowgroup" colSpan={totalCols}>
-                {g.name}<span className="bm-fan">{g.rows.length} {g.rows.length === 1 ? 'area' : 'areas'}</span>
+                <span className="bm-fat">{g.name}<span className="bm-fan">{g.rows.length} {g.rows.length === 1 ? 'area' : 'areas'}</span></span>
               </th>
             </tr>
             {g.rows.map((row) => (
@@ -213,6 +267,7 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
           </tbody>
         ))}
       </table>
+      </div>
     </div>
   );
 });
