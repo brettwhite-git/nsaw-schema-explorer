@@ -104,7 +104,7 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
   useLayoutEffect(() => {
     const el = scroller.current;
     if (!el) return;
-    const measure = () => setAvail(Math.round(el.clientWidth) - 12); // less the box's right padding (room for the last slanted name)
+    const measure = () => setAvail(Math.round(el.clientWidth) - 84); // less the box's right padding (room for the last slanted name)
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);

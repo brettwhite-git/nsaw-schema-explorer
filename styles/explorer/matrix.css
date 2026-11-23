@@ -34,7 +34,7 @@
 /* The matrix scrolls inside its own box, both ways: the header pins to its top and the subject-area column to
    its left. (Any overflow ancestor would become the sticky container anyway, so the box is made the one.) */
 .bm-scroll {
-  overflow: auto; max-height: calc(100vh - 88px); overscroll-behavior-x: contain; padding-right: 12px;
+  overflow: auto; max-height: calc(100vh - 88px); overscroll-behavior-x: contain; padding-right: 84px;
   scrollbar-width: thin; scrollbar-color: var(--edge) transparent;
 }
 .bm-bands { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; margin: 0 0 4px; }
@@ -75,7 +75,9 @@
   position: absolute; bottom: 34px; white-space: nowrap;
   font: 400 12px var(--ui); color: var(--ink); line-height: 1;
 }
-.bm-ch .bm-cl, .bm-bh .bm-cl { right: 50%; transform-origin: 100% 100%; transform: translateX(4px) rotate(60deg); }
+/* Names lean up and to the right from their column (bottom-left anchored), so the last names need room on the
+   right: the scroll box carries that padding (TAIL_PAD in BusMatrix.tsx). */
+.bm-ch .bm-cl, .bm-bh .bm-cl { left: 50%; transform-origin: 0 100%; transform: translateX(-4px) rotate(-60deg); }
 .bm-ch.tail .bm-cl { font-size: 10.5px; color: var(--ink-2); }
 .bm-ch .bm-bar { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); background-color: var(--ink-3); }
 .bm-ch.hot .bm-cl { color: var(--accent); font-weight: 600; }
@@ -269,8 +271,8 @@
 .cmp-x thead th { height: 150px; width: 20px; min-width: 20px; position: relative; vertical-align: bottom; padding: 0; border-bottom: 1px solid var(--line); }
 .cmp-x thead td { width: 190px; min-width: 190px; border-bottom: 1px solid var(--line); }
 .cmp-x thead th span {
-  position: absolute; right: 50%; bottom: 8px; white-space: nowrap; transform-origin: 100% 100%;
-  transform: translateX(4px) rotate(45deg); font: 400 12px var(--ui); color: var(--ink-3); line-height: 1;
+  position: absolute; left: 50%; bottom: 8px; white-space: nowrap; transform-origin: 0 100%;
+  transform: translateX(-4px) rotate(-45deg); font: 400 12px var(--ui); color: var(--ink-3); line-height: 1;
 }
 .cmp-x thead th.hot span { color: var(--accent); font-weight: 600; }
 .cmp-x tbody th { text-align: left; font: 400 13px var(--ui); padding: 0 10px 0 0; height: 24px; white-space: nowrap; border-bottom: 1px solid var(--rule); }
