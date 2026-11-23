@@ -31,7 +31,7 @@ describe('relatesTo edges (Oracle NSAW Data Models diagrams)', () => {
   });
   it('unmatched names are reported, not added as nodes', () => {
     const dm = core.meta.dataModels!;
-    expect(dm.unmatchedFacts).toEqual(['DW_NS_ITEM_RECEIPT_INVENTORYASSIGNMENT_EF', 'DW_NS_PURCHASE_ORDER_INVENTORYASSIGNMENT_EF', 'DW_NS_SALESTEAM_CONTRIBUTION_TRXN_LINES_CF']);
+    expect(dm.unmatchedFacts).toEqual(['DW_NS_ITEM_RECEIPT_INVENTORYASSIGNMENT_EF', 'DW_NS_PURCHASE_ORDER_INVENTORYASSIGNMENT_EF', 'DW_NS_SALESTEAM_CONTRIBUTION_TRXN_LINES_CF']); // gate:allow (table names, not a secret)
     expect(dm.unmatchedRelated).toEqual(['DW_NS_CASH_SALES_LINES_F', 'DW_NS_salesRole_D']);
     for (const n of [...dm.unmatchedFacts, ...dm.unmatchedRelated]) expect(findTable(m, n), n).toBeUndefined();
   });
