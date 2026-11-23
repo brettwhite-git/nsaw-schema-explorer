@@ -6,10 +6,11 @@ import { Link, useQuery } from '../router';
 import { searchPath } from '../routes';
 import { useExplorer } from '../useExplorer';
 import { usePage } from '../usePage';
-import { findTable, ledgerRows, sourceCoverageSentence, tableSummary } from '../../explorer/data';
+import { findTable, hasModel, ledgerRows, sourceCoverageSentence, tableSummary } from '../../explorer/data';
 import { GrainHead, KeyTags } from '../components/table/GrainHead';
 import { HeaderPartner } from '../components/table/HeaderPartner';
 import { Ledger } from '../components/table/Ledger';
+import { ModelFactsOf, ModelSection } from '../components/table/ModelList';
 import { DimensionContext, DimensionsWithFact, SubjectAreas } from '../components/table/Around';
 
 export function Table({ table }: { table: string }) {
@@ -46,16 +47,20 @@ export function Table({ table }: { table: string }) {
   const keyCards = [...s.grain.map((g) => ({ entity: g.entity, cols: g.cols })), ...(h ? [{ entity: h.entity, cols: [h.col.toLowerCase()] }] : [])]
     .sort((a, b) => a.entity.localeCompare(b.entity));
   const coverage = sourceCoverageSentence(cm, t);
-  const hasPartner = !!h || (m.grain.lines.get(t)?.length ?? 0) > 0;
+  // a fact with a data-model diagram: the star draws the header partner, so the band below keeps only its lines
+  const star = hasModel(m, t);
+  const hasPartner = (!!h && !star) || (m.grain.lines.get(t)?.length ?? 0) > 0;
   const hasSide = s.records.length > 0 || keyCards.length > 0;
 
   return (
     <div className="tp">
       <GrainHead m={m} s={s} ledger={ledger.summary} />
 
+      {star && <ModelSection m={m} s={s} />}
+
       {(hasPartner || hasSide) && (
         <section className={hasPartner ? 'tp-band' : 'tp-band solo'}>
-          {hasPartner && <div className="tp-wide"><HeaderPartner m={m} cm={cm} t={t} /></div>}
+          {hasPartner && <div className="tp-wide"><HeaderPartner m={m} cm={cm} t={t} skipHeader={star} /></div>}
           {hasSide && (
             <div className="tp-side">
               {s.records.length > 0 && (
@@ -83,6 +88,8 @@ export function Table({ table }: { table: string }) {
           )}
         </section>
       )}
+
+      <ModelFactsOf m={m} t={t} />
 
       {ledger.rows.length > 0 && <Ledger m={m} cm={cm} ledger={ledger} col={col} />}
 

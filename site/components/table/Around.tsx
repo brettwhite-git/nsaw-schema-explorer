@@ -29,9 +29,9 @@ export function DimensionsWithFact({ m, cm, s }: { m: CoreModel; cm: ColumnModel
   const shown = all ? dims : dims.slice(0, TOP);
   return (
     <div className="tn-panel tn-dims">
-      <div className="sec-h"><h2>Dimension tables in the same subject areas</h2><span className="faint num">{fmt(dims.length)}</span></div>
+      <div className="sec-h"><h2>Listed with it in subject areas</h2><span className="faint num">{fmt(dims.length)}</span></div>
       <p className="sec-p">
-        The bus matrix lists these dimension tables under the {plural(n, 'subject area')} where this table is a fact table. They are ranked by
+        From the bus matrix: the dimension tables listed under the {plural(n, 'subject area')} where this table is a fact table, ranked by
         how many of those areas list them. Next to each are the report folders that read from it there.
       </p>
       <table className="tbl tn-tbl">

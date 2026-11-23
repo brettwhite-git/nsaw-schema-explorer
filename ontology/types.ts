@@ -29,7 +29,9 @@ export type EdgeType =
   | 'usedWith'
   | 'loadedFrom'
   | 'entityOf'
-  | 'readsFrom';
+  | 'readsFrom'
+  /** physicalTable -> physicalTable: Oracle's NSAW Data Models diagram for the fact draws the table. No join columns. */
+  | 'relatesTo';
 
 /** explicit: a source row states it. inferred: our rule / co-occurrence. curated: hand-authored rule in the repo. */
 export type Provenance = 'explicit' | 'inferred' | 'curated';
@@ -103,8 +105,19 @@ export interface OntologyCounts {
   securedTables: number;
   usedWithPairs?: number;
   busMatrixColumns: number;
+  /** relatesTo edges (matched rows of the data-model diagrams) */
+  modelRelations?: number;
+  /** facts with a data-model diagram that matched a physicalTable */
+  modelFacts?: number;
   entityKeysResolved: number;
   entityKeysTotal: number;
+}
+
+export interface DataModelStats {
+  rows: number; matchedRows: number; unmatchedRows: number;
+  facts: number; matchedFacts: number; related: number; matchedRelated: number;
+  /** names in the diagrams with no physicalTable node (no node is created for them) */
+  unmatchedFacts: string[]; unmatchedRelated: string[];
 }
 
 export interface CoreJson {
@@ -121,6 +134,8 @@ export interface CoreJson {
     /** true when the build emitted only relationships Oracle's files state (scripts/build-ontology.mjs STATED_ONLY) */
     statedOnly?: boolean;
     statedOnlyNote?: string;
+    /** match report for the data-model diagrams (data-src/nsaw_data_model_edges.csv) */
+    dataModels?: DataModelStats;
   };
   nodes: Partial<Record<NodeType, NodeTable>>;
   edges: EdgeGroupJson[];
@@ -165,6 +180,8 @@ export interface PhysicalTableNode {
   derivedRule: 'pattern' | 'flagged-columns' | 'both' | null; src: number; preview: 0 | 1;
   columns: number; mappedColumns: number; derivedColumns: number;
   saCount: number; presentationTables: number; conceptCount?: number; lineageRows: number;
+  /** area of the fact's NSAW Data Models diagram (e.g. "Manufacturing"); null when the table has no diagram */
+  modelArea?: string | null;
 }
 /** derived: 0 none | 1 flagged in nsaw_derived.csv | 2 table matched isNsawGeneratedTable | 3 both */
 export interface PhysicalColumnNode { table: number; sql: number; name: string; derived: 0 | 1 | 2 | 3; src: number; saCount: number; conceptCount?: number }

@@ -11,3 +11,4 @@ export * from './trace';
 export * from './search';
 export * from './area';
 export * from './table';
+export * from './relations';

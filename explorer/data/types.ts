@@ -177,3 +177,17 @@ export interface ReachByArea {
   /** of those, how many list the dimension */
   has: number;
 }
+
+/** One table in a data-model relation (modelRelations / modelFactsOf). */
+export interface ModelRelation {
+  /** physicalTable index */
+  table: number;
+  name: string;
+  /** readable name (prettyTable) */
+  display: string;
+  role: TableRole;
+  /** subject areas the bus matrix lists the table under */
+  reach: number;
+  /** fact or enhanced fact */
+  isFact: boolean;
+}

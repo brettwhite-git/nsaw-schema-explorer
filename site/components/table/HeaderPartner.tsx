@@ -39,9 +39,9 @@ function Join({ col, keyName }: { col: string; keyName: string }) {
   );
 }
 
-/** One pair per row: header (left) to lines (right). `t` is the page's table. */
-export function HeaderPartner({ m, cm, t }: { m: CoreModel; cm: ColumnModel; t: number }) {
-  const h = m.grain.header.get(t);
+/** One pair per row: header (left) to lines (right). `t` is the page's table. `skipHeader` when the data-model star draws it. */
+export function HeaderPartner({ m, cm, t, skipHeader }: { m: CoreModel; cm: ColumnModel; t: number; skipHeader?: boolean }) {
+  const h = skipHeader ? undefined : m.grain.header.get(t);
   const lines = m.grain.lines.get(t) ?? [];
   if (!h && !lines.length) return null;
   const linkCol = (lt: number) => m.grain.header.get(lt);

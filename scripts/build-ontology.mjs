@@ -9,6 +9,7 @@
  *   data-src/ns_source_edges.csv, data-src/nsaw_derived.csv   (extracted once by scripts/extract-workbook.py)
  *   data-src/25R4_NS_Data_Augmentation_Entity_Key_List ... .csv  entity keys
  *   data-src/25R4_Fusion_NS_Analytics_Tables.html      doc groups
+ *   data-src/nsaw_data_model_edges.csv                 fact -- table pairs from Oracle's NSAW Data Models diagrams (scripts/extract-diagrams.mjs)
  *   ontology/functionalAreas.ts, ontology/naming.ts    curated rules + name inference (bundled with esbuild, single source of truth)
  *
  * Outputs:
@@ -35,6 +36,7 @@ const KEYS = P('data-src', '25R4_NS_Data_Augmentation_Entity_Key_List - Sheet1.c
 const DOCS = P('data-src', '25R4_Fusion_NS_Analytics_Tables.html');
 const SRC_EDGES = P('data-src', 'ns_source_edges.csv');
 const DERIVED = P('data-src', 'nsaw_derived.csv');
+const MODEL_EDGES = P('data-src', 'nsaw_data_model_edges.csv'); // extracted from Oracle's NSAW Data Models diagrams by scripts/extract-diagrams.mjs
 
 // STATED_ONLY: emit only what Oracle's files state. Flip to false to restore the inferred layers
 // (name-guessed sourcedFrom / loadedFrom, concepts + instanceOf, securedVariantOf + baseTable, entityOf, readsFrom,
@@ -134,6 +136,35 @@ for (const part of docHtml.split('<li class="topicref topichead">').slice(1)) {
 const tList = [...tReg.values()].sort((a, b) => cmpCI(a.name, b.name));
 const tIdx = new Map(tList.map((t, i) => [t.name.toLowerCase(), i]));
 const tByName = (n) => tIdx.get(n.toLowerCase());
+
+// ---------------------------------------------------------------- data-model diagrams (fact -- related table)
+// Oracle's NSAW Data Models book (26R4) draws one star per fact: FACT -- TABLE, undirected. It states that the fact
+// relates to the table; no join columns, direction or cardinality. Names match physicalTable case-insensitively;
+// names with no node are counted, never added as nodes.
+const modelRaw = csv(MODEL_EDGES);
+const modelEdges = []; // [factIdx, relatedIdx]
+const modelAreaOf = new Map(); // fact table idx -> diagram area
+const modelUnmatched = { rows: 0, facts: new Set(), related: new Set() };
+{
+  const seen = new Set();
+  for (const r of modelRaw) {
+    const f = tByName(r.fact), t = tByName(r.related);
+    if (f === undefined) modelUnmatched.facts.add(r.fact);
+    if (t === undefined) modelUnmatched.related.add(r.related);
+    if (f === undefined || t === undefined) { modelUnmatched.rows++; continue; }
+    const k = pairKey(f, t);
+    if (seen.has(k)) continue;
+    seen.add(k); modelEdges.push([f, t]); modelAreaOf.set(f, r.area);
+  }
+  modelEdges.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+}
+const modelStats = {
+  rows: modelRaw.length, matchedRows: modelEdges.length, unmatchedRows: modelUnmatched.rows,
+  facts: new Set(modelRaw.map((r) => r.fact.toLowerCase())).size, matchedFacts: modelAreaOf.size,
+  related: new Set(modelRaw.map((r) => r.related.toLowerCase())).size,
+  matchedRelated: new Set(modelEdges.map((e) => e[1])).size,
+  unmatchedFacts: [...modelUnmatched.facts].sort(cmpCI), unmatchedRelated: [...modelUnmatched.related].sort(cmpCI),
+};
 
 // ---------------------------------------------------------------- sql sources
 const sqlTexts = [...new Set(lineage.filter((r) => r.kind !== 'dw').map((r) => r.tbl))].sort(cmp);
@@ -340,7 +371,9 @@ const core = {
       workbookExtract: { files: ['data-src/ns_source_edges.csv', 'data-src/nsaw_derived.csv'], sha: [sha(SRC_EDGES), sha(DERIVED)], note: 'Extracted once from Data_Lineage_NS_NSDI_4.0.xlsx by scripts/extract-workbook.py' },
       entityKeys: { file: path.basename(KEYS), sha: sha(KEYS) },
       docs: { file: path.basename(DOCS), sha: sha(DOCS) },
+      dataModels: { file: 'data-src/' + path.basename(MODEL_EDGES), sha: sha(MODEL_EDGES), note: 'Oracle NSAW Data Models diagrams, 26R4: each diagram states the fact\'s relationships with its dimensions; no join columns' },
     },
+    dataModels: modelStats,
     ingest: { ...stats, docsSkippedNonNs },
     derivedDefinition: 'A physical column is derived when it is flagged in nsaw_derived.csv (code 1) OR its table matches isNsawGeneratedTable (code 2); 3 = both. Table.derivedRule says which fired.',
     roleDefinition: 'parsePhysicalTableType() after stripping a trailing _SEC; isSecured is a separate flag.',
@@ -416,6 +449,7 @@ N.physicalTable = { n: tList.length, cols: {
   presentationTables: tList.map((_, i) => size(tblPT, i)),
   ...(STATED_ONLY ? {} : { conceptCount: tList.map((_, i) => size(tblConcept, i)) }),
   lineageRows: tList.map((_, i) => tblRows.get(i) || 0),
+  modelArea: tList.map((_, i) => modelAreaOf.get(i) ?? null),
 } };
 
 N.docGroup = { n: docGroupNames.length, cols: {
@@ -481,6 +515,8 @@ if (!STATED_ONLY) core.edges.push(group('instanceOf', 'presentationTable', 'conc
   const sec = []; tBase.forEach((b, i) => { if (b !== undefined) sec.push(i, b); });
   if (!STATED_ONLY) core.edges.push(group('securedVariantOf', 'physicalTable', 'physicalTable', sec, 'inferred', { note: 'X_SEC -> X by name.' }));
 }
+core.edges.push(group('relatesTo', 'physicalTable', 'physicalTable', flat(modelEdges), 'explicit',
+  { note: 'Oracle NSAW Data Models diagrams (26R4): fact -> table its diagram draws. States a relationship only: no join columns, direction or cardinality.' }));
 core.edges.push(group('inDocGroup', 'physicalTable', 'docGroup', flat(docMembers.map(([g, t]) => [tIdx.get(t), g]).sort((a, b) => a[0] - b[0] || a[1] - b[1])), 'explicit'));
 {
   const lf = [...loadedFrom.entries()].map(([k, prov]) => { const [t, rk] = k.split('|'); return [+t, recIdx.get(rk), prov]; }).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
@@ -580,6 +616,8 @@ core.meta.counts = {
   securedTables: tSecured.filter(Boolean).length,
   ...(STATED_ONLY ? {} : { usedWithPairs: usedPairs.length }),
   busMatrixColumns: busCols.length,
+  modelRelations: modelEdges.length,
+  modelFacts: modelAreaOf.size,
   entityKeysResolved: entList.reduce((n, e) => n + e.keys.filter((k) => k.ci >= 0).length, 0),
   entityKeysTotal: entList.reduce((n, e) => n + e.keys.length, 0),
 };
@@ -595,6 +633,7 @@ core.meta.sizes = undefined;
 console.log('ontology counts');
 for (const [k, v] of Object.entries(core.meta.counts)) console.log(`  ${k.padEnd(28)} ${v}`);
 console.log('ingest', JSON.stringify(core.meta.ingest));
+console.log('dataModels', JSON.stringify(modelStats));
 console.log('inference', JSON.stringify(stat));
 console.log('roles', JSON.stringify(tRole.reduce((m, r) => ((m[r] = (m[r] || 0) + 1), m), {})));
 console.log('files (raw / gzip bytes)');
