@@ -7,7 +7,7 @@ import { memo, useCallback, useLayoutEffect, useMemo, useRef, useState, type Key
 import { matrixRows, prettyTable, reach, type CoreModel } from '../../explorer/data';
 import { matrixLayout, type Sel } from './matrix/shared';
 
-const LABEL_W = 204, BAND_W = 52, GAP = 6, MIN_W = 18, MAX_W = 26;
+const LABEL_W = 204, BAND_W = 52, GAP = 6, MIN_W = 14, MAX_W = 34, OPEN_MIN = 7, OPEN_MAX = 22;
 
 type Slot =
   | { kind: 'col'; c: number; w: number; label: boolean; k: number }
@@ -19,8 +19,10 @@ function buildSlots(m: CoreModel, open: Set<number>, avail: number, dim: number 
   const openCols = [...open].reduce((n, b) => n + bands[b].cols.length, 0);
   const closed = bands.length - open.size;
   const room = avail - LABEL_W - closed * BAND_W - bands.length * GAP - 8;
-  const cw = Math.max(MIN_W, Math.min(MAX_W, Math.floor((room - openCols * MIN_W) / head.length)));
-  const ecw = openCols ? Math.max(7, Math.min(cw, Math.floor((room - head.length * cw) / openCols))) : cw;
+  // Opened long-tail columns get a narrow minimum first; the named head columns share what is left, so the
+  // whole table fits the measured width instead of running under the side panel.
+  const cw = Math.max(MIN_W, Math.min(MAX_W, Math.floor((room - openCols * OPEN_MIN) / head.length)));
+  const ecw = openCols ? Math.max(OPEN_MIN, Math.min(OPEN_MAX, cw, Math.floor((room - head.length * cw) / openCols))) : cw;
   const slots: Slot[] = [];
   let k = 1, width = LABEL_W;
   for (const c of head) { slots.push({ kind: 'col', c, w: cw, label: true, k: k++ }); width += cw; }
@@ -190,7 +192,7 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
                 <th key={i} scope="col" className={`bm-ch ${cls}`} data-r={-1} data-k={s.k} data-c={c} tabIndex={focusable}
                   aria-selected={dim === c} title={m.tables[m.bus.columns[c]].name}
                   aria-label={`${names[c]}, listed under ${n} of ${N} subject areas`}>
-                  {s.label && <span className="bm-cl">{names[c]}</span>}
+                  {s.label && <span className={s.w < 20 ? 'bm-cl steep' : 'bm-cl'}>{names[c]}</span>}
                   <i className="bm-bar" style={{ height: Math.max(1, (n / N) * 24), width: Math.max(2, Math.min(6, s.w - 4)) }} />
                 </th>
               );

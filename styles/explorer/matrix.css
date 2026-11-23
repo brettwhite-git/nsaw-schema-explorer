@@ -23,7 +23,7 @@
 .mx-foot { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--rule); color: var(--ink-3); font: italic 400 13px var(--serif); max-width: 100ch; }
 
 /* long-tail toggles */
-.bm-wrap { min-width: 0; }
+.bm-wrap { min-width: 0; overflow-x: clip; }
 .bm-bands { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 22px; margin: 0 0 4px; }
 .bm-bands-k { font: italic 400 14px var(--serif); color: var(--ink); margin-right: 2px; }
 .bm-band-t { padding: 2px 0; color: var(--ink-2); font-size: 13px; border-bottom: 1px solid var(--rule); }
@@ -59,6 +59,8 @@
   transform-origin: 100% 100%; transform: translateX(4px) rotate(45deg);
   font: 400 12px var(--ui); color: var(--ink); line-height: 1;
 }
+/* narrow columns (a long-tail band is open): a steeper angle keeps neighbouring names apart */
+.bm-ch .bm-cl.steep { transform: translateX(4px) rotate(68deg); font-size: 11.5px; }
 .bm-ch .bm-bar { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); background-color: var(--ink-3); }
 .bm-ch.hot .bm-cl { color: var(--accent); font-weight: 600; }
 .bm-ch.hot .bm-bar { background-color: var(--accent); }

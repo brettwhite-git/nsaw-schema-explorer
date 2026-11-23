@@ -37,9 +37,9 @@ export function Shell({ children }: { children: ReactNode }) {
       <a className="skip" href="#main">Skip to content</a>
       <header className="top">
         <div className="top-in">
-          <Link to="/" className="brand" aria-label="NSAW Schema Explorer, 25R4: bus matrix">
+          <Link to="/" className="brand" aria-label="NetSuite Data Intelligence Schema Explorer, 25R4: bus matrix">
             <Logo />
-            <b>NSAW Schema Explorer</b>
+            <b><span className="brand-long">NetSuite Data Intelligence </span>Schema Explorer</b>
             <small>· 25R4</small>
           </Link>
           <button type="button" className="search-btn" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-keyshortcuts="Meta+K Control+K /">

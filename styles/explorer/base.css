@@ -169,6 +169,7 @@ h3, .h3 { margin: 0 0 4px; font: 400 19px/1.25 var(--serif); letter-spacing: -0.
 @media (max-width: 759px) {
   .top-in { padding: 0 var(--pad-page-narrow); grid-template-columns: auto 1fr; gap: 14px; }
   .brand small { display: none; }
+  .brand .brand-long { display: none; }
   .search-btn { min-height: var(--hit-touch); min-width: 0; justify-self: end; border-bottom: 0; color: var(--ink-2); }
   .search-btn kbd, .search-btn .sb-long { display: none; }
   .search-btn .sb-short { display: inline; flex: none; }
