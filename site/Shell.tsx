@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Link } from './router';
 import { Palette } from './components/Palette';
+import { LevelBar } from './components/LevelBar';
 
 function isTyping(t: EventTarget | null): boolean {
   const el = t as HTMLElement | null;
@@ -50,6 +51,7 @@ export function Shell({ children }: { children: ReactNode }) {
           </button>
         </div>
       </header>
+      <LevelBar />
       <main id="main" className="page">{children}</main>
       <footer className="site-foot">
         <p>

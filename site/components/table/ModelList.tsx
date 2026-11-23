@@ -5,6 +5,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from '../../router';
 import { matrixPath, tablePath } from '../../routes';
+import { carryArea } from '../area/carry';
 import {
   fmt, grainOf, grainSentence, keyOrder, modelArea, modelFactsOf, modelRelations, plural, prettyTable,
   type CoreModel, type ModelRelation, type TableSummary,
@@ -36,7 +37,7 @@ export function ModelList({ rels, total, hot, setHot, header }: ListProps) {
           <div className="ml-gk"><span>Header partner</span><span className="num">1</span></div>
           <ul>
             <li className="ml-li">
-              <Link to={tablePath(header.name)} className="ml-row f">
+              <Link to={carryArea(tablePath(header.name))} className="ml-row f">
                 <span className="ml-nm">{header.display}</span>
                 <span className="ml-key mono">id = {header.col}</span>
                 <span className="ml-mono mono">one to many</span>
@@ -54,7 +55,7 @@ export function ModelList({ rels, total, hot, setHot, header }: ListProps) {
               <ul>
                 {rs.map((r) => (
                   <li key={r.table} className={hot === r.table ? 'ml-li on' : 'ml-li'} onMouseEnter={() => setHot(r.table)} onMouseLeave={() => setHot(null)}>
-                    <Link to={tablePath(r.name)} className={r.reach > 0 ? 'ml-row' : 'ml-row f'} onFocus={() => setHot(r.table)} onBlur={() => setHot(null)}
+                    <Link to={carryArea(tablePath(r.name))} className={r.reach > 0 ? 'ml-row' : 'ml-row f'} onFocus={() => setHot(r.table)} onBlur={() => setHot(null)}
                       aria-label={`${r.display}, ${r.reach > 0 ? `${r.reach} of ${total} subject areas` : 'fact table'}, ${SRC_DM}`}>
                       <span className="ml-nm">{r.display}</span>
                       <span className="ml-src" aria-hidden="true">{SRC_DM}</span>
@@ -147,7 +148,7 @@ export function ModelFactsOf({ m, t }: { m: CoreModel; t: number }) {
                     const g = grainOf(m, f.table).length ? grainSentence(m, f.table) : null;
                     return (
                       <li key={f.table} className="mf-li">
-                        <Link to={tablePath(f.name)} className="mf-row">
+                        <Link to={carryArea(tablePath(f.name))} className="mf-row">
                           <span className="mf-nm mono">{f.name}</span>
                           {f.reach > 0 && <span className="mf-n num faint">{f.reach} of {total}</span>}
                           {g && <span className="mf-grain">{g}</span>}

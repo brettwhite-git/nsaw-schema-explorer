@@ -2,9 +2,11 @@
 //
 //   /                       bus matrix            ?dim=
 //   /compare/:a/:b          compare two subject areas (slugs)
-//   /area/:slug             one subject area
-//   /table/:name            one warehouse table   ?col=
-//   /field/:record/:field   fan-out impact trace  ?at= ?sa=   (no dot in the URL: hosts treat it as a file)
+//   /area/:slug             one subject area      ?view=grid  ?sel=fact:TABLE | dim:TABLE
+//   /table/:name            one warehouse table   ?col=  ?area=
+//   /field/:record/:field   fan-out impact trace  ?at= ?sa= ?area=   (no dot in the URL: hosts treat it as a file)
+//
+// Area context travels in the URL: table and field links carry `?area=<slug>` (the level bar reads it back).
 //   /search                 full results          ?q=
 export type Route =
   | { name: 'matrix' }
@@ -61,12 +63,23 @@ export function matchRoute(pathname: string): Route {
 // ---------------------------------------------------------------- path builders
 const seg = encodeURIComponent;
 type Query = Record<string, string | null | undefined>;
+/** A query patch, or a bare string: the subject-area slug to carry as `?area=` (null/'' leaves it out). */
+type QueryOrArea = Query | string | null | undefined;
+const asQuery = (q: QueryOrArea, area?: string | null): Query => {
+  const base: Query = typeof q === 'string' || q === null || q === undefined ? { area: (q as string | null | undefined) || null } : { ...q };
+  if (area !== undefined) base.area = area || null;
+  return base;
+};
 
 export const matrixPath = (q: Query = {}): string => withQuery('/', q);
 export const comparePath = (a: string, b: string): string => `/compare/${seg(a)}/${seg(b)}`;
-export const areaPath = (slug: string): string => `/area/${seg(slug)}`;
-export const tablePath = (table: string, q: Query = {}): string => withQuery(`/table/${seg(table)}`, q);
-export const fieldPath = (record: string, field: string, q: Query = {}): string => withQuery(`/field/${seg(record)}/${seg(field)}`, q);
+export const areaPath = (slug: string, q: Query = {}): string => withQuery(`/area/${seg(slug)}`, q);
+/** `/table/X`; `q` patches the query, or is the area slug. `area` (third) sets `?area=` alongside a patch. */
+export const tablePath = (table: string, q: QueryOrArea = {}, area?: string | null): string =>
+  withQuery(`/table/${seg(table)}`, asQuery(q, area));
+/** `/field/r/f`; `q` patches the query, or is the area slug. `area` (fourth) sets `?area=` alongside a patch. */
+export const fieldPath = (record: string, field: string, q: QueryOrArea = {}, area?: string | null): string =>
+  withQuery(`/field/${seg(record)}/${seg(field)}`, asQuery(q, area));
 export const searchPath = (q?: string): string => withQuery('/search', { q: q || null });
 
 // ---------------------------------------------------------------- query
@@ -88,6 +101,14 @@ export function withQuery(href: string, patch: Query): string {
   const out = p.toString().replace(/%3A/gi, ':').replace(/%2C/gi, ',');
   return path + (out ? `?${out}` : '') + (hash ? `#${hash}` : '');
 }
+
+/** The subject-area slug a location carries in `?area=` (pathname + search, or just the search), or null. */
+export function areaOf(search: string): string | null {
+  return parseQuery(search).area || null;
+}
+
+/** Set (or with null, remove) `?area=` on an href, keeping the rest of its query. */
+export const withArea = (href: string, slug: string | null): string => withQuery(href, { area: slug });
 
 /** Paths that are files served by the host, not routes of this app. Links to them are plain anchors. */
 export function isFilePath(path: string): boolean {

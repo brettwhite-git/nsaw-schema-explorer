@@ -19,7 +19,7 @@
 .mx-stats .stat b { font-size: 32px; }
 
 /* ------------------------------------------------------------------ board */
-.mx-board { display: grid; grid-template-columns: minmax(0, 1fr) 320px; column-gap: 34px; margin-top: 40px; border-top: 1px solid var(--rule); padding-top: 22px; }
+.mx-board { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 34px; margin-top: 40px; border-top: 1px solid var(--rule); padding-top: 22px; }
 .mx-foot { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--rule); color: var(--ink-3); font: italic 400 13px var(--serif); max-width: 100ch; }
 
 /* long-tail toggles */
@@ -133,32 +133,10 @@
 
 .bm [data-k]:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
 
-/* ------------------------------------------------------------------ side panel */
-.mx-side {
-  border-left: 1px solid var(--rule); padding: 0 0 20px 28px; position: sticky; top: 72px; align-self: start;
-  max-height: calc(100vh - 88px); overflow-y: auto; scrollbar-width: thin; min-width: 0;
-}
-.mx-eyebrow { font: italic 400 14px var(--serif); color: var(--ink-2); }
-.mx-h2 { margin: 4px 0 2px; font: 400 26px/1.2 var(--serif); letter-spacing: -0.01em; }
-.mx-h2.pair { display: flex; flex-direction: column; gap: 2px; font-size: 22px; }
-.mx-h2.pair i, .cmp-title i, .sec-t i {
-  font: 600 12px var(--mono); color: var(--accent); font-style: normal; display: inline-block; width: 20px; vertical-align: 3px;
-}
-.mx-sub { color: var(--ink-3); font-size: 11.5px; }
-.mx-sub a { color: var(--ink-3); text-decoration: none; border-bottom: 1px solid var(--rule); }
-.mx-sub a:hover { color: var(--ink); border-bottom-color: var(--ink-2); }
-.mx-h3 {
-  display: flex; justify-content: space-between; align-items: baseline; margin: 24px 0 8px; padding-bottom: 6px;
-  border-bottom: 1px solid var(--line); font: italic 400 15px var(--serif); color: var(--ink);
-}
-.mx-h3 .n { font: 400 12px var(--ui); color: var(--ink-3); }
+/* ------------------------------------------------------------------ the inspector beside the matrix (Inspector.tsx) and its details */
+.mx-board > .ins { grid-area: auto; padding-top: 0; }
 .mx-note { margin: 6px 0 10px; color: var(--ink-2); font-size: 12.5px; line-height: 1.5; }
 .mx-hint { margin-top: 14px; color: var(--ink-3); font: italic 400 13px var(--serif); }
-.mx-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 18px; }
-.mx-kv { display: grid; grid-template-columns: 1fr auto; margin: 16px 0 0; border-top: 1px solid var(--rule); }
-.mx-kv dt, .mx-kv dd { margin: 0; padding: 5px 0; border-bottom: 1px solid var(--rule); }
-.mx-kv dt { color: var(--ink-2); }
-.mx-kv dd { font: 400 15px var(--serif); text-align: right; font-variant-numeric: oldstyle-nums; }
 
 .mx-fact { padding: 10px 0 11px; border-bottom: 1px solid var(--rule); }
 .mx-fact .f-name, .mx-fact .f-sec { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -171,14 +149,13 @@
 .mx-fact .f-key .ktag { font-size: 11.5px; }
 .mx-fact .plus { color: var(--ink-3); margin-right: 4px; }
 
-.mx-trio, .cmp-trio { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 18px; border-top: 1px solid var(--line); padding-top: 10px; }
-.mx-trio div, .cmp-trio div { padding-left: 14px; border-left: 1px solid var(--rule); }
-.mx-trio div:first-child, .cmp-trio div:first-child { padding-left: 0; border-left: 0; }
-.mx-trio b, .cmp-trio b { display: block; font: 400 34px/1.05 var(--serif); font-variant-numeric: oldstyle-nums proportional-nums; }
-.mx-trio .hot b, .cmp-trio .hot b { color: var(--accent); }
-.mx-trio .quiet b, .cmp-trio .quiet b { color: var(--ink-3); }
-.mx-trio span, .cmp-trio span { color: var(--ink-2); font-size: 12.5px; }
-.mx-lead { margin: 14px 0 4px; font: 400 15.5px/1.45 var(--serif); }
+.cmp-trio { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 18px; border-top: 1px solid var(--line); padding-top: 10px; }
+.cmp-trio div { padding-left: 14px; border-left: 1px solid var(--rule); }
+.cmp-trio div:first-child { padding-left: 0; border-left: 0; }
+.cmp-trio b { display: block; font: 400 34px/1.05 var(--serif); font-variant-numeric: oldstyle-nums proportional-nums; }
+.cmp-trio .hot b { color: var(--accent); }
+.cmp-trio .quiet b { color: var(--ink-3); }
+.cmp-trio span { color: var(--ink-2); font-size: 12.5px; }
 .mx-shared { margin-top: 20px; }
 .mx-shared summary, .cmp-both summary { cursor: pointer; color: var(--ink-2); font-size: 12.5px; }
 .mx-quiet { margin: 6px 0 0; color: var(--ink-3); font-size: 12.5px; line-height: 1.6; }
@@ -191,11 +168,6 @@
 .mx-dl.hot .nm { color: var(--accent); }
 .mx-dl .n, .mx-bars .n, .mx-roles .n { color: var(--ink-3); font-size: 11.5px; font-variant-numeric: tabular-nums; }
 
-.mx-big { display: flex; align-items: baseline; gap: 10px; margin-top: 16px; }
-.mx-big b { font: 400 40px/1 var(--serif); font-variant-numeric: oldstyle-nums proportional-nums; color: var(--accent); }
-.mx-big span { color: var(--ink-2); }
-.mx-meter { height: 3px; background-color: var(--rule); position: relative; margin-top: 10px; }
-.mx-meter i { position: absolute; left: 0; top: 0; bottom: 0; background-color: var(--accent); }
 .mx-bars { list-style: none; }
 .mx-bars li { display: grid; grid-template-columns: minmax(0, 1fr) 70px 54px; gap: 10px; align-items: center; padding: 3px 0; border-bottom: 1px solid var(--rule); }
 .mx-bars.fx li { grid-template-columns: minmax(0, 1fr) 60px 26px; }
@@ -208,10 +180,6 @@
 .mx-roles { display: flex; flex-wrap: wrap; gap: 4px 16px; font: 400 15px/1.5 var(--serif); }
 .mx-howto { margin: 12px 0 0; padding-left: 20px; color: var(--ink-2); font: 400 15px/1.55 var(--serif); }
 .mx-howto li { margin-bottom: 6px; }
-.mx-try { display: block; padding: 8px 0; border-bottom: 1px solid var(--rule); text-decoration: none; }
-.mx-try span { display: block; font: 400 16px var(--serif); }
-.mx-try small { color: var(--ink-3); font-size: 12px; }
-.mx-try:hover span { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
 
 /* ------------------------------------------------------------------ phone lists */
 .mx-phone { min-width: 0; }
@@ -285,7 +253,7 @@
 /* ------------------------------------------------------------------ narrower desktops: the matrix scrolls sideways */
 @media (max-width: 1199px) {
   .mx-board { grid-template-columns: minmax(0, 1fr); row-gap: 28px; }
-  .mx-side { position: static; max-height: none; border-left: 0; border-top: 1px solid var(--rule); padding: 22px 0 0; }
+  .mx-board > .ins { width: auto; position: static; max-height: none; min-height: 0; border-left: 0; border-top: 1px solid var(--rule); padding: 22px 0 0; }
 }
 
 /* ------------------------------------------------------------------ phone */
@@ -297,9 +265,8 @@
   .mx-stats .stat b { font-size: 26px; }
   .mx-stats .stat:last-child { grid-column: 1 / -1; padding-left: 0; border-left: 0; }
   .mx-board.phone { display: block; margin-top: 28px; padding-top: 14px; }
-  .mx-board.phone .mx-side { border: 1px solid var(--rule); background-color: var(--surface-2); padding: 16px; margin-bottom: 22px; scroll-margin-top: 64px; }
+  .mx-board.phone .mx-side { margin-bottom: 22px; scroll-margin-top: 64px; }
   .mx-dl { columns: 1; }
-  .mx-links .linkbtn, .mx-links .btn { min-height: var(--hit-touch); display: inline-flex; align-items: center; }
   .cmp-title { font-size: 28px; }
   .cmp-trio b { font-size: 30px; }
   .cmp-diff { grid-template-columns: minmax(0, 1fr); margin-top: 32px; }

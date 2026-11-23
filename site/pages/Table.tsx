@@ -1,20 +1,24 @@
-// Route: /table/:name   ?col= selects a ledger row.
-// One warehouse table, any role. Each section renders only when the files give it data.
+// Route: /table/:name   ?col= selects a ledger row   ?area= the subject area the reader came from (level bar, links)
+// One warehouse table, any role. Each section renders only when the files give it data. The inspector on the right
+// shows the table (inspectTable) or, with ?col=, the selected warehouse column (inspectColumn + its report names).
 // A _SEC table is its own page, tagged secured; nothing here relates it to another table.
 import { useMemo } from 'react';
-import { Link, useQuery } from '../router';
+import { Link, setQuery, useQuery } from '../router';
 import { searchPath } from '../routes';
 import { useExplorer } from '../useExplorer';
 import { usePage } from '../usePage';
-import { findTable, hasModel, ledgerRows, sourceCoverageSentence, tableSummary } from '../../explorer/data';
+import { findColumn, findTable, hasModel, ledgerRows, sourceCoverageSentence, tableSummary, unslug } from '../../explorer/data';
 import { GrainHead, KeyTags } from '../components/table/GrainHead';
 import { HeaderPartner } from '../components/table/HeaderPartner';
 import { Ledger } from '../components/table/Ledger';
 import { ModelFactsOf, ModelSection } from '../components/table/ModelList';
 import { DimensionContext, DimensionsWithFact, SubjectAreas } from '../components/table/Around';
+import { Inspector, InspectorLayout } from '../components/Inspector';
+import { inspectColumn, inspectTable } from '../components/inspector/builders';
+import { ColumnDetails } from '../components/inspector/details';
 
 export function Table({ table }: { table: string }) {
-  const { col } = useQuery();
+  const { col, area } = useQuery();
   const { core: m, columns: cm, ready, error } = useExplorer({ columns: true });
   const t = m ? findTable(m, table) : undefined;
   const name = m && t !== undefined ? m.tables[t].name : table;
@@ -43,6 +47,11 @@ export function Table({ table }: { table: string }) {
   }
 
   const { s, ledger } = data;
+  const sa = area ? unslug(m, area) : undefined;
+  const c = col ? findColumn(cm, t, col) : undefined;
+  const here = `/table/${encodeURIComponent(name)}`;
+  const insp = c !== undefined ? inspectColumn(m, cm, c, sa) : inspectTable(m, cm, t, sa);
+  insp.actions = insp.actions?.filter((x) => x.to.split('?')[0] !== here);
   const h = m.grain.header.get(t);
   const keyCards = [...s.grain.map((g) => ({ entity: g.entity, cols: g.cols })), ...(h ? [{ entity: h.entity, cols: [h.col.toLowerCase()] }] : [])]
     .sort((a, b) => a.entity.localeCompare(b.entity));
@@ -54,7 +63,14 @@ export function Table({ table }: { table: string }) {
 
   return (
     <div className="tp">
-      <GrainHead m={m} s={s} ledger={ledger.summary} />
+      <InspectorLayout
+        head={<GrainHead m={m} s={s} ledger={ledger.summary} />}
+        inspector={(
+          <Inspector {...insp} onClose={c !== undefined ? () => setQuery({ col: null }, { replace: true }) : undefined} closeLabel={`Back to ${name}`}>
+            {c !== undefined && <ColumnDetails m={m} cm={cm} c={c} />}
+          </Inspector>
+        )}
+      >
 
       {star && <ModelSection m={m} s={s} />}
 
@@ -99,6 +115,7 @@ export function Table({ table }: { table: string }) {
         </div>
         <div className="tp-side"><SubjectAreas m={m} cm={cm} s={s} /></div>
       </section>
+      </InspectorLayout>
     </div>
   );
 }

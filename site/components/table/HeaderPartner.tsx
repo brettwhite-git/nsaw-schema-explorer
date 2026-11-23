@@ -2,6 +2,7 @@
 // Drawn as two boxes joined by one solid line, 1 at the header, many at the lines. Each partner links to its page.
 import { Link } from '../../router';
 import { tablePath } from '../../routes';
+import { carryArea } from '../area/carry';
 import { grainOf, keyOrder, fmt, plural, type ColumnModel, type CoreModel } from '../../../explorer/data';
 
 interface BoxProps { m: CoreModel; cm: ColumnModel; t: number; kick: string; here?: boolean; keyText?: string }
@@ -16,7 +17,7 @@ function Box({ m, cm, t, kick, here, keyText }: BoxProps) {
   return (
     <div className={here ? 'hp-box here' : 'hp-box'}>
       <span className="hp-kick">{kick}</span>
-      {here ? <span className="hp-nm mono">{name}</span> : <Link to={tablePath(name)} className="hp-nm mono link">{name}</Link>}
+      {here ? <span className="hp-nm mono">{name}</span> : <Link to={carryArea(tablePath(name))} className="hp-nm mono link">{name}</Link>}
       {key && <span className="hp-meta">key <span className="mono">{key}</span></span>}
       {meta && <span className="hp-meta">{meta}</span>}
     </div>
@@ -61,7 +62,7 @@ export function HeaderPartner({ m, cm, t, skipHeader }: { m: CoreModel; cm: Colu
           </div>
           {h.also.length > 0 && (
             <p className="sec-p small">The same key is also listed for {h.also.map((x, i) => (
-              <span key={x}>{i > 0 && ', '}<Link to={tablePath(m.tables[x].name)} className="mono link">{m.tables[x].name}</Link></span>
+              <span key={x}>{i > 0 && ', '}<Link to={carryArea(tablePath(m.tables[x].name))} className="mono link">{m.tables[x].name}</Link></span>
             ))}.</p>
           )}
         </>

@@ -20,7 +20,7 @@ export function groupFacts(facts: AreaFact[]): Group[] {
   return groups.sort((a, b) => Number(!a.lead.grain) - Number(!b.lead.grain) || a.key.localeCompare(b.key));
 }
 
-export function AreaFacts({ m, facts }: { m: CoreModel; facts: AreaFact[] }) {
+export function AreaFacts({ m, facts, area }: { m: CoreModel; facts: AreaFact[]; area?: string }) {
   const groups = groupFacts(facts);
   return (
     <ol className="ar-facts">
@@ -38,7 +38,7 @@ export function AreaFacts({ m, facts }: { m: CoreModel; facts: AreaFact[] }) {
           <ul className="ar-names">
             {g.members.map((f) => (
               <li key={f.table}>
-                <Link to={tablePath(f.name)} className="ar-tname mono">{f.name}</Link>
+                <Link to={tablePath(f.name, area)} className="ar-tname mono">{f.name}</Link>
                 {f.secured && <span className="badge">secured</span>}
               </li>
             ))}

@@ -56,7 +56,8 @@ Each section that draws lines carries a small legend: "— stated" and, where se
 - Title block: an eyebrow (role or breadcrumb, italic serif), the title (grain sentence for tables with a key-list entry, readable name otherwise), then a lead sentence built by `explorer/data/copy.ts`.
 - Stats row: up to six figures, number in serif, label in UI type; a stat with no data is left out.
 - Sections: serif heading over a `line` rule, count at the right in ink3, one plain-sentence description, then the list or ledger.
-- Side column on wide screens (`aside`), stacked below on phones.
+- Level bar under the header on every page (`LevelBar.tsx`): 1 Matrix › 2 Subject area › 3 Table › 4 Field. The current level's number is filled in the accent; levels above link back up, levels below name what to pick next ("pick a fact", "pick a column"). ‹ previous / next › step to neighbouring subject areas in the same functional area.
+- One inspector on the right of every page (`Inspector.tsx`), replacing the old hand-built side columns. Phones get it as an inline card under the title.
 - Footer: one italic line crediting Oracle's published 25R4 files and the NetSuite data lineage 4.0 workbook.
 - Every page sets `document.title`, focuses its `h1` on route change and sets `body[data-ready="1"]` when its data has rendered.
 
@@ -74,6 +75,15 @@ Each section that draws lines carries a small legend: "— stated" and, where se
 - **Header partner** (`table/HeaderPartner.tsx`): two boxes, header and this table, joined by the stated key with "1" and "many" ends. On fact pages that have a data model star, the star carries the header instead.
 - **Palette** (`Palette.tsx`): dialog + combobox, full screen on phones, same index and ranking as `/search`.
 
+- **Inspector** (`Inspector.tsx`, `inspector/builders.tsx`, `inspector/details.tsx`): one sticky 340px panel with the same order on every page: eyebrow, title, mono name, lead, figures (two-column grid, positive counts only), one small visual (mini star, reach bar, fact dots, NetSuite sources), "Go next" (link rows with a sub line and an arrow), detail lists, then the back control. Builders: `inspectArea`, `inspectFact`, `inspectDimension`, `inspectTable`, `inspectPair`, `inspectColumn`, `inspectField`. The fold button tucks it into a 52px rail (remembered per browser). Esc clears the selection when there is one, otherwise folds it. On the matrix, the hovered row shows in it too.
+- **Level bar** (`LevelBar.tsx`): reads only the route and query. Without `?area=`, a table or field page shows a compact "pick a subject area" menu (a `<details>` list) of the areas that list the table or read the field.
+- **Area flow** (`area/AreaFlow.tsx`, A, the default): the area's facts that have a 26R4 data model diagram as cards on the left; every table their diagrams relate them to on the right, in "Shared by two or more facts" and "Related to one fact"; one solid curve per stated relation, no arrows or cardinality. Hover lights a node's lines in the accent; picking (`?sel=`) keeps them in the accent at lower strength and fades the rest. Facts without a diagram are listed under "Also listed in this area". Under 640px wide: plain lists.
+- **Area grid** (`area/AreaGrid.tsx`, B, `?view=grid`): the same content as a mini bus matrix with a dot where a fact's diagram draws a table. Names slant 60° as on the home matrix. Columns are 15 to 24px; when they don't fit, names drop to 10.5px and columns to 12px (the matrix's long-tail size), and counts alternate between two lines. The grid scrolls in its own box only when even that is too wide.
+
+## 4a. Area context
+
+A reader's subject area travels in the URL. A link that moves down a level carries it: area to table (`?area=`), table ledger column to field (`?area=`). Links that stay at the same level carry it too (`carryArea`). Each level then knows where the reader came from, and "Back to …" links lead there.
+
 ## 5. Accessibility
 
 Skip link; palette is a labelled dialog with focus trap; matrix cells carry labels; selection never relies on colour alone (row wash, bold, dots); contrast pairs in `tokens.json` are checked by `tests/tokens.test.ts`; reduced motion removes transitions.
@@ -88,4 +98,5 @@ Skip link; palette is a labelled dialog with focus trap; matrix cells carry labe
 - 2026-11-22: "Facts with a grain" has one definition (`factsWithGrain`), shown identically on the matrix and search pages.
 - 2026-11-23: Renamed to "NetSuite Data Intelligence Schema Explorer"; max width 1440px to 1760px.
 - 2026-11-23: Matrix column names slant at 60° up and to the right, with a measured header, pinned sideways scrolling and a hover label. Replaces mixed 45°/68°/vertical labels that rose above the header and left opened columns unnamed.
+- 2026-11-23: Navigation in four levels, one direction (matrix, subject area, table, field), picked from `lab/area-proto`. Every page gets a level bar and one shared inspector instead of its own side column. The area page opens with the subject-area flow (bipartite A by default, mini matrix B as a toggle); area context travels in `?area=`.
 - 2026-11-23: Oracle's NSAW 26R4 data model diagrams are a stated source (`relatesTo`). The star returns on fact pages as a radial star (A) with a ranked list beneath (B), picked from three lab prototypes (`lab/star-proto`). "Dimension tables in the same subject areas" is renamed "Listed with it in subject areas" and sits lower, so the two sources stay distinct.

@@ -12,3 +12,4 @@ export * from './search';
 export * from './area';
 export * from './table';
 export * from './relations';
+export * from './areaflow';

@@ -5,6 +5,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from '../../router';
 import { areaPath, matrixPath, tablePath } from '../../routes';
+import { carryArea } from '../area/carry';
 import { reportFoldersReading, shortTable, fmt, plural, type ColumnModel, type CoreModel, type FolderCount, type TableSummary } from '../../../explorer/data';
 
 const TOP = 16;
@@ -44,7 +45,7 @@ export function DimensionsWithFact({ m, cm, s }: { m: CoreModel; cm: ColumnModel
             return (
               <tr key={d.col}>
                 <td className="n faint">{i + 1}</td>
-                <td><Link to={tablePath(name)} className="mono link" title={name}>{shortTable(name)}</Link></td>
+                <td><Link to={carryArea(tablePath(name))} className="mono link" title={name}>{shortTable(name)}</Link></td>
                 <td className="tn-fold" title={d.folders.map((x) => x.name).join(' · ')}><Folders fs={d.folders} /></td>
                 <td className="tn-cnt"><Bar v={d.areas} of={n} /><span className="num">{d.areas} of {n}</span></td>
                 <td><Link to={matrixPath({ dim: name })} className="tn-mx" aria-label={`${shortTable(name)} in the bus matrix`}>matrix</Link></td>
@@ -123,7 +124,7 @@ export function DimensionContext({ m, cm, s }: { m: CoreModel; cm: ColumnModel; 
                 return (
                   <tr key={f.table}>
                     <td className="n faint">{i + 1}</td>
-                    <td><Link to={tablePath(name)} className="mono link">{shortTable(name)}</Link></td>
+                    <td><Link to={carryArea(tablePath(name))} className="mono link">{shortTable(name)}</Link></td>
                     <td className="tn-cnt"><Bar v={f.areas} of={nAreas} /><span className="num">{f.areas} of {nAreas}</span></td>
                   </tr>
                 );

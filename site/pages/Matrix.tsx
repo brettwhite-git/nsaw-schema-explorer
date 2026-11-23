@@ -1,7 +1,7 @@
 // Route: /   ?a=slug&b=slug (picked rows)  ?dim=TABLE (picked column)  ?open=0,2 (open long-tail bands)
 // The bus matrix: a title block, a summary strip, the matrix and a side panel. At phone width the matrix becomes
 // grouped lists (PhoneMatrix) and the panel sits above them.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { setQuery, useLocation } from '../router';
 import { parseQuery } from '../routes';
 import { usePage } from '../usePage';
@@ -34,7 +34,7 @@ function MatrixBody({ m, cm, loc }: { m: CoreModel; cm: ReturnType<typeof useExp
   const sel = useMemo(() => readSel(m, parseQuery(loc)), [m, loc]);
   const phone = useMedia(PHONE);
   const [hoverRow, setHoverRow] = useState<number | null>(null);
-  const panel = useRef<HTMLElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
   const write = useCallback((s: Sel) => setQuery(selQuery(m, s)), [m]);
 
   const onPickRow = useCallback((r: number) => write(pickRow(sel, r)), [write, sel]);
@@ -53,15 +53,6 @@ function MatrixBody({ m, cm, loc }: { m: CoreModel; cm: ReturnType<typeof useExp
   const onPhonePick = useCallback((c: number) => {
     write({ ...sel, a: null, b: null, dim: c });
     requestAnimationFrame(() => panel.current?.scrollIntoView({ block: 'start' }));
-  }, [sel, write]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('[role="dialog"]')) return;
-      if (sel.a !== null || sel.dim !== null) write({ ...sel, a: null, b: null, dim: null });
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
   }, [sel, write]);
 
   const stats = useMemo(() => {
@@ -98,18 +89,16 @@ function MatrixBody({ m, cm, loc }: { m: CoreModel; cm: ReturnType<typeof useExp
       {phone ? (
         <section className="mx-board phone">
           {selected && (
-            <aside className="mx-side" ref={panel} aria-label="Selection">
+            <div className="mx-side" ref={panel}>
               <SidePanel m={m} cm={cm} sel={sel} hoverRow={null} onSel={write} />
-            </aside>
+            </div>
           )}
           <PhoneMatrix m={m} onPickCol={onPhonePick} dim={sel.dim} />
         </section>
       ) : (
         <section className="mx-board">
           <BusMatrix m={m} sel={sel} onPickRow={onPickRow} onPickCol={onPickCol} onToggleBand={onToggleBand} onHoverRow={setHoverRow} />
-          <aside className="mx-side" ref={panel} aria-label="Selection">
-            <SidePanel m={m} cm={cm} sel={sel} hoverRow={hoverRow} onSel={write} />
-          </aside>
+          <SidePanel m={m} cm={cm} sel={sel} hoverRow={hoverRow} onSel={write} />
         </section>
       )}
 

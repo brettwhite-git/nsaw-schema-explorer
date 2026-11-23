@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  areaPath, comparePath, fieldPath, isFilePath, matchPattern, matchRoute, matrixPath, parseQuery, searchPath, tablePath, withQuery,
+  areaOf, areaPath, comparePath, fieldPath, isFilePath, matchPattern, matchRoute, matrixPath, parseQuery, searchPath, tablePath, withArea, withQuery,
 } from '../site/routes';
 
 describe('router matching', () => {
@@ -47,6 +47,22 @@ describe('router matching', () => {
     expect(withQuery('/table/X?col=A&sa=1', { col: null, sa: '' })).toBe('/table/X');
     expect(withQuery('/t?x=1#frag', { y: '2' })).toBe('/t?x=1&y=2#frag');
     expect(parseQuery(withQuery('/s', { q: 'a&b=c ?' }))).toEqual({ q: 'a&b=c ?' });
+  });
+  it('carries the subject area in ?area=', () => {
+    expect(tablePath('DW_NS_SALES_ORDER_LINES_F', 'sales-order')).toBe('/table/DW_NS_SALES_ORDER_LINES_F?area=sales-order');
+    expect(tablePath('X', { col: 'ID' }, 'sales-order')).toBe('/table/X?col=ID&area=sales-order');
+    expect(tablePath('X', { col: 'ID' }, null)).toBe('/table/X?col=ID');
+    expect(tablePath('X', null)).toBe('/table/X');
+    expect(tablePath('X', '')).toBe('/table/X');
+    expect(fieldPath('transactions', 'tranid', 'sales-order')).toBe('/field/transactions/tranid?area=sales-order');
+    expect(fieldPath('transactions', 'tranid', { at: 'T.C' }, 'sales-order')).toBe('/field/transactions/tranid?at=T.C&area=sales-order');
+    expect(areaPath('sales-order', { view: 'grid' })).toBe('/area/sales-order?view=grid');
+    expect(areaOf('/table/X?col=ID&area=sales-order')).toBe('sales-order');
+    expect(areaOf('?area=')).toBeNull();
+    expect(areaOf('/table/X')).toBeNull();
+    expect(withArea('/table/X?col=ID', 'order-to-cash')).toBe('/table/X?col=ID&area=order-to-cash');
+    expect(withArea('/table/X?area=a&col=ID', null)).toBe('/table/X?col=ID');
+    expect(matchRoute(tablePath('X', 'sales-order'))).toEqual({ name: 'table', table: 'X' });
   });
   it('files are served by the host, not routed', () => {
     expect(isFilePath('/ontology/core.json')).toBe(true);

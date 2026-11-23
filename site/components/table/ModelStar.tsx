@@ -5,6 +5,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { navigate } from '../../router';
 import { tablePath } from '../../routes';
+import { carryArea } from '../area/carry';
 import { keyOrder, type CoreModel, type ModelRelation } from '../../../explorer/data';
 
 // ------------------------------------------------------------------ text measuring (same faces as the CSS)
@@ -182,10 +183,10 @@ export function ModelStar({ fact, header, rels, total, hot, setHot }: StarProps)
   const go = (name: string) => (e: React.MouseEvent) => {
     if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     e.preventDefault();
-    navigate(tablePath(name));
+    navigate(carryArea(tablePath(name)));
   };
   const nodeProps = (t: number, name: string, label: string) => ({
-    href: tablePath(name),
+    href: carryArea(tablePath(name)),
     onClick: go(name),
     onMouseEnter: () => setHot(t), onMouseLeave: () => setHot(null),
     onFocus: () => setHot(t), onBlur: () => setHot(null),
