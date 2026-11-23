@@ -134,7 +134,14 @@
 .bm [data-k]:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
 
 /* ------------------------------------------------------------------ the inspector beside the matrix (Inspector.tsx) and its details */
-.mx-board > .ins { grid-area: auto; padding-top: 0; }
+.mx-board > .ins { grid-area: auto; grid-row: 1 / span 2; grid-column: 2; padding-top: 0; }
+.mx-board > .bm-wrap { grid-column: 1; }
+.mx-cmp { grid-column: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 14px; }
+.mx-cmp-t { color: var(--ink-3); font: italic 400 13px var(--serif); }
+.mx-start { margin: 12px 0 0; color: var(--ink-2); font-size: 13.5px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.mx-start span { color: var(--ink-3); }
+.mx-start .linkbtn { font: italic 400 14px var(--serif); color: var(--ink); }
+.bm-rl { text-decoration: none; }
 .mx-note { margin: 6px 0 10px; color: var(--ink-2); font-size: 12.5px; line-height: 1.5; }
 .mx-hint { margin-top: 14px; color: var(--ink-3); font: italic 400 13px var(--serif); }
 
@@ -253,7 +260,7 @@
 /* ------------------------------------------------------------------ narrower desktops: the matrix scrolls sideways */
 @media (max-width: 1199px) {
   .mx-board { grid-template-columns: minmax(0, 1fr); row-gap: 28px; }
-  .mx-board > .ins { width: auto; position: static; max-height: none; min-height: 0; border-left: 0; border-top: 1px solid var(--rule); padding: 22px 0 0; }
+  .mx-board > .ins { grid-row: auto; grid-column: 1; width: auto; position: static; max-height: none; min-height: 0; border-left: 0; border-top: 1px solid var(--rule); padding: 22px 0 0; }
 }
 
 /* ------------------------------------------------------------------ phone */

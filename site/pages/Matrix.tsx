@@ -2,8 +2,9 @@
 // The bus matrix: a title block, a summary strip, the matrix and a side panel. At phone width the matrix becomes
 // grouped lists (PhoneMatrix) and the panel sits above them.
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { setQuery, useLocation } from '../router';
-import { parseQuery } from '../routes';
+import { navigate, setQuery, useLocation } from '../router';
+import { areaPath, parseQuery } from '../routes';
+import { openPalette } from '../components/Palette';
 import { usePage } from '../usePage';
 import { useExplorer } from '../useExplorer';
 import { BusMatrix } from '../components/BusMatrix';
@@ -37,7 +38,11 @@ function MatrixBody({ m, cm, loc }: { m: CoreModel; cm: ReturnType<typeof useExp
   const panel = useRef<HTMLDivElement>(null);
   const write = useCallback((s: Sel) => setQuery(selQuery(m, s)), [m]);
 
+  const [comparing, setComparing] = useState(false);
+  const compare = comparing || sel.a !== null;
   const onPickRow = useCallback((r: number) => write(pickRow(sel, r)), [write, sel]);
+  const onOpenRow = useCallback((r: number) => navigate(areaPath(m.subjectAreas[m.bus.rows[r]].slug)), [m]);
+  const stopCompare = () => { setComparing(false); if (sel.a !== null) write({ ...sel, a: null, b: null }); };
   const onPickCol = useCallback((c: number) => {
     const { bandOf } = matrixLayout(m);
     const open = new Set(sel.open);
@@ -79,6 +84,10 @@ function MatrixBody({ m, cm, loc }: { m: CoreModel; cm: ReturnType<typeof useExp
             of them. Read across a row to see what an area can be sliced by. Read down a column to see how far a
             dimension reaches.
           </p>
+          <p className="mx-start">
+            Click a subject area to open it.{' '}
+            <span>Or start from a NetSuite field: <button type="button" className="linkbtn" onClick={() => openPalette('fields')}>Trace a field</button></span>
+          </p>
         </div>
         <p className="mx-intro-note"><Mark /><span>A mark means Oracle’s lineage lists this dimension table under this subject area.</span></p>
         <div className="stats mx-stats">
@@ -97,7 +106,22 @@ function MatrixBody({ m, cm, loc }: { m: CoreModel; cm: ReturnType<typeof useExp
         </section>
       ) : (
         <section className="mx-board">
-          <BusMatrix m={m} sel={sel} onPickRow={onPickRow} onPickCol={onPickCol} onToggleBand={onToggleBand} onHoverRow={setHoverRow} />
+          <div className="mx-cmp" role="group" aria-label="Compare two subject areas">
+            {compare ? (
+              <>
+                <span className="mx-cmp-t">
+                  {sel.a === null ? 'Pick two rows to compare.' : sel.b === null ? 'Pick a second row to compare with the first.' : 'Comparing the two picked rows.'}
+                </span>
+                <button type="button" className="linkbtn" onClick={stopCompare}>Done comparing</button>
+              </>
+            ) : (
+              <>
+                <button type="button" className="btn" onClick={() => setComparing(true)}>Compare two areas</button>
+                <span className="mx-cmp-t">or Shift-click two rows</span>
+              </>
+            )}
+          </div>
+          <BusMatrix m={m} sel={sel} onPickRow={onPickRow} onOpenRow={onOpenRow} compare={compare} onPickCol={onPickCol} onToggleBand={onToggleBand} onHoverRow={setHoverRow} />
           <SidePanel m={m} cm={cm} sel={sel} hoverRow={hoverRow} onSel={write} />
         </section>
       )}

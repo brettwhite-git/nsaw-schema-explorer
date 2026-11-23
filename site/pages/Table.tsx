@@ -1,4 +1,4 @@
-// Route: /table/:name   ?col= selects a ledger row   ?area= the subject area the reader came from (level bar, links)
+// Route: /table/:name   ?col= selects a ledger row   ?area= the subject area the reader came from (breadcrumb, links)
 // One warehouse table, any role. Each section renders only when the files give it data. The inspector on the right
 // shows the table (inspectTable) or, with ?col=, the selected warehouse column (inspectColumn + its report names).
 // A _SEC table is its own page, tagged secured; nothing here relates it to another table.

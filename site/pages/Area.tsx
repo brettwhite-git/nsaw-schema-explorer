@@ -1,15 +1,16 @@
 // One subject area. Top: the flow (level 2 of 4): the facts Oracle's 26R4 data model draws for this area and the
 // tables their diagrams relate them to, as a bipartite flow (default) or a mini bus matrix (?view=grid). Picking a
 // fact or table (?sel=fact:NAME | dim:NAME) shows it in the inspector on the right. Below: the fact tables the bus
-// matrix lists, shared dimensions, report folders, and "Compare with…". Every section renders only with data.
+// matrix lists, the NetSuite fields behind them, shared dimensions, report folders, and "Compare with…". Every section
+// renders only with data. A click on a fact or table opens it (/table/:name?area=); hovering previews it.
 // Route: /area/:slug   ?view=grid   ?sel=
 import { useCallback, useState } from 'react';
 import { useExplorer } from '../useExplorer';
 import { usePage } from '../usePage';
 import { Link, setQuery, useLocation } from '../router';
-import { matrixPath, parseQuery, tablePath } from '../routes';
+import { fieldPath, matrixPath, parseQuery, tablePath } from '../routes';
 import {
-  areaFlow, areaGrainSentence, areaSummary, findTable, fmt, plural, unslug, type AreaFlow, type AreaSummary,
+  areaFields, areaFlow, areaGrainSentence, areaSummary, findTable, fmt, plural, unslug, type AreaFlow, type AreaSummary,
 } from '../../explorer/data';
 import { NotFound } from './NotFound';
 import { AreaFacts } from '../components/area/AreaFacts';
@@ -54,26 +55,29 @@ function Legend({ grid }: { grid: boolean }) {
 }
 
 export function Area({ slug }: { slug: string }) {
-  const { core: m, columns: cm } = useExplorer();
+  const { core: m, columns: cm } = useExplorer({ columns: true });
+  const [preview, setPreview] = useState<string | null>(null);
   const q = parseQuery(useLocation());
   const [figReady, setFigReady] = useState(false);
   const onReady = useCallback(() => setFigReady(true), []);
   const sa = m ? unslug(m, slug) : undefined;
   const a = m && sa !== undefined ? areaSummary(m, null, sa) : null;
   const flow = m && sa !== undefined ? areaFlow(m, sa) : null;
-  usePage({ title: a?.label ?? (m ? 'Not found' : ''), ready: !!m && (!flow?.facts.length || figReady) });
-  const onPick = useCallback((s: string) => setQuery({ sel: s === parseQuery(location.search).sel ? null : s }, { replace: true }), []);
+  usePage({ title: a?.label ?? (m ? 'Not found' : ''), ready: !!m && !!cm && (!flow?.facts.length || figReady) });
 
   if (!m) return <section className="page-h" aria-busy="true"><p className="note">Loading…</p></section>;
   if (!a || !flow || sa === undefined) return <NotFound path={`/area/${slug}`} />;
 
   const grid = q.view === 'grid';
-  const selT = q.sel && /^(fact|dim):/.test(q.sel) ? findTable(m, q.sel.slice(q.sel.indexOf(':') + 1)) : undefined;
+  const tableOf = (x: string | null | undefined) => (x && /^(fact|dim):/.test(x) ? findTable(m, x.slice(x.indexOf(':') + 1)) : undefined);
+  const selT = tableOf(q.sel);
   const sel = selT !== undefined ? q.sel! : null;
-  const insp = selT === undefined ? inspectArea(m, sa)
-    : sel!.startsWith('fact:') ? inspectFact(m, cm, selT, sa) : inspectDimension(m, selT, sa);
-  // the inspector's own "Back to" control replaces the builder's link back to this page
-  insp.actions = insp.actions?.filter((x) => x.to.split('?')[0] !== `/area/${a.slug}`);
+  // the inspector shows the hovered node, else the ?sel= one, else the area
+  const showT = tableOf(preview) ?? selT;
+  const showKey = tableOf(preview) !== undefined ? preview! : sel;
+  const insp = showT === undefined ? inspectArea(m, sa)
+    : showKey!.startsWith('fact:') ? inspectFact(m, cm, showT, sa) : inspectDimension(m, showT, sa);
+  const fields = cm ? areaFields(m, cm, sa, 12) : [];
   const clear = () => setQuery({ sel: null }, { replace: true });
   const lead = flow.facts.length ? flowSentence(a, flow) : leadSentence(a);
   const grainLine = areaGrainSentence(m, sa);
@@ -95,7 +99,7 @@ export function Area({ slug }: { slug: string }) {
     <article className="area">
       <InspectorLayout
         head={head}
-        inspector={<Inspector {...insp} onClose={sel ? clear : undefined} closeLabel={`Back to ${a.label}`} />}
+        inspector={<Inspector {...insp} onClose={sel && !preview ? clear : undefined} closeLabel={`Back to ${a.label}`} />}
       >
         {flow.facts.length > 0 && (
           <section className="af-sec" aria-labelledby="af-h">
@@ -110,11 +114,12 @@ export function Area({ slug }: { slug: string }) {
               <Legend grid={grid} />
             </div>
             <p className="sec-p af-p">
-              Each line is a relation one of the area’s fact diagrams draws. Pick a fact or a table to see it in the inspector.
+              Each line is a relation one of the area’s fact diagrams draws. Click a fact or a table to open it; hover to
+              preview it in the inspector.
             </p>
             {grid
-              ? <AreaGridFigure key={`g${sa}`} m={m} flow={flow} sel={sel} onPick={onPick} onReady={onReady} />
-              : <AreaFlowFigure key={`f${sa}`} m={m} flow={flow} sel={sel} onPick={onPick} onReady={onReady} />}
+              ? <AreaGridFigure key={`g${sa}`} m={m} flow={flow} sel={sel} onPreview={setPreview} onReady={onReady} />
+              : <AreaFlowFigure key={`f${sa}`} m={m} flow={flow} sel={sel} onPreview={setPreview} onReady={onReady} />}
             {flow.others.length > 0 && (
               <p className="af-also">
                 <i>Also listed in this area</i>{' '}
@@ -136,6 +141,24 @@ export function Area({ slug }: { slug: string }) {
               The bus matrix lists these facts for {a.label}.{grainLine ? ` ${grainLine}` : ''}
             </p>
             <AreaFacts m={m} facts={a.facts} area={a.slug} />
+          </section>
+        )}
+
+        {fields.length > 0 && (
+          <section aria-labelledby="ar-flds-h" className="ar-sec">
+            <div className="sec-h"><h2 id="ar-flds-h">NetSuite fields behind this area</h2><span className="faint num">{fmt(fields.length)}</span></div>
+            <p className="sec-p">
+              The NetSuite fields loaded into {a.label}’s fact tables, by the number of its report columns that read them.
+              Pick one to trace it across every subject area.
+            </p>
+            <ol className="ar-fields">
+              {fields.map((f) => (
+                <li key={f.field}>
+                  <Link to={fieldPath(f.record, f.name.toLowerCase(), a.slug)} className="mono link">{f.record}.{f.name.toLowerCase()}</Link>
+                  <span className="faint num">{plural(f.n, 'report column')}</span>
+                </li>
+              ))}
+            </ol>
           </section>
         )}
 

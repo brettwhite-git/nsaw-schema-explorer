@@ -26,7 +26,9 @@ export function AreaFacts({ m, facts, area }: { m: CoreModel; facts: AreaFact[];
     <ol className="ar-facts">
       {groups.map((g) => (
         <li key={g.key} className="ar-fact">
-          <p className={g.lead.grain ? 'ar-grain' : 'ar-grain ar-plain'}>{g.lead.grain ?? prettyTable(m, g.key)}</p>
+          <p className={g.lead.grain ? 'ar-grain' : 'ar-grain ar-plain'}>
+            <Link to={tablePath(g.members[0].name, area)} className="ar-glink">{g.lead.grain ?? prettyTable(m, g.key)}</Link>
+          </p>
           {g.lead.key.length > 0 && (
             <p className="ar-key">
               <span className="tag">key</span>{' '}

@@ -1,10 +1,13 @@
 // The bus matrix as a real <table>: rows are subject areas grouped by functional area, columns the shared
 // dimensions ordered by reach (a readable head, then long-tail bands that open in place).
 // Keyboard: one cell is in the tab order (roving tabindex); arrows, Home and End move; Enter or Space picks.
+// A row's name opens its subject area (onOpenRow); Shift-click or Shift-Enter on it, or any click while `compare` is
+// on, picks it for comparing (onPickRow). Clicking a cell in the row also picks the row.
 // Hover: the row drives the side panel (onHoverRow); the column tint is a one-line <style>, so hovering never
 // re-renders the table.
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { matrixRows, prettyTable, reach, type CoreModel } from '../../explorer/data';
+import { areaPath } from '../routes';
 import { matrixLayout, type Sel } from './matrix/shared';
 
 // Every column name is slanted at SLANT degrees from horizontal. Neighbouring names sit w·sin(SLANT) apart, so a
@@ -75,12 +78,16 @@ export interface BusMatrixProps {
   m: CoreModel;
   sel: Sel;
   onPickRow: (row: number) => void;
+  /** the row's name was clicked: open its subject area */
+  onOpenRow: (row: number) => void;
+  /** compare mode: a click on a row's name picks it instead of opening it */
+  compare?: boolean;
   onPickCol: (col: number) => void;
   onToggleBand: (band: number) => void;
   onHoverRow: (row: number | null) => void;
 }
 
-export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol, onToggleBand, onHoverRow }: BusMatrixProps) {
+export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onOpenRow, compare = false, onPickCol, onToggleBand, onHoverRow }: BusMatrixProps) {
   const wrap = useRef<HTMLDivElement>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const tip = useRef<HTMLDivElement>(null);
@@ -130,18 +137,24 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
 
   const cellAt = (r: number, k: number) => wrap.current?.querySelector<HTMLElement>(`[data-r="${r}"][data-k="${k}"]`) ?? null;
 
-  const activate = useCallback((el: HTMLElement) => {
+  const activate = useCallback((el: HTMLElement, shift = false) => {
     const r = Number(el.dataset.r);
-    if (r >= 0) { onPickRow(r); return; }
+    if (r >= 0) {
+      if (el.dataset.k === '0' && !shift && !compare) onOpenRow(r); else onPickRow(r);
+      return;
+    }
     if (el.dataset.c !== undefined) onPickCol(Number(el.dataset.c));
     else if (el.dataset.band !== undefined) onToggleBand(Number(el.dataset.band));
-  }, [onPickRow, onPickCol, onToggleBand]);
+  }, [onPickRow, onOpenRow, compare, onPickCol, onToggleBand]);
 
   const onClick = (e: MouseEvent<HTMLTableElement>) => {
     const el = (e.target as HTMLElement).closest<HTMLElement>('[data-k]');
     if (!el) return;
+    // a modified click on a row's name link keeps the browser's behaviour (new tab and so on)
+    if ((e.target as HTMLElement).closest('a') && (e.metaKey || e.ctrlKey || e.altKey || e.button !== 0)) return;
+    e.preventDefault();
     setFocus({ r: Number(el.dataset.r), k: Number(el.dataset.k) });
-    activate(el);
+    activate(el, e.shiftKey);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTableElement>) => {
@@ -155,7 +168,7 @@ export const BusMatrix = memo(function BusMatrix({ m, sel, onPickRow, onPickCol,
       case 'ArrowRight': k = Math.min(nSlots, k + 1); break;
       case 'Home': k = r < 0 ? 1 : 0; if (e.ctrlKey) r = 0; break;
       case 'End': k = nSlots; if (e.ctrlKey) r = nRows - 1; break;
-      case 'Enter': case ' ': e.preventDefault(); activate(el); return;
+      case 'Enter': case ' ': e.preventDefault(); activate(el, e.shiftKey); return;
       default: return;
     }
     e.preventDefault();
@@ -314,10 +327,10 @@ const Row = memo(function Row({ m, r, label, slots, sel, view, names, focusK }: 
   const tab = (k: number) => (focusK === k ? 0 : -1);
   return (
     <tr className={`bm-row${isAB ? ' sel' : ''}${rowFade ? ' fade' : ''}`} aria-selected={isAB}>
-      <th scope="row" data-r={r} data-k={0} tabIndex={tab(0)} title={label}>
+      <th scope="row" data-r={r} data-k={0} tabIndex={tab(0)} title={`${label}: open the subject area (Shift-click to compare)`}>
         <span className="bm-rh">
           {ab && <b className="bm-ab">{ab}</b>}
-          <span className="bm-rl">{label}</span>
+          <a className="bm-rl" href={areaPath(m.subjectAreas[m.bus.rows[r]].slug)} tabIndex={-1}>{label}</a>
           <span className="bm-rn">{m.bus.cells[r].length}</span>
         </span>
       </th>

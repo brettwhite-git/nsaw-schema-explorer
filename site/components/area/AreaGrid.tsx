@@ -2,16 +2,17 @@
 // column per table their diagrams relate them to (most facts first, names slanted 60° up and to the right), a dot
 // where the fact's diagram draws the table. The shared columns sit on a light wash; the count under each column says
 // how many of the facts relate to it. The grid scrolls sideways in its own box when it is wider than the page.
-// Hover lights a row or a column; click or Enter picks it (same ?sel= as the flow). Under 640px: the flow's lists.
+// Hover lights a row or a column and previews it in the inspector; click or Enter opens its table. Under 640px:
+// the flow's lists.
 // Ported from lab/area-proto (?v=b).
 import { useEffect, useMemo, useState } from 'react';
 import { plural } from '../../../explorer/data';
-import { dimSel, factSel, FlowLists, FlowTip, keyPick, selIndex, type FlowFigureProps } from './AreaFlow';
+import { FlowLists, FlowTip, nodeProps, selIndex, type FlowFigureProps } from './AreaFlow';
 import { FONT, fit, r1, useWidth } from './measure';
 
 type Hover = { k: 'f' | 'd'; i: number; x: number; y: number } | null;
 
-export function AreaGridFigure({ m, flow, sel, onPick, onReady }: FlowFigureProps) {
+export function AreaGridFigure({ m, flow, sel, onPreview, onReady }: FlowFigureProps) {
   const [ref, width, fonts] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<Hover>(null);
   const wide = width >= 640;
@@ -45,22 +46,12 @@ export function AreaGridFigure({ m, flow, sel, onPick, onReady }: FlowFigureProp
     if (k === 'f') setHover({ k, i, x: Math.max(0, b.left - box.left) + (L?.rowHW ?? 0) / 2, y: b.top - box.top });
     else setHover({ k, i, x: b.left - box.left + b.width / 2, y: b.top - box.top });
   };
-  const node = (k: 'f' | 'd', i: number, name: string) => ({
-    tabIndex: 0,
-    role: 'button',
-    'aria-pressed': k === 'f' ? si.f === i : si.d === i,
-    onClick: () => onPick(k === 'f' ? factSel(name) : dimSel(name)),
-    onKeyDown: keyPick(() => onPick(k === 'f' ? factSel(name) : dimSel(name))),
-    onMouseEnter: (e: { currentTarget: Element }) => at(k, i, e.currentTarget),
-    onMouseLeave: () => setHover(null),
-    onFocus: (e: { currentTarget: Element }) => at(k, i, e.currentTarget),
-    onBlur: () => setHover(null),
-  });
+  const node = nodeProps(m, flow, at, () => setHover(null), onPreview);
   const nShared = flow.shared;
 
   return (
     <div className="af ag" ref={ref}>
-      {ready && !wide && <FlowLists m={m} flow={flow} sel={sel} onPick={onPick} />}
+      {ready && !wide && <FlowLists m={m} flow={flow} sel={sel} />}
       {L && (
         <>
           <div className="ag-scroll" tabIndex={L.W > width ? 0 : undefined} aria-label={L.W > width ? 'Scroll the grid sideways' : undefined} role={L.W > width ? 'region' : undefined}>

@@ -1,7 +1,7 @@
 // The matrix page's inspector (the shared <Inspector>): two picked rows (a pair to compare), one picked row, one
 // picked dimension column, the hovered row, or a short guide. Detail sections render only when they have data.
 import { Link } from '../../router';
-import { areaPath, comparePath, matrixPath, tablePath } from '../../routes';
+import { areaPath, comparePath, tablePath } from '../../routes';
 import { Inspector, InspectorSection, type InspectorAction } from '../Inspector';
 import { inspectArea, inspectDimension, inspectPair } from '../inspector/builders';
 import { areaGrainSentence, areaSummary, compare, dimensionReach, factsInSameAreas, plural, prettyTable, reach, reportFoldersReading, shortTable, unsecuredName, unslug, type AreaFact, type ColumnModel, type CoreModel } from '../../../explorer/data';
@@ -53,7 +53,7 @@ export function SidePanel({ m, cm, sel, hoverRow, onSel }: SidePanelProps) {
   }
   if (hoverRow !== null) {
     const sa = m.bus.rows[hoverRow];
-    return <Inspector {...inspectArea(m, sa)}><RowDetails m={m} sa={sa} /><p className="mx-hint">Click the row to pick it.</p></Inspector>;
+    return <Inspector {...inspectArea(m, sa)}><RowDetails m={m} sa={sa} /><p className="mx-hint">Click the name to open it; Shift-click to compare it with another row.</p></Inspector>;
   }
   return <GuidePanel m={m} pickDim={pickDim} />;
 }
@@ -80,16 +80,16 @@ function GuidePanel({ m, pickDim }: { m: CoreModel; pickDim: (c: number) => void
   const so = unslug(m, 'sales-order'), ci = unslug(m, 'customer-invoice');
   const emp = m.tableByName.get('DW_NS_EMPLOYEE_D');
   const actions: InspectorAction[] = [];
-  if (so !== undefined) actions.push({ label: m.subjectAreas[so].label, sub: 'one subject area: its facts and the tables they relate to', to: areaPath(m.subjectAreas[so].slug) });
-  if (so !== undefined && ci !== undefined) actions.push({ label: `${m.subjectAreas[so].label} and ${m.subjectAreas[ci].label}`, sub: 'compare two Order to Cash areas', to: comparePath(m.subjectAreas[so].slug, m.subjectAreas[ci].slug) });
-  if (emp !== undefined && m.tables[emp].col >= 0) actions.push({ label: prettyTable(m, m.tables[emp].name), sub: 'one dimension, many report folders', to: matrixPath({ dim: m.tables[emp].name }) });
+  if (so !== undefined) actions.push({ label: `Subject area: ${m.subjectAreas[so].label}`, sub: 'its facts and the tables they relate to', to: areaPath(m.subjectAreas[so].slug) });
+  if (so !== undefined && ci !== undefined) actions.push({ label: `Compare ${m.subjectAreas[so].label} with ${m.subjectAreas[ci].label}`, sub: 'two Order to Cash areas side by side', to: comparePath(m.subjectAreas[so].slug, m.subjectAreas[ci].slug) });
+  if (emp !== undefined) actions.push({ label: `Dimension: ${prettyTable(m, m.tables[emp].name)}`, sub: 'one dimension, many report folders', to: tablePath(m.tables[emp].name) });
   return (
     <Inspector kind="area" eyebrow="reading the matrix" title="Rows, columns and marks"
       visual={(
         <ol className="mx-howto">
-          <li>Hover a row to see its facts and the grain of each.</li>
-          <li>Click two rows to compare the dimensions they list.</li>
+          <li>Click a subject area’s name to open it. Hover a row to preview its facts here.</li>
           <li>Click a column name to see where a dimension reaches and which report folders read from it.</li>
+          <li>To compare two areas, use “Compare two areas” or Shift-click two rows.</li>
         </ol>
       )}
       actions={actions}>

@@ -2,29 +2,46 @@
 // A modal dialog with a combobox over a listbox: ↑ ↓ move, Enter opens, Esc closes, Tab stays inside, focus goes
 // back where it was on close. Top results grouped by kind, then "See all results" for /search?q=.
 // Results come from the core index at once and fill in when columns.json loads. Full screen on a phone.
+// Two modes: 'all' (everything) and 'fields' ("Trace a field": only NetSuite fields, `is:field`; with an empty query
+// it lists the fields reaching the most subject areas). Open it from anywhere with openPalette('fields').
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import { fmt, search, type ItemKind, type SearchItem } from '../../explorer/data';
+import { fmt, search, topFields, type ItemKind, type SearchItem } from '../../explorer/data';
 import { navigate } from '../router';
 import { searchPath } from '../routes';
 import { KIND_GROUP, itemHref, useSearchModel } from './search/model';
 import { Glass, ResultRow, StartRow, startEntries } from './search/parts';
 
+export type PaletteMode = 'all' | 'fields';
+
+/** The window event the Shell listens to; `detail` is the mode. */
+export const PALETTE_EVENT = 'explorer:palette';
+
+/** Open the palette from any page (the Shell owns it). */
+export function openPalette(mode: PaletteMode = 'all'): void {
+  window.dispatchEvent(new CustomEvent(PALETTE_EVENT, { detail: mode }));
+}
+
 export interface PaletteProps {
   open: boolean;
+  mode?: PaletteMode;
   onClose: () => void;
 }
 
 const TOP = 8;
 
-export function Palette({ open, onClose }: PaletteProps) {
+export function Palette({ open, mode = 'all', onClose }: PaletteProps) {
   if (!open) return null;
-  return <PaletteDialog onClose={onClose} />;
+  return <PaletteDialog key={mode} initialMode={mode} onClose={onClose} />;
 }
 
 type Option = { id: string; href: string } & ({ type: 'item'; it: SearchItem } | { type: 'start'; i: number } | { type: 'all' });
 
-function PaletteDialog({ onClose }: { onClose: () => void }) {
+const TOP_FIELDS = 12;
+
+function PaletteDialog({ initialMode, onClose }: { initialMode: PaletteMode; onClose: () => void }) {
   const { index, m, cm, extended } = useSearchModel({ columns: true });
+  const [mode, setMode] = useState<PaletteMode>(initialMode);
+  const fields = mode === 'fields';
   const [q, setQ] = useState('');
   const [sel, setSel] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -47,7 +64,14 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
   }, []);
 
   const query = q.trim();
-  const res = useMemo(() => (index && query ? search(index, query) : null), [index, query, extended]);
+  const full = fields && query ? `is:field ${query}` : query;
+  const res = useMemo(() => (index && full ? search(index, full) : null), [index, full, extended]);
+  // fields mode, empty query: the most-used fields, as index entries so they render like any result
+  const topItems = useMemo(() => {
+    if (!fields || query || !cm || !index || !extended) return [];
+    const byField = new Map(index.items.filter((it) => it.kind === 'field').map((it) => [it.field, it]));
+    return topFields(cm, TOP_FIELDS).map((f) => byField.get(f.field)).filter((x): x is SearchItem => !!x);
+  }, [fields, query, cm, index, extended]);
   const top = res ? res.results.slice(0, TOP) : [];
 
   // Group the top results by kind, in the order each kind first appears.
@@ -60,16 +84,18 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
     return g;
   }, [res]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const starts = m && !query ? startEntries(m, cm) : [];
+  const starts = m && !query && !fields ? startEntries(m, cm) : [];
   const options: Option[] = useMemo(() => {
     if (!m) return [];
+    if (!query && fields) return topItems.map((it, i) => ({ id: `pal-f${i}`, href: itemHref(m, cm, it), type: 'item' as const, it }));
     if (!query) return starts.map((e, i) => ({ id: `pal-s${i}`, href: e.href, type: 'start' as const, i }));
     const out: Option[] = [];
     for (const g of groups) for (const it of g.items) out.push({ id: `pal-${out.length}`, href: itemHref(m, cm, it), type: 'item', it });
-    if (res && res.total) out.push({ id: 'pal-all', href: searchPath(query), type: 'all' });
+    if (res && res.total) out.push({ id: 'pal-all', href: searchPath(full), type: 'all' });
     return out;
-  }, [groups, m, cm, query, res]); // eslint-disable-line react-hooks/exhaustive-deps
-  useEffect(() => { setSel(0); }, [query]);
+  }, [groups, m, cm, query, res, topItems, fields]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setSel(0); }, [query, mode]);
+  const switchTo = (md: PaletteMode) => { setMode(md); inputRef.current?.focus(); };
   const cur = Math.min(sel, Math.max(0, options.length - 1));
 
   const close = (back = true) => { restore.current = back; onClose(); };
@@ -85,7 +111,7 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (options[cur]) go(options[cur].href);
-      else if (query) go(searchPath(query));
+      else if (query) go(searchPath(full));
     }
   };
 
@@ -106,14 +132,15 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="pal-scrim" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
-      <div ref={dialogRef} className="pal" role="dialog" aria-modal="true" aria-label="Search" onKeyDown={onDialogKey}>
+      <div ref={dialogRef} className="pal" role="dialog" aria-modal="true" aria-label={fields ? 'Trace a NetSuite field' : 'Search'} onKeyDown={onDialogKey}>
         <div className="pal-bar">
           <Glass size={18} />
+          {fields && <span className="pal-chip">NetSuite fields</span>}
           <input
             ref={inputRef}
             type="text"
             role="combobox"
-            aria-label="Search tables, columns, NetSuite fields, subject areas"
+            aria-label={fields ? 'Search NetSuite fields to trace' : 'Search tables, columns, NetSuite fields, subject areas'}
             aria-expanded={options.length > 0}
             aria-controls="pal-list"
             aria-autocomplete="list"
@@ -121,7 +148,7 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
             autoComplete="off"
             spellCheck={false}
             enterKeyHint="search"
-            placeholder="Search tables, columns, NetSuite fields"
+            placeholder={fields ? 'Type a NetSuite field, e.g. tranid' : 'Search tables, columns, NetSuite fields'}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={onKey}
@@ -133,8 +160,27 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
 
         <div className="pal-body">
           {!m && <p className="pal-note">Loading the lineage files…</p>}
-          {m && !query && (
+          {m && fields && (
+            <p className="pal-mode">
+              Tracing a field follows it from NetSuite through the warehouse to every report column that reads it.{' '}
+              <button type="button" className="linkbtn" onClick={() => switchTo('all')}>Search everything instead</button>
+            </p>
+          )}
+          {m && fields && !query && (
+            topItems.length ? (
+              <>
+                <p className="pal-group" id="pal-g-fields">Most used NetSuite fields</p>
+                <ul className="results pal-list" id="pal-list" role="listbox" aria-labelledby="pal-g-fields">
+                  {topItems.map((it, i) => <ResultRow key={i} m={m} cm={cm} it={it} text="" id={`pal-f${i}`} selected={cur === i} onOpen={go} onHover={() => setSel(i)} />)}
+                </ul>
+              </>
+            ) : <p className="pal-note">Loading the NetSuite fields…</p>
+          )}
+          {m && !query && !fields && (
             <>
+              <button type="button" className="pal-trace" onClick={() => switchTo('fields')}>
+                <span>Trace a NetSuite field</span><small>from NetSuite to every report column that reads it</small><i aria-hidden="true">→</i>
+              </button>
               <p className="pal-group" id="pal-g-start">Start here</p>
               <ul className="results pal-list" id="pal-list" role="listbox" aria-labelledby="pal-g-start">
                 {starts.map((e, i) => <StartRow key={e.name} e={e} id={`pal-s${i}`} selected={cur === i} onHover={() => setSel(i)} onOpen={go} />)}
@@ -163,7 +209,7 @@ function PaletteDialog({ onClose }: { onClose: () => void }) {
                   aria-selected={options[cur]?.id === 'pal-all'}
                   className={`pal-all${options[cur]?.id === 'pal-all' ? ' sel' : ''}`}
                   onMouseMove={() => setSel(options.length - 1)}
-                  onClick={() => go(searchPath(query))}
+                  onClick={() => go(searchPath(full))}
                 >
                   See all {fmt(res.total)} results <span aria-hidden="true">→</span>
                   {!extended && <span className="pal-loading"> Columns and fields are still loading.</span>}

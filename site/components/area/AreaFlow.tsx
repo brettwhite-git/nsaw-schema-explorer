@@ -1,11 +1,14 @@
 // Subject-area flow, variant A (bipartite): the area's facts that Oracle's 26R4 data model draws, as cards on the
 // left; every table their diagrams relate them to on the right, in two groups ("Shared by two or more facts",
 // "Related to one fact"); one plain solid curve per stated relation (no direction, no cardinality).
-// Hover or focus a node: its lines turn to the accent and the rest step back, with a one-line label. Click or
-// Enter picks it (the page shows it in the inspector and keeps it in ?sel=). Under 640px wide: plain lists.
+// Hover or focus a node: its lines turn to the accent and the rest step back, with a one-line label, and the page's
+// inspector previews it (onPreview). Click or Enter opens the table (/table/:name?area=…), the next level down.
+// A ?sel= in the URL still marks one node as selected. Under 640px wide: plain lists of links.
 // Ported from lab/area-proto (?v=a).
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent as RKeyboardEvent } from 'react';
 import { fmt, plural, prettyTable, type AreaFlow as Flow, type CoreModel } from '../../../explorer/data';
+import { Link, navigate } from '../../router';
+import { tablePath } from '../../routes';
 import { FONT, fit, r1, useWidth } from './measure';
 
 export interface FlowFigureProps {
@@ -13,7 +16,8 @@ export interface FlowFigureProps {
   flow: Flow;
   /** "fact:NAME" | "dim:NAME" | null */
   sel: string | null;
-  onPick: (sel: string) => void;
+  /** hover or focus on a node ("fact:NAME" / "dim:NAME"), null when it ends: the page previews it */
+  onPreview?: (sel: string | null) => void;
   /** called once the figure has drawn at its measured width */
   onReady?: () => void;
 }
@@ -34,6 +38,31 @@ export function selIndex(flow: Flow, sel: string | null): { f: number; d: number
 export const keyPick = (go: () => void) => (e: RKeyboardEvent) => {
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
 };
+
+/** Props for one node of a figure: a link to its table, with hover / focus feeding the label and the preview. */
+export function nodeProps(m: CoreModel, flow: Flow, at: (k: 'f' | 'd', i: number, el: Element) => void, leave: () => void,
+  onPreview?: (sel: string | null) => void) {
+  const slug = m.subjectAreas[flow.sa].slug;
+  return (k: 'f' | 'd', i: number, name: string) => {
+    const href = tablePath(name, slug);
+    const s = k === 'f' ? factSel(name) : dimSel(name);
+    return {
+      tabIndex: 0,
+      role: 'link',
+      onClick: (e: { metaKey?: boolean; ctrlKey?: boolean }) => openTable(href, e),
+      onKeyDown: keyPick(() => openTable(href)),
+      onMouseEnter: (e: { currentTarget: Element }) => { at(k, i, e.currentTarget); onPreview?.(s); },
+      onMouseLeave: () => { leave(); onPreview?.(null); },
+      onFocus: (e: { currentTarget: Element }) => { at(k, i, e.currentTarget); onPreview?.(s); },
+      onBlur: () => { leave(); onPreview?.(null); },
+    };
+  };
+}
+
+/** Open a table from a figure node: plain click in the app, Cmd/Ctrl-click in a new tab. */
+export function openTable(href: string, e?: { metaKey?: boolean; ctrlKey?: boolean }): void {
+  if (e && (e.metaKey || e.ctrlKey)) window.open(href, '_blank', 'noopener'); else navigate(href);
+}
 
 function tipText(m: CoreModel, flow: Flow, h: NonNullable<Hover>): string {
   const NSA = m.subjectAreas.length;
@@ -75,8 +104,9 @@ export function FlowTip({ m, flow, hover, place }: { m: CoreModel; flow: Flow; h
 }
 
 /** Narrow screens: the same content as lists, each item a button that picks it. */
-export function FlowLists({ m, flow, sel, onPick }: Omit<FlowFigureProps, 'onReady'>) {
+export function FlowLists({ m, flow, sel }: Omit<FlowFigureProps, 'onReady' | 'onPreview'>) {
   const si = selIndex(flow, sel);
+  const slug = m.subjectAreas[flow.sa].slug;
   const nF = flow.facts.length;
   const groups = [
     { title: 'Shared by two or more facts', ds: flow.tables.filter((d) => d.facts.length >= 2) },
@@ -88,10 +118,10 @@ export function FlowLists({ m, flow, sel, onPick }: Omit<FlowFigureProps, 'onRea
       <ul className="af-facts">
         {flow.facts.map((f) => (
           <li key={f.table}>
-            <button type="button" className={si.f === f.i ? 'af-card sel' : 'af-card'} aria-pressed={si.f === f.i} onClick={() => onPick(factSel(f.name))}>
+            <Link to={tablePath(f.name, slug)} className={si.f === f.i ? 'af-card sel' : 'af-card'}>
               <span className="mono">{f.name}</span><span className="num faint">{f.rels.length}</span>
               <i>{f.grain ?? prettyTable(m, f.name)}</i>
-            </button>
+            </Link>
           </li>
         ))}
       </ul>
@@ -101,10 +131,10 @@ export function FlowLists({ m, flow, sel, onPick }: Omit<FlowFigureProps, 'onRea
           <ul className="af-rows">
             {g.ds.map((d) => (
               <li key={d.table}>
-                <button type="button" className={si.d === d.i ? 'sel' : undefined} aria-pressed={si.d === d.i} onClick={() => onPick(dimSel(d.name))}>
+                <Link to={tablePath(d.name, slug)} className={si.d === d.i ? 'sel' : undefined}>
                   <span>{d.display}{d.isFact && <i> fact</i>}</span>
                   <span className="num faint">{d.facts.length >= 2 ? `${d.facts.length} of ${nF} facts` : '1'}</span>
-                </button>
+                </Link>
               </li>
             ))}
           </ul>
@@ -144,7 +174,7 @@ function layout(flow: Flow, W: number): Layout {
   return { W, H: Math.ceil(H), cardW, cardH, dimX, rowH, fy, dy, heads };
 }
 
-export function AreaFlowFigure({ m, flow, sel, onPick, onReady }: FlowFigureProps) {
+export function AreaFlowFigure({ m, flow, sel, onPreview, onReady }: FlowFigureProps) {
   const [ref, width, fonts] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<Hover>(null);
   const W = Math.min(width, 1320);
@@ -170,21 +200,11 @@ export function AreaFlowFigure({ m, flow, sel, onPick, onReady }: FlowFigureProp
     return { src, fs, ds, hot: !!hover };
   }, [hover, si.f, si.d, flow]);
 
-  const node = (k: 'f' | 'd', i: number, name: string) => ({
-    tabIndex: 0,
-    role: 'button',
-    'aria-pressed': k === 'f' ? si.f === i : si.d === i,
-    onClick: () => onPick(k === 'f' ? factSel(name) : dimSel(name)),
-    onKeyDown: keyPick(() => onPick(k === 'f' ? factSel(name) : dimSel(name))),
-    onMouseEnter: (e: { currentTarget: Element }) => at(k, i, e.currentTarget),
-    onMouseLeave: () => setHover(null),
-    onFocus: (e: { currentTarget: Element }) => at(k, i, e.currentTarget),
-    onBlur: () => setHover(null),
-  });
+  const node = nodeProps(m, flow, at, () => setHover(null), onPreview);
 
   return (
     <div className="af" ref={ref}>
-      {ready && !wide && <FlowLists m={m} flow={flow} sel={sel} onPick={onPick} />}
+      {ready && !wide && <FlowLists m={m} flow={flow} sel={sel} />}
       {L && (
         <>
           <svg className={`af-svg${lit ? (lit.hot ? ' hov' : ' picked') : ''}`} width={L.W} height={L.H} viewBox={`0 0 ${L.W} ${L.H}`} role="group" aria-label={label}>

@@ -81,7 +81,12 @@
 .lg-row { width: 100%; min-height: 30px; align-items: center; text-align: left; transition: background-color var(--dur-hover); }
 .lg-row:hover:not(.sel) { background: var(--tint); }
 .lg-row.sel { background: var(--accent-soft); }
-.lg-row:focus-visible { outline-offset: -2px; }
+.lg-row { cursor: pointer; }
+.lg-c { text-align: left; padding: 0; }
+.lg-c:focus-visible { outline-offset: 2px; }
+a.lg-fl { color: var(--ink); text-decoration: underline; text-decoration-color: var(--edge); text-underline-offset: 3px; }
+a.lg-fl:hover { text-decoration-color: var(--ink); }
+.lg-lead { margin: 0 0 6px; font: italic 400 15px var(--serif); color: var(--ink); }
 .lg-cell { display: flex; align-items: center; gap: 8px; padding: 4px 10px; min-width: 0; white-space: nowrap; }
 .lg-src { flex-direction: column; align-items: flex-start; gap: 2px; }
 .lg-s, .lg-c { overflow: hidden; text-overflow: ellipsis; min-width: 0; font-size: 12px; color: var(--ink); }

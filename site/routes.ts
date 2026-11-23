@@ -6,7 +6,7 @@
 //   /table/:name            one warehouse table   ?col=  ?area=
 //   /field/:record/:field   fan-out impact trace  ?at= ?sa= ?area=   (no dot in the URL: hosts treat it as a file)
 //
-// Area context travels in the URL: table and field links carry `?area=<slug>` (the level bar reads it back).
+// Area context travels in the URL: table and field links carry `?area=<slug>` (the breadcrumb reads it back); `?from=<TABLE>` on field links names the table they came from.
 //   /search                 full results          ?q=
 export type Route =
   | { name: 'matrix' }

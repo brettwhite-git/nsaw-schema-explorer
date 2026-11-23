@@ -199,3 +199,22 @@
   .af-legend { white-space: normal; }
   .af-view .btn { min-height: var(--hit-touch); }
 }
+
+/* NetSuite fields behind this area */
+.ar-fields { list-style: none; columns: 2; column-gap: var(--gutter); margin-top: 4px; }
+.ar-fields > li {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px; break-inside: avoid;
+  padding: 6px 0; border-bottom: 1px solid var(--rule); min-width: 0;
+}
+.ar-fields .link { font-size: 12.5px; overflow-wrap: anywhere; }
+.ar-fields .num { font-size: 11.5px; white-space: nowrap; }
+.af-rows a {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; min-height: var(--hit-touch);
+  border-bottom: 1px solid var(--rule); font-size: 13.5px; color: var(--ink); text-decoration: none;
+}
+.af-rows a i { font: italic 400 12.5px var(--serif); color: var(--ink-2); }
+.af-rows a .num { font-size: 11.5px; white-space: nowrap; }
+a.af-card { color: var(--ink); text-decoration: none; }
+@media (max-width: 759px) { .ar-fields { columns: 1; } .ar-fields > li { min-height: var(--hit-touch); align-items: center; } }
+.ar-glink { color: inherit; text-decoration: none; }
+.ar-glink:hover { text-decoration: underline; text-decoration-color: var(--edge); text-underline-offset: 4px; }

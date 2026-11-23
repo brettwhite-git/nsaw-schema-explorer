@@ -6,7 +6,7 @@
 
 import { areaSummary } from './area';
 import { hasModel, modelRelations } from './relations';
-import type { CoreModel, ModelRelation } from './types';
+import type { ColumnModel, CoreModel, ModelRelation } from './types';
 
 export interface FlowFact {
   /** position in AreaFlow.facts */
@@ -98,4 +98,60 @@ export function areaNeighbours(m: CoreModel, sa: number): { prev: number | null;
   const sibs = m.functionalAreas[fa].subjectAreas;
   const at = sibs.indexOf(sa);
   return { prev: at > 0 ? sibs[at - 1] : null, next: at >= 0 && at < sibs.length - 1 ? sibs[at + 1] : null };
+}
+
+/** One NetSuite field with a count (subject areas reached, or report columns in one area). */
+export interface FieldCount {
+  /** netsuiteField index */
+  field: number;
+  /** record key, e.g. "transactions" */
+  record: string;
+  /** field name as the lineage spells it, e.g. "TRANID" */
+  name: string;
+  /** "transactions.tranid", lower-case: record and field for fieldPath */
+  key: string;
+  n: number;
+}
+
+function fieldCount(cm: ColumnModel, f: number, n: number): FieldCount {
+  const record = cm.core.recordKey[cm.nfRecord[f]];
+  return { field: f, record, name: cm.nfName[f], key: `${record}.${cm.nfName[f].toLowerCase()}`, n };
+}
+
+/**
+ * NetSuite fields reaching the most subject areas (through their warehouse columns), most first, then by key.
+ * At most `perRecord` fields per NetSuite record, so one wide record (subsidiary) does not fill the list.
+ */
+export function topFields(cm: ColumnModel, n = 12, perRecord = 1): FieldCount[] {
+  const all: FieldCount[] = [];
+  cm.fieldSas.forEach((s, f) => { if (s.length) all.push(fieldCount(cm, f, s.length)); });
+  all.sort((a, b) => b.n - a.n || a.key.localeCompare(b.key));
+  const per = new Map<string, number>();
+  const out: FieldCount[] = [];
+  for (const x of all) {
+    const k = per.get(x.record) ?? 0;
+    if (k >= perRecord) continue;
+    per.set(x.record, k + 1);
+    out.push(x);
+    if (out.length >= n) break;
+  }
+  return out;
+}
+
+/**
+ * NetSuite fields behind one subject area's facts: fields a listed fact's warehouse columns are loaded from, counted
+ * by the area's report columns that read those columns. Most report columns first, then by key.
+ */
+export function areaFields(m: CoreModel, cm: ColumnModel, sa: number, n = 12): FieldCount[] {
+  const facts = new Set(m.factsOfSa[sa]);
+  const cnt = new Map<number, Set<number>>();
+  cm.prcSa.forEach((x, p) => {
+    if (x !== sa) return;
+    for (const c of cm.presPhys[p]) {
+      if (!facts.has(cm.pcTable[c])) continue;
+      for (const f of cm.colSrc[c]) (cnt.get(f) ?? cnt.set(f, new Set()).get(f)!).add(p);
+    }
+  });
+  return [...cnt].map(([f, ps]) => fieldCount(cm, f, ps.size))
+    .sort((a, b) => b.n - a.n || a.key.localeCompare(b.key)).slice(0, n);
 }

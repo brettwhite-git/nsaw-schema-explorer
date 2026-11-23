@@ -2,8 +2,8 @@
 // ⌘K / Ctrl-K anywhere, or "/" outside a text field, opens the palette.
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Link } from './router';
-import { Palette } from './components/Palette';
-import { LevelBar } from './components/LevelBar';
+import { Palette, PALETTE_EVENT, type PaletteMode } from './components/Palette';
+import { Breadcrumb } from './components/Breadcrumb';
 
 function isTyping(t: EventTarget | null): boolean {
   const el = t as HTMLElement | null;
@@ -21,17 +21,22 @@ function Logo() {
 
 export function Shell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<PaletteMode>('all');
   const close = useCallback(() => setOpen(false), []);
+  const openIn = useCallback((m: PaletteMode) => { setMode(m); setOpen(true); }, []);
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'k') { e.preventDefault(); setOpen((o) => !o); return; }
-      if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !isTyping(e.target)) { e.preventDefault(); setOpen(true); }
+      if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'k') { e.preventDefault(); setMode('all'); setOpen((o) => !o); return; }
+      if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !isTyping(e.target)) { e.preventDefault(); openIn('all'); }
     };
+    // any page can open the palette, e.g. in fields mode: openPalette('fields')
+    const onOpen = (e: Event) => openIn(((e as CustomEvent).detail as PaletteMode) ?? 'all');
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+    window.addEventListener(PALETTE_EVENT, onOpen);
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener(PALETTE_EVENT, onOpen); };
+  }, [openIn]);
 
   return (
     <>
@@ -43,15 +48,16 @@ export function Shell({ children }: { children: ReactNode }) {
             <b><span className="brand-long">NetSuite Data Intelligence </span>Schema Explorer</b>
             <small>· 25R4</small>
           </Link>
-          <button type="button" className="search-btn" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-keyshortcuts="Meta+K Control+K /">
+          <button type="button" className="search-btn" onClick={() => openIn('all')} aria-haspopup="dialog" aria-keyshortcuts="Meta+K Control+K /">
             <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" strokeWidth="1.4" /><path d="M10.5 10.5 14 14" stroke="currentColor" strokeWidth="1.4" /></svg>
             <span className="sb-long">Search tables, fields, subject areas</span>
             <span className="sb-short">Search</span>
             <kbd>{isMac ? '⌘' : 'Ctrl'}</kbd><kbd>K</kbd>
           </button>
+          <button type="button" className="trace-btn" onClick={() => openIn('fields')} aria-haspopup="dialog">Trace a field</button>
         </div>
       </header>
-      <LevelBar />
+      <Breadcrumb />
       <main id="main" className="page">{children}</main>
       <footer className="site-foot">
         <p>
@@ -60,7 +66,7 @@ export function Shell({ children }: { children: ReactNode }) {
           4.0 workbook.
         </p>
       </footer>
-      <Palette open={open} onClose={close} />
+      <Palette open={open} mode={mode} onClose={close} />
     </>
   );
 }

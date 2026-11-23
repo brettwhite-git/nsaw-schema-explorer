@@ -24,6 +24,22 @@ import { similarAreas } from '../area/AreaCompare';
 import type { InspectorProps } from '../Inspector';
 import { FactDots, InspectorVisual, MiniStar, ReachBar, type InspectorAction, type InspectorFigure } from './pieces';
 
+/**
+ * "Go next" labels name the kind of thing: "Subject area: Cash Refund", "Fact table: Sales Order Lines",
+ * "Dimension: Employee", "NetSuite field: transactions.tranid". A table's readable name gives way to its physical name
+ * when it reads the same as the subject area around it. The Inspector drops any action pointing at the current page
+ * and shows at most four, so builders list the natural next level down first.
+ */
+export function tableLabel(m: CoreModel, t: number, areaLabel?: string | null): string {
+  const name = m.tables[t].name;
+  const pretty = prettyTable(m, name);
+  const shown = !pretty || (areaLabel && pretty.toLowerCase() === areaLabel.toLowerCase()) ? name : pretty;
+  const kind = isFact(m, t) ? 'Fact table' : m.tables[t].role === 'dimension' ? 'Dimension' : 'Table';
+  return `${kind}: ${shown}`;
+}
+const fieldAction = (rec: string, field: string, slug: string | null, sub: string, from?: string): InspectorAction =>
+  ({ label: `NetSuite field: ${rec}.${field.toLowerCase()}`, sub, to: fieldPath(rec, field.toLowerCase(), from ? { from } : {}, slug) });
+
 const positive = (fs: (InspectorFigure | false | null | undefined)[]): InspectorFigure[] =>
   fs.filter((f): f is InspectorFigure => !!f && (typeof f.n !== 'number' || f.n > 0));
 
@@ -34,13 +50,11 @@ export function inspectArea(m: CoreModel, sa: number): InspectorProps {
   const drawn = new Set(flow.facts.map((f) => f.table));
   const listed = m.factsOfSa[sa];
   const near = similarAreas(m, sa, 1)[0];
-  const actions: InspectorAction[] = [{ label: `Open ${s.label}`, sub: 'its facts and the tables they relate to', to: areaPath(s.slug) }];
-  if (flow.facts[0]) {
-    const f = flow.facts.reduce((a, b) => (b.rels.length > a.rels.length ? b : a));
-    actions.push({ label: `Open ${prettyTable(m, f.name)}`, sub: 'its data model star and column ledger', to: tablePath(f.name, s.slug) });
-  }
-  if (s.row >= 0) actions.push({ label: 'Its row in the bus matrix', sub: 'the dimensions it shares with other areas', to: matrixPath({ a: s.slug }) });
+  const actions: InspectorAction[] = [{ label: `Subject area: ${s.label}`, sub: 'its facts and the tables they relate to', to: areaPath(s.slug) }];
+  const big = flow.facts.length ? flow.facts.reduce((a, b) => (b.rels.length > a.rels.length ? b : a)).table : listed[0];
+  if (big !== undefined) actions.push({ label: tableLabel(m, big, s.label), sub: 'its data model star and column ledger', to: tablePath(m.tables[big].name, s.slug) });
   if (near) actions.push({ label: `Compare with ${m.subjectAreas[near.sa].label}`, sub: `${fmt(near.shared)} shared dimensions`, to: comparePath(s.slug, m.subjectAreas[near.sa].slug) });
+  if (s.row >= 0) actions.push({ label: `Matrix row: ${s.label}`, sub: 'the dimensions it shares with other areas', to: matrixPath({ a: s.slug }) });
   return {
     kind: 'area',
     eyebrow: 'subject area',
@@ -70,15 +84,15 @@ export function inspectFact(m: CoreModel, cm: ColumnModel | null, t: number, are
   const flow = area != null ? areaFlow(m, area) : null;
   const shared = new Set(flow ? flow.tables.filter((d) => d.facts.length >= 2).map((d) => d.table) : []);
   const sh = rels.filter((r) => shared.has(r.table)).length;
-  const actions: InspectorAction[] = [{ label: rels.length ? 'Open the table star' : 'Open the table', sub: 'the data model, the column ledger', to: tablePath(name, slug) }];
+  const areaLabel = area != null ? m.subjectAreas[area].label : null;
+  const actions: InspectorAction[] = [{ label: tableLabel(m, t, areaLabel), sub: rels.length ? 'its data model star and column ledger' : 'its column ledger', to: tablePath(name, slug) }];
   if (cm) {
     const lr = ledgerRows(m, cm, t);
     const row = lr.rows.find((r) => r.isKey && r.sources.length) ?? lr.rows.find((r) => r.sources.length);
     const src = row?.sources[0];
-    if (row) actions.push({ label: `Follow ${row.name}`, sub: 'one column from NetSuite to the reports', to: tablePath(name, { col: row.name }, slug) });
-    if (src) actions.push({ label: 'Trace a field', sub: src.label, to: fieldPath(src.record, src.key.slice(src.record.length + 1), slug) });
+    if (src) actions.push(fieldAction(src.record, src.key.slice(src.record.length + 1), slug, `loaded into ${row!.name}; its trace across every subject area`, name));
   }
-  if (slug) actions.push({ label: `Back to ${m.subjectAreas[area!].label}`, sub: 'the subject area flow', to: areaPath(slug) });
+  if (slug) actions.push({ label: `Subject area: ${areaLabel}`, sub: 'the subject area flow', to: areaPath(slug) });
   let visual: ReactNode;
   if (rels.length) {
     visual = (
@@ -112,10 +126,10 @@ export function inspectDimension(m: CoreModel, t: number, area?: number | null):
   const d = flow ? flowTable(flow, t) : undefined;
   const reach = m.tables[t].saCount;
   const facts = modelFactsOf(m, t).length;
-  const actions: InspectorAction[] = [];
-  if (m.tables[t].col >= 0) actions.push({ label: 'Open in the bus matrix', sub: 'its column across every subject area', to: matrixPath({ dim: name }) });
-  actions.push({ label: 'Open the table', sub: facts ? 'facts that relate to it, its columns' : 'its columns', to: tablePath(name, slug) });
-  if (slug) actions.push({ label: `Back to ${m.subjectAreas[area!].label}`, sub: 'the subject area flow', to: areaPath(slug) });
+  const areaLabel = area != null ? m.subjectAreas[area].label : null;
+  const actions: InspectorAction[] = [{ label: tableLabel(m, t, areaLabel), sub: facts ? 'facts that relate to it, its columns' : 'its columns', to: tablePath(name, slug) }];
+  if (m.tables[t].col >= 0) actions.push({ label: `Matrix column: ${prettyTable(m, name)}`, sub: 'the subject areas that list it', to: matrixPath({ dim: name }) });
+  if (slug) actions.push({ label: `Subject area: ${areaLabel}`, sub: 'the subject area flow', to: areaPath(slug) });
   return {
     kind: 'dimension',
     eyebrow: isFact(m, t) ? 'fact table' : m.tables[t].role === 'dimension' ? 'dimension' : 'table',
@@ -159,9 +173,9 @@ export function inspectPair(m: CoreModel, saA: number, saB: number): InspectorPr
       { n: c.both.length, label: 'listed under both' },
     ]),
     actions: [
-      { label: 'Compare the two', sub: 'side by side, with both matrix rows', to: comparePath(A.slug, B.slug) },
-      { label: `Open ${A.label}`, sub: 'its facts and the tables they relate to', to: areaPath(A.slug) },
-      { label: `Open ${B.label}`, sub: 'its facts and the tables they relate to', to: areaPath(B.slug) },
+      { label: `Compare ${A.label} with ${B.label}`, sub: 'side by side, with both matrix rows', to: comparePath(A.slug, B.slug) },
+      { label: `Subject area: ${A.label}`, sub: 'its facts and the tables they relate to', to: areaPath(A.slug) },
+      { label: `Subject area: ${B.label}`, sub: 'its facts and the tables they relate to', to: areaPath(B.slug) },
     ],
   };
 }
@@ -179,11 +193,12 @@ export function inspectColumn(m: CoreModel, cm: ColumnModel, c: number, area?: n
   const f0 = srcs[0];
   if (f0 !== undefined) {
     const rec = cm.core.recordKey[cm.nfRecord[f0]];
-    actions.push({ label: 'Trace its NetSuite field', sub: `${rec}.${cm.nfName[f0]} across every subject area`, to: fieldPath(rec, cm.nfName[f0].toLowerCase(), slug) });
+    actions.push(fieldAction(rec, cm.nfName[f0], slug, 'its trace across every subject area', table || undefined));
   }
-  if (table) actions.push({ label: `Open ${shortTable(table)}`, sub: 'the column in its table ledger', to: tablePath(table, { col: cm.pcName[c] }, slug) });
+  if (t >= 0) actions.push({ label: tableLabel(m, t, area != null ? m.subjectAreas[area].label : null), sub: `the column ${cm.pcName[c]} in its ledger`, to: tablePath(table, { col: cm.pcName[c] }, slug) });
   const sa0 = area != null && cm.colSas[c].includes(area) ? null : cm.colSas[c][0];
-  if (sa0 != null) actions.push({ label: `Open ${m.subjectAreas[sa0].label}`, sub: 'a subject area that reads it', to: areaPath(m.subjectAreas[sa0].slug) });
+  if (sa0 != null) actions.push({ label: `Subject area: ${m.subjectAreas[sa0].label}`, sub: 'a subject area that reads it', to: areaPath(m.subjectAreas[sa0].slug) });
+  else if (area != null) actions.push({ label: `Subject area: ${m.subjectAreas[area].label}`, sub: 'the subject area flow', to: areaPath(m.subjectAreas[area].slug) });
   return {
     kind: 'column',
     eyebrow: 'warehouse column',
@@ -222,9 +237,9 @@ export function inspectField(m: CoreModel, trace: Trace, area?: number | null): 
   const top = trace.groups.flatMap((g) => g.columns).sort((a, b) => b.reportColumns - a.reportColumns)[0];
   const busiest = trace.functionalAreas.flatMap((g) => g.areas).sort((a, b) => b.reportColumns - a.reportColumns)[0];
   const actions: InspectorAction[] = [];
-  if (top) actions.push({ label: `Open ${shortTable(top.tableName)}`, sub: `${top.column}, read by ${fmt(top.reportColumns)} report columns`, to: tablePath(top.tableName, { col: top.column }, slug) });
+  if (top) actions.push({ label: tableLabel(m, top.table), sub: `${top.column}, read by ${fmt(top.reportColumns)} report columns`, to: tablePath(top.tableName, { col: top.column }, slug) });
   const go = area != null ? m.subjectAreas[area] : busiest ? m.subjectAreas[busiest.sa] : null;
-  if (go) actions.push({ label: `Open ${go.label}`, sub: area != null ? 'the subject area you came from' : 'the subject area that reads it most', to: areaPath(go.slug) });
+  if (go) actions.push({ label: `Subject area: ${go.label}`, sub: area != null ? 'the subject area you came from' : 'the subject area that reads it most', to: areaPath(go.slug) });
   return {
     kind: 'field',
     eyebrow: 'NetSuite field',

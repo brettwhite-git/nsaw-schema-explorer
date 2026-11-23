@@ -63,6 +63,18 @@ export function InspectorSection({ title, count, children }: { title: string; co
   );
 }
 
+/** "Go next": never the page you are on, no repeats, at most four (the builders list the most useful first). */
+function nextSteps(actions: InspectorAction[]): InspectorAction[] {
+  const here = typeof location === 'undefined' ? '' : location.pathname;
+  const seen = new Set<string>();
+  return actions.filter((a) => {
+    const path = a.to.split(/[?#]/)[0];
+    if (path === here || seen.has(a.to)) return false;
+    seen.add(a.to);
+    return true;
+  }).slice(0, 4);
+}
+
 const KEY = 'explorer-inspector-folded';
 const readFolded = (): boolean => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } };
 const writeFolded = (v: boolean) => { try { if (v) localStorage.setItem(KEY, '1'); else localStorage.removeItem(KEY); } catch { /* storage off */ } };
@@ -82,7 +94,7 @@ export function Inspector({ kind, eyebrow, title, mono, lead, figures = [], visu
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented || typing(e.target)) return;
       if (document.querySelector('[role="dialog"]')) return;
-      if ((e.target as HTMLElement | null)?.closest?.('details[open]') || document.querySelector('.lv-menu[open]')) return;
+      if ((e.target as HTMLElement | null)?.closest?.('details[open]')) return;
       if (onClose) { e.preventDefault(); onClose(); return; }
       if (folded || isPhone()) return;
       set(true);
@@ -117,7 +129,7 @@ export function Inspector({ kind, eyebrow, title, mono, lead, figures = [], visu
           {lead && <p className="ins-lead">{lead}</p>}
           <Figures items={figures} />
           {visual}
-          <GoNext actions={actions} />
+          <GoNext actions={nextSteps(actions)} />
           {children}
           {onClose && <button type="button" className="ins-back linkbtn" onClick={onClose}>{closeLabel ?? 'Clear the selection'}</button>}
           <p className="ins-foot">{onClose ? 'Esc clears the selection' : 'Esc folds the inspector'}</p>

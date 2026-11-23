@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { CoreJson } from '../ontology/types';
+import type { CoreJson, DetailJson } from '../ontology/types';
 import {
-  areaFlow, areaNeighbours, areasOfTable, buildCore, findTable, flowTable, hasModel, unslug, type CoreModel,
+  areaFields, areaFlow, areaNeighbours, areasOfTable, buildColumns, buildCore, findTable, flowTable, hasModel, topFields, unslug,
+  type ColumnModel, type CoreModel,
 } from '../explorer/data';
 
 const root = path.resolve(__dirname, '..');
@@ -67,5 +68,30 @@ describe('areasOfTable and areaNeighbours', () => {
     const { prev, next } = areaNeighbours(m, s);
     for (const x of [prev, next]) if (x !== null) expect(m.subjectAreas[x].fa).toBe(m.subjectAreas[s].fa);
     expect(prev !== null || next !== null).toBe(true);
+  });
+});
+
+describe('topFields and areaFields', () => {
+  let cm: ColumnModel;
+  beforeAll(() => {
+    cm = buildColumns(m, JSON.parse(fs.readFileSync(path.join(root, 'public/ontology/columns.json'), 'utf8')) as DetailJson);
+  });
+  it('the most-used fields come first, one per record; transactions.tranid reaches 84 areas', () => {
+    const top = topFields(cm, 12);
+    expect(new Set(top.map((x) => x.record)).size).toBe(top.length);
+    expect(top.length).toBe(12);
+    for (let i = 1; i < top.length; i++) expect(top[i - 1].n).toBeGreaterThanOrEqual(top[i].n);
+    const tr = topFields(cm, 1000, 1000).find((x) => x.key === 'transactions.tranid');
+    expect(tr?.n).toBe(84);
+    expect(top[0].n).toBe(cm.fieldSas[top[0].field].length);
+  });
+  it('fields behind an area are loaded into its facts and read by its report columns', () => {
+    const s = sa('sales-order');
+    const fs2 = areaFields(m, cm, s, 12);
+    expect(fs2.length).toBeGreaterThan(0);
+    for (const f of fs2) {
+      expect(f.n).toBeGreaterThan(0);
+      expect(cm.fieldCols[f.field].some((c) => m.factsOfSa[s].includes(cm.pcTable[c]))).toBe(true);
+    }
   });
 });
