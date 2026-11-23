@@ -5,11 +5,11 @@
  *   npm run ontology
  *
  * Inputs (all in the repo, no workbook needed):
- *   public/25R4_NS_Semantic_Model_Lineage ... .csv     presentation -> physical lineage
+ *   data-src/25R4_NS_Semantic_Model_Lineage ... .csv     presentation -> physical lineage
  *   data-src/ns_source_edges.csv, data-src/nsaw_derived.csv   (extracted once by scripts/extract-workbook.py)
- *   public/25R4_NS_Data_Augmentation_Entity_Key_List ... .csv  entity keys
- *   public/25R4_Fusion_NS_Analytics_Tables.html        doc groups
- *   config/functionalAreas.ts, types.ts                curated rules + name inference (bundled with esbuild, single source of truth)
+ *   data-src/25R4_NS_Data_Augmentation_Entity_Key_List ... .csv  entity keys
+ *   data-src/25R4_Fusion_NS_Analytics_Tables.html      doc groups
+ *   ontology/functionalAreas.ts, ontology/naming.ts    curated rules + name inference (bundled with esbuild, single source of truth)
  *
  * Outputs:
  *   core.json      small, always loaded: nodes of the smaller types, summaries, bus matrix, small edge groups
@@ -30,9 +30,9 @@ import { build } from 'esbuild';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const P = (...a) => path.join(ROOT, ...a);
 const OUT = P('public', 'ontology');
-const LINEAGE = P('public', '25R4_NS_Semantic_Model_Lineage - 25R4_NS_Semantic_Model_Lineage.csv');
-const KEYS = P('public', '25R4_NS_Data_Augmentation_Entity_Key_List - Sheet1.csv');
-const DOCS = P('public', '25R4_Fusion_NS_Analytics_Tables.html');
+const LINEAGE = P('data-src', '25R4_NS_Semantic_Model_Lineage - 25R4_NS_Semantic_Model_Lineage.csv');
+const KEYS = P('data-src', '25R4_NS_Data_Augmentation_Entity_Key_List - Sheet1.csv');
+const DOCS = P('data-src', '25R4_Fusion_NS_Analytics_Tables.html');
 const SRC_EDGES = P('data-src', 'ns_source_edges.csv');
 const DERIVED = P('data-src', 'nsaw_derived.csv');
 
@@ -59,9 +59,9 @@ const pairKey = (a, b) => a * 4194304 + b; // ids stay far below 2^22
 const addTo = (m, k, v) => { let s = m.get(k); if (!s) m.set(k, (s = new Set())); s.add(v); return s; };
 
 async function loadTs() {
-  // Bundle types.ts + config/functionalAreas.ts in memory so the build uses the app's own rules, not a copy.
+  // Bundle ontology/naming.ts + ontology/functionalAreas.ts in memory so the build uses the app's own rules, not a copy.
   const res = await build({
-    stdin: { contents: "export * from './types'; export * from './config/functionalAreas';", resolveDir: ROOT, loader: 'ts' },
+    stdin: { contents: "export * from './ontology/naming'; export * from './ontology/functionalAreas';", resolveDir: ROOT, loader: 'ts' },
     bundle: true, format: 'esm', platform: 'node', write: false, logLevel: 'silent',
   });
   return import('data:text/javascript;base64,' + Buffer.from(res.outputFiles[0].text).toString('base64'));

@@ -3,8 +3,21 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    { "source": "/atlas/physicalTable/:name", "destination": "/table/:name", "permanent": true },
+    { "source": "/atlas/:path*", "destination": "/", "permanent": false },
+    { "source": "/course/:path*", "destination": "/", "permanent": true },
+    { "source": "/course", "destination": "/", "permanent": true },
+    { "source": "/index", "destination": "/", "permanent": true },
+    { "source": "/legacy.html", "destination": "/", "permanent": true }
+  ],
   "rewrites": [
-    { "source": "/atlas/:path+", "destination": "/index.html" },
-    { "source": "/((?!legacy\\.html$|ontology/|paper/|fonts/|assets/)[^.]*)", "destination": "/index.html" }
+    { "source": "/((?!ontology/|assets/)[^.]*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/ontology/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }]
+    }
   ]
 }

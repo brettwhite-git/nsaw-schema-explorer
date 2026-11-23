@@ -1,0 +1,107 @@
+/* area page styles (site/pages/Area.tsx, site/components/area/*). Shared look lives in base.css; colours come
+   from tokens (no hex here). */
+
+/* ------------------------------------------------------------------ head */
+.ar-head { padding-bottom: 4px; }
+.ar-head .eyebrow { gap: 10px; }
+.ar-fa { text-decoration: none; border-bottom: 1px solid var(--edge); }
+.ar-fa:hover { color: var(--ink); border-bottom-color: var(--ink); }
+.ar-head .title { margin-bottom: 4px; }
+.ar-sm { margin: 0 0 16px; font-size: 12px; }
+.ar-head .lead { margin-top: 14px; }
+.ar-head .stats { margin-top: 22px; padding-bottom: 6px; }
+
+.ar-grid { margin-top: 8px; }
+.ar-main { grid-column: span 8; }
+.ar-side { grid-column: span 4; }
+.ar-sec { margin-top: 52px; }
+.ar-main .sec-h { padding-bottom: 10px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+.ar-main .sec-h .more { font-size: 13px; }
+
+/* ------------------------------------------------------------------ facts */
+.ar-facts {
+  list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--gutter); margin-top: 6px;
+}
+.ar-fact { padding: 14px 0 16px; border-bottom: 1px solid var(--rule); min-width: 0; }
+.ar-grain { font: 400 18px/1.3 var(--serif); letter-spacing: -0.005em; color: var(--ink); }
+.ar-grain.ar-plain { color: var(--ink-2); }
+.ar-key { margin-top: 6px; font-size: 12.5px; }
+.ar-key .tag { font-size: 13px; color: var(--ink-3); margin-right: 2px; }
+.ar-key .ktag { font-size: 12px; }
+.ar-names { list-style: none; margin-top: 8px; display: flex; flex-direction: column; gap: 3px; }
+.ar-names li { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ar-tname {
+  font-size: 12px; color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--edge);
+  overflow-wrap: anywhere; transition: color var(--dur-hover), border-color var(--dur-hover);
+}
+.ar-tname:hover { color: var(--ink); border-bottom-color: var(--ink); }
+.ar-names .badge { font-size: 9.5px; }
+
+/* ------------------------------------------------------------------ shared dimensions */
+.ar-dims {
+  list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--gutter); margin-top: 4px;
+}
+.ar-dim {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) 118px; align-items: baseline; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid var(--rule); min-width: 0;
+}
+.ar-rank { color: var(--ink-3); font-size: 10.5px; text-align: right; }
+.ar-dname {
+  font-size: 13px; color: var(--ink); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ar-dname:hover { text-decoration: underline; text-decoration-color: var(--edge); text-underline-offset: 3px; }
+.ar-reach { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink-2); align-self: center; }
+.ar-bar { flex: 1; height: 3px; background: var(--rule); position: relative; }
+.ar-bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink-3); transition: background var(--dur-hover); }
+.ar-n { width: 26px; text-align: right; font-size: 11.5px; }
+.ar-reach:hover .ar-bar i { background: var(--accent); }
+.ar-reach:hover .ar-n { color: var(--accent); }
+
+/* ------------------------------------------------------------------ side: compare + folders */
+.ar-side h2.h3 { margin-bottom: 10px; }
+.ar-side-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.ar-side-h .h3 { margin-bottom: 4px; }
+.ar-compare .note { margin-bottom: 6px; }
+.ar-near > li { padding: 8px 0; }
+.ar-nname { color: var(--ink); text-decoration: none; font: 400 15px/1.3 var(--serif); min-width: 0; }
+.ar-nname:hover { text-decoration: underline; text-decoration-color: var(--edge); text-underline-offset: 3px; }
+.ar-ncount { font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.ar-pick { display: block; margin-top: 18px; }
+.ar-pick select {
+  width: 100%; min-height: var(--hit-control); appearance: none; -webkit-appearance: none;
+  background: transparent; color: var(--ink); border: 0; border-bottom: 1px solid var(--edge); border-radius: 0;
+  font: 400 15px var(--serif); padding: 4px 22px 6px 0; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-2) 50%), linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+  background-position: calc(100% - 9px) 55%, calc(100% - 4px) 55%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+.ar-pick select:hover { border-bottom-color: var(--ink-2); }
+.ar-pick option, .ar-pick optgroup { background-color: var(--paper); color: var(--ink); font-family: var(--ui); }
+
+/* ------------------------------------------------------------------ phone */
+@media (max-width: 759px) {
+  .ar-facts, .ar-dims { grid-template-columns: minmax(0, 1fr); }
+  .ar-sec { margin-top: 40px; }
+  .ar-dim { grid-template-columns: 22px minmax(0, 1fr) 96px; min-height: var(--hit-touch); align-items: center; padding: 0; }
+  .ar-reach { min-height: var(--hit-touch); }
+  .ar-pick select { min-height: var(--hit-touch); }
+  .ar-near > li { min-height: var(--hit-touch); align-items: center; }
+  .ar-main .sec-h { flex-wrap: wrap; row-gap: 4px; }
+}
+
+/* ------------------------------------------------------------------ late additions: column flow, folders in main, sticky side */
+.ar-dims { grid-auto-flow: column; }
+.ar-side > section { position: sticky; top: 80px; }
+.ar-folders { list-style: none; columns: 3; column-gap: var(--gutter); margin-top: 4px; }
+.ar-folders > li {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px; break-inside: avoid;
+  padding: 5px 0; border-bottom: 1px solid var(--rule); font-size: 12.5px; min-width: 0;
+}
+.ar-folders > li > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 759px) {
+  .ar-dims { grid-auto-flow: row; grid-template-rows: none !important; }
+  .ar-folders { columns: 1; }
+  .ar-side > section { position: static; }
+}

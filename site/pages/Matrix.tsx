@@ -1,0 +1,125 @@
+// Route: /   ?a=slug&b=slug (picked rows)  ?dim=TABLE (picked column)  ?open=0,2 (open long-tail bands)
+// The bus matrix: a title block, a summary strip, the matrix and a side panel. At phone width the matrix becomes
+// grouped lists (PhoneMatrix) and the panel sits above them.
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { setQuery, useLocation } from '../router';
+import { parseQuery } from '../routes';
+import { usePage } from '../usePage';
+import { useExplorer } from '../useExplorer';
+import { BusMatrix } from '../components/BusMatrix';
+import { SidePanel } from '../components/matrix/SidePanel';
+import { PhoneMatrix } from '../components/matrix/PhoneMatrix';
+import { factGrainCount, matrixLayout, PHONE, pickRow, readSel, selQuery, useMedia, type Sel } from '../components/matrix/shared';
+import { fmt } from '../../explorer/data/names';
+import type { CoreModel } from '../../explorer/data/types';
+
+function Mark() {
+  return <svg className="mx-mark" width="22" height="8" aria-hidden="true"><line x1="1" y1="4" x2="21" y2="4" /></svg>;
+}
+
+export function Matrix() {
+  const loc = useLocation();
+  const q = parseQuery(loc);
+  const { core: m, columns: cm, ready, error } = useExplorer({ columns: q.dim !== undefined });
+  usePage({ title: '', ready: !!m && ready });
+  if (!m) return (
+    <section className="page-h">
+      <h1 className="title">The bus matrix</h1>
+      <p className="note">{error ? `The ontology did not load: ${error}` : 'Loading the matrix…'}</p>
+    </section>
+  );
+  return <MatrixBody m={m} cm={cm} loc={loc} />;
+}
+
+function MatrixBody({ m, cm, loc }: { m: CoreModel; cm: ReturnType<typeof useExplorer>['columns']; loc: string }) {
+  const sel = useMemo(() => readSel(m, parseQuery(loc)), [m, loc]);
+  const phone = useMedia(PHONE);
+  const [hoverRow, setHoverRow] = useState<number | null>(null);
+  const panel = useRef<HTMLElement>(null);
+  const write = useCallback((s: Sel) => setQuery(selQuery(m, s)), [m]);
+
+  const onPickRow = useCallback((r: number) => write(pickRow(sel, r)), [write, sel]);
+  const onPickCol = useCallback((c: number) => {
+    const { bandOf } = matrixLayout(m);
+    const open = new Set(sel.open);
+    if (bandOf[c] >= 0) open.add(bandOf[c]);
+    write({ a: null, b: null, dim: sel.dim === c ? null : c, open });
+  }, [m, sel, write]);
+  const onToggleBand = useCallback((k: number) => {
+    const open = new Set(sel.open);
+    if (open.has(k)) open.delete(k); else open.add(k);
+    const dim = sel.dim !== null && matrixLayout(m).bandOf[sel.dim] === k && !open.has(k) ? null : sel.dim;
+    setQuery(selQuery(m, { ...sel, dim, open }), { replace: true });
+  }, [m, sel]);
+  const onPhonePick = useCallback((c: number) => {
+    write({ ...sel, a: null, b: null, dim: c });
+    requestAnimationFrame(() => panel.current?.scrollIntoView({ block: 'start' }));
+  }, [sel, write]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape' || e.defaultPrevented || document.querySelector('[role="dialog"]')) return;
+      if (sel.a !== null || sel.dim !== null) write({ ...sel, a: null, b: null, dim: null });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [sel, write]);
+
+  const stats = useMemo(() => {
+    const g = factGrainCount(m);
+    const counts = m.core.meta.counts;
+    return [
+      { n: m.subjectAreas.length, t: `subject areas in ${m.functionalAreas.length} functional areas` },
+      { n: counts.physicalTablesInLineage, t: 'warehouse tables in the lineage' },
+      { n: m.bus.columns.length, t: 'dimensions shared by two or more areas' },
+      { n: g.has, t: `of ${fmt(g.total)} facts with a grain in Oracle’s key list` },
+      { n: counts.netsuiteRecords, t: 'NetSuite records named in the lineage' },
+    ];
+  }, [m]);
+  const { head } = matrixLayout(m);
+  const selected = sel.a !== null || sel.dim !== null;
+
+  return (
+    <>
+      <section className="mx-intro">
+        <div className="mx-intro-main">
+          <h1 className="title">The bus matrix</h1>
+          <p className="mx-lede">
+            Each row is a subject area and each column a dimension table that Oracle’s lineage lists under two or more
+            of them. Read across a row to see what an area can be sliced by. Read down a column to see how far a
+            dimension reaches.
+          </p>
+        </div>
+        <p className="mx-intro-note"><Mark /><span>A mark means Oracle’s lineage lists this dimension table under this subject area.</span></p>
+        <div className="stats mx-stats">
+          {stats.map((s) => <div className="stat" key={s.t}><b>{fmt(s.n)}</b><span>{s.t}</span></div>)}
+        </div>
+      </section>
+
+      {phone ? (
+        <section className="mx-board phone">
+          {selected && (
+            <aside className="mx-side" ref={panel} aria-label="Selection">
+              <SidePanel m={m} cm={cm} sel={sel} hoverRow={null} onSel={write} />
+            </aside>
+          )}
+          <PhoneMatrix m={m} onPickCol={onPhonePick} dim={sel.dim} />
+        </section>
+      ) : (
+        <section className="mx-board">
+          <BusMatrix m={m} sel={sel} onPickRow={onPickRow} onPickCol={onPickCol} onToggleBand={onToggleBand} onHoverRow={setHoverRow} />
+          <aside className="mx-side" ref={panel} aria-label="Selection">
+            <SidePanel m={m} cm={cm} sel={sel} hoverRow={hoverRow} onSel={write} />
+          </aside>
+        </section>
+      )}
+
+      {!phone && (
+        <p className="mx-foot">
+          Columns are ordered by reach, the number of subject areas whose lineage lists them. The{' '}
+          {m.bus.columns.length - head.length} least shared sit in bands at the right edge; open a band to see its columns.
+        </p>
+      )}
+    </>
+  );
+}

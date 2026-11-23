@@ -41,3 +41,4 @@ lab/**/shots/
 
 # Personal Claude settings
 .claude/settings.local.json
+lab/_shots*/

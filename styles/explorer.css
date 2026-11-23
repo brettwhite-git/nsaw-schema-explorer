@@ -1,0 +1,9 @@
+/* NSAW Schema Explorer: the Paper ledger look (from lab/explorer-combo and lab/paper-lineage).
+   Colours, faces and sizes come from styles/tokens.generated.css (tokens.json). No hex values in any of these files.
+   base.css holds the shared look; each page builder owns one file below (they load after base, so they win ties). */
+@import './explorer/base.css';
+@import './explorer/matrix.css';
+@import './explorer/table.css';
+@import './explorer/trace.css';
+@import './explorer/search.css';
+@import './explorer/area.css';

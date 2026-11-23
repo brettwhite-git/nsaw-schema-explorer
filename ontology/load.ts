@@ -31,6 +31,7 @@ export class Ontology {
   private groups: EdgeGroupJson[] = [];
   private adj = new Map<EdgeGroupJson, Adjacency>();
   private keyIndex = new Map<NodeType, Map<string, number>>();
+  private columnarCache = new Map<NodeType, { n: number; cols: Record<string, any[]>; strings?: string[] }>();
   private files = new Set<OntologyFile>(['core']);
   private loading = new Map<OntologyFile, Promise<void>>();
   private opts: { baseUrl: string; fetchJson: FetchJson };
@@ -120,6 +121,24 @@ export class Ontology {
   ref(type: NodeType, key: string): NodeRef | undefined {
     const i = this.find(type, key);
     return i === undefined ? undefined : { type, i };
+  }
+
+  /**
+   * The whole node table at once, column by column (fast path for indexes; `get()` builds one object per call).
+   * String columns (`strCols`) come back resolved to their text. `strings` is the file's shared string table.
+   */
+  columnar(type: NodeType): { n: number; cols: Record<string, any[]>; strings?: string[] } {
+    let c = this.columnarCache.get(type);
+    if (!c) {
+      const e = this.tables.get(type);
+      if (!e) throw new Error(`ontology: ${type} nodes not loaded (call ensure() for the detail file)`);
+      const str = e.table.strCols ?? [];
+      const cols: Record<string, any[]> = {};
+      for (const [k, col] of Object.entries(e.table.cols)) cols[k] = str.includes(k) ? col.map((x: number) => e.strings![x]) : col;
+      c = { n: e.table.n, cols, strings: e.strings };
+      this.columnarCache.set(type, c);
+    }
+    return c;
   }
 
   // ---------------------------------------------------------------- edges

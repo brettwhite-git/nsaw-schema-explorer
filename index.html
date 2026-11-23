@@ -1,21 +1,13 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>The Warehouse, Drawn</title>
-  <meta name="description" content="A hand-inked field manual for data warehousing and NetSuite Analytics Warehouse.">
-  <script>
-    // No flash: set the theme before first paint. Dark is the default; light is the alternate.
-    (function () {
-      var t = null;
-      try { t = localStorage.getItem('drawn-theme'); } catch (e) {}
-      document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
-    })();
-  </script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Caveat:wght@500&display=swap" rel="stylesheet">
+  <title>NSAW Schema Explorer</title>
+  <meta name="description" content="Browse NetSuite Analytics Warehouse 25R4: subject areas, fact and dimension tables, shared dimensions, grain and field-level lineage from NetSuite to the semantic model.">
+  <meta name="theme-color" content="#F6F5F0">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23F6F5F0'/%3E%3Ccircle cx='8' cy='8' r='2.5' fill='%239E2A1B'/%3E%3Cpath d='M8 8 2 3M8 8l6-5M8 8l-6 5M8 8l6 5' stroke='%231B1A17' stroke-dasharray='1.5 1.5'/%3E%3C/svg%3E">
+  <link rel="preload" href="/ontology/core.json" as="fetch" crossorigin>
 </head>
 <body>
   <div id="root"></div>

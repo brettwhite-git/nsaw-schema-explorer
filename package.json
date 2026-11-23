@@ -10,28 +10,21 @@
     "ontology": "node scripts/build-ontology.mjs",
     "test": "vitest run",
     "tokens": "node scripts/build-tokens.mjs",
-    "glyphs": "node scripts/make-written-glyphs.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "d3-force": "^3.0.0",
-    "dagre": "^0.8.5",
-    "flexsearch": "^0.8.212",
-    "lucide-react": "^0.563.0",
-    "papaparse": "^5.5.3",
+    "@fontsource-variable/jetbrains-mono": "^5.3.0",
+    "@fontsource-variable/source-sans-3": "^5.3.1",
+    "@fontsource-variable/source-serif-4": "^5.3.1",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "reactflow": "^11.11.4",
-    "roughjs": "^4.6.6"
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
-    "@types/d3-force": "^3.0.10",
-    "@types/dagre": "^0.7.53",
     "@types/node": "^22.14.0",
-    "@types/papaparse": "^5.5.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^5.0.0",
-    "opentype.js": "^2.0.0",
-    "p5.brush": "^3.0.0",
+    "papaparse": "^5.7.1",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
     "vitest": "^5.1.0"

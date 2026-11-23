@@ -1,7 +1,7 @@
 // Types for the JSON written by scripts/build-ontology.mjs (public/ontology/*.json).
 // Shape: columnar node tables (one array per field, same length) + edge groups (flat [from,to,from,to,...] int pairs).
 
-import type { PhysicalTableType } from '../types';
+import type { PhysicalTableType } from './naming';
 
 export type NodeType =
   | 'functionalArea'

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Ontology } from '../ontology/load';
 import type { CoreJson, DetailJson } from '../ontology/types';
-import { parsePhysicalTableType, isSecuredTable } from '../types';
+import { parsePhysicalTableType, isSecuredTable } from '../ontology/naming';
 
 // Reads the committed build output. Run `npm run ontology` after changing sources.
 const dir = path.resolve(__dirname, '../public/ontology');
